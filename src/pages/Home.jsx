@@ -1,63 +1,78 @@
 import React, { useEffect, useState } from 'react';
 import { Container, Typography, Grid, Card, CardContent, CardMedia, Box, Button } from '@mui/material';
+import api from '../services/api'; // Importamos la configuración de Axios
 import { obtenerProductos } from '../services/productoService';
-import Navbar from '../components/Navbar'; // Importamos la barra de navegación
+import Navbar from '../components/Navbar';
 
 const Home = () => {
-  // Estado para guardar los productos que vienen de la base de datos
   const [productos, setProductos] = useState([]);
 
-  // useEffect carga los datos en cuanto entramos a la página
+  // Carga los productos al entrar a la página
   useEffect(() => {
-    const cargarProductos = async () => {
+    const cargar = async () => {
       try {
         const data = await obtenerProductos();
         setProductos(data);
       } catch (error) {
-        console.error("Error al cargar productos");
+        console.error("Error al obtener productos");
       }
     };
-    cargarProductos();
+    cargar();
   }, []);
 
-  // El return debe estar SIEMPRE dentro de la función del componente...
+  // Función para eliminar el producto
+  const handleEliminar = async (id) => {
+    // Confirmación nativa del navegador para evitar borrados accidentales
+    if (window.confirm("¿Estás seguro? Se borrará la imagen de Amazon S3 y el registro de la base de datos.")) {
+      try {
+        // Enviamos la petición DELETE al backend
+        await api.delete(`/productos/${id}`);
+        
+        // Actualizamos el estado local para que el producto desaparezca de la vista sin recargar
+        setProductos(productos.filter(p => p.id !== id));
+        
+        alert("Producto eliminado con éxito.");
+      } catch (error) {
+        console.error("Error al eliminar:", error);
+        alert("No se pudo eliminar el producto. Revisa el backend.");
+      }
+    }
+  };
+
   return (
     <>
-      {/* Componente de la barra superior */}
-      <Navbar /> 
-
+      <Navbar />
       <Container sx={{ mt: 4, mb: 4 }}>
-        <Typography variant="h3" gutterBottom sx={{ fontWeight: 'bold', textAlign: 'center', mb: 5 }}>
-          Marketplace Fourverr
+        <Typography variant="h4" sx={{ mb: 4, fontWeight: 'bold' }}>
+          Explorar Servicios
         </Typography>
 
-        {/* Rejilla de productos */}
-        <Grid container spacing={4}>
+        <Grid container spacing={3}>
           {productos.map((p) => (
-            <Grid item key={p.id} xs={12} md={4}>
-              <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', borderRadius: 4, boxShadow: 3 }}>
+            <Grid item key={p.id} xs={12} sm={6} md={4}>
+              <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', borderRadius: 3 }}>
                 <CardMedia
                   component="img"
-                  height="200"
+                  height="180"
                   image={p.urlArchivo || 'https://via.placeholder.com/300'}
                   alt={p.titulo}
                 />
                 <CardContent sx={{ flexGrow: 1 }}>
                   <Typography variant="h6" fontWeight="bold">{p.titulo}</Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                    {p.descripcion}
-                  </Typography>
+                  <Typography variant="body2" color="text.secondary">{p.descripcion}</Typography>
                   
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Box sx={{ mt: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <Typography variant="h6" color="primary">${p.precio}</Typography>
-                    <Typography variant="caption" sx={{ bgcolor: '#e3f2fd', p: 0.5, borderRadius: 1, fontWeight: 'bold' }}>
-                      {p.tipo}
-                    </Typography>
+                    {/* Botón de eliminar con color de advertencia */}
+                    <Button 
+                      variant="outlined" 
+                      color="error" 
+                      size="small"
+                      onClick={() => handleEliminar(p.id)}
+                    >
+                      Eliminar
+                    </Button>
                   </Box>
-                  
-                  <Button fullWidth variant="outlined" sx={{ mt: 2, borderRadius: 2 }}>
-                    Ver detalles
-                  </Button>
                 </CardContent>
               </Card>
             </Grid>

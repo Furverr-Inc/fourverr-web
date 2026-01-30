@@ -5,38 +5,53 @@ import { useNavigate } from 'react-router-dom';
 const Navbar = () => {
   const navigate = useNavigate();
 
-  // Función para limpiar la sesión y volver al login
+  // Obtenemos el nombre guardado en el Login. Si no hay, ponemos 'Invitado'
+  const nombreUsuario = localStorage.getItem('usuarioNombre') || 'Invitado';
+
+  // Función para cerrar sesión
   const handleLogout = () => {
-    // Por ahora solo redirigimos, luego limpiaremos estados globales
+    // Limpiamos los datos del navegador
+    localStorage.clear();
+    // Redirigimos al Login
     navigate('/login');
   };
 
   return (
-    <AppBar position="static" sx={{ backgroundColor: '#1976d2' }}>
+    <AppBar position="static" elevation={0} sx={{ backgroundColor: '#2c3e50' }}>
       <Container>
         <Toolbar disableGutters>
-          {/* Logo o Nombre de la marca */}
+          {/* Nombre de la App/Logo */}
           <Typography
             variant="h6"
-            component="div"
-            sx={{ flexGrow: 1, fontWeight: 'bold', cursor: 'pointer' }}
+            sx={{ flexGrow: 1, fontWeight: 'bold', cursor: 'pointer', letterSpacing: 1 }}
             onClick={() => navigate('/home')}
           >
             FOURVERR
           </Typography>
 
-          {/* Botones de navegación */}
-          <Box>
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            {/* Saludo personalizado */}
+            <Typography variant="body1" sx={{ mr: 3, fontStyle: 'italic' }}>
+              Hola, {nombreUsuario}
+            </Typography>
+
             <Button color="inherit" onClick={() => navigate('/home')}>
               Inicio
             </Button>
+            
+            {/* Botón para ir a crear un producto nuevo */}
+            <Button color="inherit" onClick={() => navigate('/nuevo')}>
+              Vender
+            </Button>
+
             <Button 
-              color="inherit" 
-              variant="outlined" 
-              sx={{ ml: 2, borderColor: 'white' }} 
+              variant="contained" 
+              color="error" 
+              size="small"
+              sx={{ ml: 2, fontWeight: 'bold' }}
               onClick={handleLogout}
             >
-              Cerrar Sesión
+              Salir
             </Button>
           </Box>
         </Toolbar>
