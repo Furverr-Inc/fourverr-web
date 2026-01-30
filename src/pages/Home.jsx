@@ -20,7 +20,7 @@ const Home = () => {
     cargarProductos();
   }, []);
 
-  // El return debe estar SIEMPRE dentro de la función del componente
+  // El return debe estar SIEMPRE dentro de la función del componente...
   return (
     <>
       {/* Componente de la barra superior */}

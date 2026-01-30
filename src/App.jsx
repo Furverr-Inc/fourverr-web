@@ -17,3 +17,4 @@ function App() {
 }
 
 export default App;
+// Sincronización con Jira FUR-3
