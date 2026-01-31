@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Container, TextField, Button, Typography, Paper, Box, Alert, Link } from '@mui/material';
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
-import api from '../services/api'; // Usamos nuestra api configurada
+import api from '../services/api'; // Importamos nuestra api configurada
 
 const Login = () => {
   const [correoInput, setCorreoInput] = useState('');
@@ -10,37 +10,45 @@ const Login = () => {
   const [mensajeError, setMensajeError] = useState('');
   const navigate = useNavigate();
 
+  // === 🧹 LIMPIEZA AUTOMÁTICA ===
+  // Este bloque se ejecuta apenas entras a esta pantalla.
+  // Borra cualquier token viejo para evitar accesos no autorizados.
+  useEffect(() => {
+    localStorage.clear();
+    console.log("🔒 Seguridad: Sesión limpiada al cargar Login.");
+  }, []);
+
   const handleEntrar = async (e) => {
     e.preventDefault();
     setError(false);
     
     try {
-      // 1. Enviamos credenciales al nuevo endpoint seguro
-      // Nota: Tu backend espera "correo", no "username"
+      // 1. Petición al Backend
       const response = await api.post('/auth/login', {
         correo: correoInput,
         password: passInput
       });
 
-      // 2. Extraemos los datos del JSON que diseñamos en Java
+      // 2. Extraer datos
       const { token, nombreMostrado, usuarioId } = response.data;
 
-      // 3. ¡AQUI OCURRE LA MAGIA! Guardamos la "llave" en el navegador
+      // 3. Guardar la NUEVA llave
       localStorage.setItem('token', token);
       localStorage.setItem('usuarioNombre', nombreMostrado);
       localStorage.setItem('usuarioId', usuarioId);
 
-      // 4. Todo bien, pasamos al Home
-      console.log("Login exitoso. Token guardado.");
+      // 4. Entrar al sistema
+      console.log("✅ Login exitoso");
       navigate('/home');
 
     } catch (err) {
       console.error("Error en login:", err);
       setError(true);
+      
       if (err.response && err.response.status === 401) {
         setMensajeError("Correo o contraseña incorrectos");
       } else {
-        setMensajeError("No se pudo conectar con el servidor");
+        setMensajeError("Error de conexión con el servidor");
       }
     }
   };
@@ -49,7 +57,7 @@ const Login = () => {
     <Container maxWidth="xs">
       <Paper elevation={6} sx={{ p: 4, mt: 10, borderRadius: 3 }}>
         <Typography variant="h4" align="center" color="primary" fontWeight="bold">Fourverr</Typography>
-        <Typography variant="subtitle1" align="center" sx={{ mb: 3, color: 'gray' }}>Bienvenido de nuevo</Typography>
+        <Typography variant="subtitle1" align="center" sx={{ mb: 3, color: 'gray' }}>Bienvenido</Typography>
         
         {error && <Alert severity="error" sx={{ mt: 2 }}>{mensajeError}</Alert>}
         

@@ -1,55 +1,136 @@
 import React, { useState } from 'react';
-import { Container, TextField, Button, Typography, Paper, Box } from '@mui/material';
-import api from '../services/api';
-import Navbar from '../components/Navbar';
+import { Container, TextField, Button, Typography, Paper, Box, Alert } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
+import api from '../services/api'; 
+
+// NOTA: YA NO IMPORTAMOS NAVBAR AQUÍ PORQUE EL "PROTECTED ROUTE" LA PONE SOLA
 
 const CrearProducto = () => {
+  const navigate = useNavigate();
+  
+  // Estados para el formulario
   const [titulo, setTitulo] = useState('');
   const [precio, setPrecio] = useState('');
-  const [archivo, setArchivo] = useState(null); // Aquí guardamos el archivo binario
+  const [descripcion, setDescripcion] = useState('');
+  const [archivo, setArchivo] = useState(null);
+  
+  // Estados de carga y error
+  const [mensaje, setMensaje] = useState(null);
+  const [error, setError] = useState(false);
+  const [cargando, setCargando] = useState(false);
 
+  // Manejo de la selección de archivo
+  const handleFileChange = (e) => {
+    setArchivo(e.target.files[0]);
+  };
+
+  // Enviar formulario al Backend
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // FormData es necesario para enviar archivos al backend
+    if (!titulo || !precio || !archivo) {
+      setError(true);
+      setMensaje("Por favor completa título, precio y sube una imagen.");
+      return;
+    }
+
+    setCargando(true);
+    
+    // Usamos FormData para enviar texto + archivo
     const formData = new FormData();
     formData.append('titulo', titulo);
     formData.append('precio', precio);
-    formData.append('file', archivo); // El nombre 'file' debe ser igual en Java (@RequestParam)
+    formData.append('descripcion', descripcion);
+    formData.append('file', archivo); // 'file' debe coincidir con el @RequestParam del backend
+    
+    // Obtenemos el ID del usuario del localStorage (para saber quién vende)
+    const usuarioId = localStorage.getItem('usuarioId'); 
+    formData.append('usuarioId', usuarioId); // Opcional, si tu backend lo pide así
 
     try {
-      await api.post('/productos', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' } // Importante para archivos
+      // El token se envía solo gracias a api.js
+      await api.post('/productos/crear', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
       });
-      alert("¡Producto subido a S3 y guardado en DB!");
-    } catch (error) {
-      console.error("Error al subir", error);
+      
+      alert("Producto creado exitosamente");
+      navigate('/home'); // Regresamos al inicio
+
+    } catch (err) {
+      console.error(err);
+      setError(true);
+      setMensaje("Error al subir el producto. Intenta de nuevo.");
+    } finally {
+      setCargando(false);
     }
   };
 
   return (
-    <>
-      <Navbar />
-      <Container maxWidth="sm">
-        <Paper sx={{ p: 4, mt: 5 }}>
-          <Typography variant="h5" gutterBottom>Nuevo Producto (Amazon S3)</Typography>
-          <Box component="form" onSubmit={handleSubmit}>
-            <TextField fullWidth label="Título del producto" margin="normal" required
-              onChange={(e) => setTitulo(e.target.value)} />
-            <TextField fullWidth label="Precio" type="number" margin="normal" required
-              onChange={(e) => setPrecio(e.target.value)} />
-            
-            {/* Input especial para archivos */}
-            <input type="file" style={{ marginTop: '20px' }} 
-              onChange={(e) => setArchivo(e.target.files[0])} required />
-            
-            <Button fullWidth variant="contained" type="submit" sx={{ mt: 4 }}>
-              Publicar Producto
-            </Button>
-          </Box>
-        </Paper>
-      </Container>
-    </>
+    <Container maxWidth="sm">
+      <Paper elevation={3} sx={{ p: 4, mt: 5 }}>
+        <Typography variant="h5" gutterBottom>
+          Nuevo Producto (Amazon S3)
+        </Typography>
+
+        {mensaje && <Alert severity={error ? "error" : "success"} sx={{ mb: 2 }}>{mensaje}</Alert>}
+
+        <Box component="form" onSubmit={handleSubmit}>
+          <TextField
+            fullWidth
+            label="Título del producto"
+            margin="normal"
+            value={titulo}
+            onChange={(e) => setTitulo(e.target.value)}
+          />
+          
+          <TextField
+            fullWidth
+            label="Precio"
+            type="number"
+            margin="normal"
+            value={precio}
+            onChange={(e) => setPrecio(e.target.value)}
+          />
+
+          <TextField
+            fullWidth
+            label="Descripción"
+            multiline
+            rows={3}
+            margin="normal"
+            value={descripcion}
+            onChange={(e) => setDescripcion(e.target.value)}
+          />
+
+          {/* Input para archivos */}
+          <Button
+            variant="outlined"
+            component="label"
+            fullWidth
+            sx={{ mt: 2, mb: 2 }}
+          >
+            {archivo ? archivo.name : "Seleccionar Imagen"}
+            <input
+              type="file"
+              hidden
+              onChange={handleFileChange}
+              accept="image/*"
+            />
+          </Button>
+
+          <Button
+            type="submit"
+            variant="contained"
+            color="primary"
+            fullWidth
+            size="large"
+            disabled={cargando}
+          >
+            {cargando ? "Subiendo..." : "Publicar Producto"}
+          </Button>
+        </Box>
+      </Paper>
+    </Container>
   );
 };
 
