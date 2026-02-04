@@ -1,7 +1,8 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import Landing from './pages/Landing';           // 👈 NUEVO
 import Login from './pages/Login';
-import Registro from './pages/Registro'; // Si no tienes este archivo, borra esta línea
+import Registro from './pages/Registro';
 import Home from './pages/Home';
 import CrearProducto from './pages/CrearProducto'; 
 import ProtectedRoute from './components/ProtectedRoute'; 
@@ -10,8 +11,11 @@ function App() {
   return (
     <Router>
       <Routes>
+        {/* === RUTA PÚBLICA PRINCIPAL === */}
+        <Route path="/" element={<Landing />} />           
+        
         {/* === RUTAS PÚBLICAS (Sin Navbar) === */}
-        <Route path="/" element={<Login />} />
+        <Route path="/login" element={<Login />} />        
         <Route path="/registro" element={<Registro />} />
 
         {/* === RUTAS PRIVADAS (Con Navbar automática) === */}
@@ -21,7 +25,7 @@ function App() {
         </Route>
 
         {/* Redirección por defecto */}
-        <Route path="*" element={<Login />} />
+        <Route path="*" element={<Landing />} />           
       </Routes>
     </Router>
   );
