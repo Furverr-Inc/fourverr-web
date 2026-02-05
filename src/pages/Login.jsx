@@ -1,86 +1,93 @@
 import React, { useState, useEffect } from 'react';
 import { Container, TextField, Button, Typography, Paper, Box, Alert, Link } from '@mui/material';
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
-import api from '../services/api'; // Importamos nuestra api configurada
+import api from '../services/api'; 
 
 const Login = () => {
-  const [correoInput, setCorreoInput] = useState('');
-  const [passInput, setPassInput] = useState('');
-  const [error, setError] = useState(false);
-  const [mensajeError, setMensajeError] = useState('');
+  const [username, setUsername] = useState(''); // Spring Security usa 'username' por defecto
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [cargando, setCargando] = useState(false);
   const navigate = useNavigate();
 
-  // === 🧹 LIMPIEZA AUTOMÁTICA ===
-  // Este bloque se ejecuta apenas entras a esta pantalla.
-  // Borra cualquier token viejo para evitar accesos no autorizados.
+  // Limpieza de seguridad al entrar
   useEffect(() => {
     localStorage.clear();
-    console.log("🔒 Seguridad: Sesión limpiada al cargar Login.");
   }, []);
 
-  const handleEntrar = async (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    setError(false);
+    setError('');
+    setCargando(true);
     
     try {
       // 1. Petición al Backend
+      // NOTA: Java espera { "username": "...", "password": "..." }
       const response = await api.post('/auth/login', {
-        correo: correoInput,
-        password: passInput
+        username: username, 
+        password: password
       });
 
-      // 2. Extraer datos
-      const { token, nombreMostrado, usuarioId } = response.data;
+      // 2. Extraer datos del JwtResponse de Java
+      const { token, username: userAlias, role, id } = response.data;
 
-      // 3. Guardar la NUEVA llave
+      // 3. Guardar en LocalStorage (Nuestra "Billetera")
       localStorage.setItem('token', token);
-      localStorage.setItem('usuarioNombre', nombreMostrado);
-      localStorage.setItem('usuarioId', usuarioId);
+      localStorage.setItem('usuarioNombre', userAlias);
+      localStorage.setItem('usuarioRol', role);
+      localStorage.setItem('usuarioId', id);
 
-      // 4. Entrar al sistema
-      console.log("✅ Login exitoso");
+      // 4. Redirigir
       navigate('/home');
 
     } catch (err) {
-      console.error("Error en login:", err);
-      setError(true);
-      
+      console.error("Login fallido:", err);
       if (err.response && err.response.status === 401) {
-        setMensajeError("Correo o contraseña incorrectos");
+        setError("Usuario o contraseña incorrectos.");
       } else {
-        setMensajeError("Error de conexión con el servidor");
+        setError("No se pudo conectar con el servidor.");
       }
+    } finally {
+      setCargando(false);
     }
   };
 
   return (
     <Container maxWidth="xs">
-      <Paper elevation={6} sx={{ p: 4, mt: 10, borderRadius: 3 }}>
-        <Typography variant="h4" align="center" color="primary" fontWeight="bold">Fourverr</Typography>
-        <Typography variant="subtitle1" align="center" sx={{ mb: 3, color: 'gray' }}>Bienvenido</Typography>
+      <Paper elevation={6} sx={{ p: 4, mt: 10, borderRadius: 2 }}>
+        <Typography variant="h4" align="center" color="primary" fontWeight="bold">
+          Fourverr
+        </Typography>
+        <Typography variant="subtitle1" align="center" sx={{ mb: 3, color: 'text.secondary' }}>
+          Bienvenido de nuevo
+        </Typography>
         
-        {error && <Alert severity="error" sx={{ mt: 2 }}>{mensajeError}</Alert>}
+        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
         
-        <Box component="form" onSubmit={handleEntrar} sx={{ mt: 2 }}>
+        <Box component="form" onSubmit={handleLogin}>
           <TextField 
-            fullWidth label="Correo Electrónico" margin="normal" required
-            value={correoInput} onChange={(e) => setCorreoInput(e.target.value)} 
+            fullWidth label="Usuario o Correo" margin="normal" required
+            value={username} onChange={(e) => setUsername(e.target.value)} 
+            autoFocus
           />
           
           <TextField 
             fullWidth label="Contraseña" type="password" margin="normal" required
-            value={passInput} onChange={(e) => setPassInput(e.target.value)} 
+            value={password} onChange={(e) => setPassword(e.target.value)} 
           />
           
           <Button 
             fullWidth variant="contained" size="large" type="submit" 
+            disabled={cargando}
             sx={{ mt: 3, mb: 2, py: 1.5, fontWeight: 'bold' }}>
-            Iniciar Sesión
+            {cargando ? 'Entrando...' : 'Iniciar Sesión'}
           </Button>
           
-          <Typography variant="body2" align="center">
-            ¿No tienes cuenta? <Link component={RouterLink} to="/registro" underline="hover">Regístrate aquí</Link>
-          </Typography>
+          <Box textAlign="center">
+            <Typography variant="body2">
+              ¿Nuevo aquí? <Link component={RouterLink} to="/registro" underline="hover" fontWeight="bold">Crea una cuenta</Link>
+            </Typography>
+          </Box>
         </Box>
       </Paper>
     </Container>

@@ -1,65 +1,70 @@
 import React, { useState } from 'react';
-import { Container, TextField, Button, Typography, Paper, Box, Alert } from '@mui/material';
+import { Container, TextField, Button, Typography, Paper, Box, Alert, MenuItem } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api'; 
-
-// NOTA: YA NO IMPORTAMOS NAVBAR AQUÍ PORQUE EL "PROTECTED ROUTE" LA PONE SOLA
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 
 const CrearProducto = () => {
   const navigate = useNavigate();
   
-  // Estados para el formulario
+  // Estados
   const [titulo, setTitulo] = useState('');
   const [precio, setPrecio] = useState('');
   const [descripcion, setDescripcion] = useState('');
+  const [tipo, setTipo] = useState('ILUSTRACION'); // Valor por defecto del ENUM
   const [archivo, setArchivo] = useState(null);
   
-  // Estados de carga y error
-  const [mensaje, setMensaje] = useState(null);
-  const [error, setError] = useState(false);
+  // UI States
+  const [mensaje, setMensaje] = useState('');
+  const [esError, setEsError] = useState(false);
   const [cargando, setCargando] = useState(false);
 
-  // Manejo de la selección de archivo
   const handleFileChange = (e) => {
-    setArchivo(e.target.files[0]);
+    if (e.target.files && e.target.files[0]) {
+      setArchivo(e.target.files[0]);
+    }
   };
 
-  // Enviar formulario al Backend
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setMensaje('');
+    setEsError(false);
     
-    if (!titulo || !precio || !archivo) {
-      setError(true);
-      setMensaje("Por favor completa título, precio y sube una imagen.");
+    if (!titulo || !precio || !archivo || !descripcion) {
+      setEsError(true);
+      setMensaje("Todos los campos y la imagen son obligatorios.");
       return;
     }
 
     setCargando(true);
     
-    // Usamos FormData para enviar texto + archivo
+    // PREPARAR DATOS PARA ENVÍO (MULTIPART)
     const formData = new FormData();
     formData.append('titulo', titulo);
     formData.append('precio', precio);
     formData.append('descripcion', descripcion);
-    formData.append('file', archivo); // 'file' debe coincidir con el @RequestParam del backend
-    
-    // Obtenemos el ID del usuario del localStorage (para saber quién vende)
-    const usuarioId = localStorage.getItem('usuarioId'); 
-    formData.append('usuarioId', usuarioId); // Opcional, si tu backend lo pide así
+    formData.append('tipo', tipo);
+    // IMPORTANTE: 'archivo' debe coincidir con @RequestParam("archivo") en Java
+    formData.append('archivo', archivo); 
 
     try {
-      // El token se envía solo gracias a api.js
-      await api.post('/productos/crear', formData, {
+      // La URL debe coincidir con tu Controller
+      await api.post('/productos', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       
-      alert("Producto creado exitosamente");
-      navigate('/home'); // Regresamos al inicio
+      alert("¡Producto publicado exitosamente!");
+      navigate('/home');
 
     } catch (err) {
       console.error(err);
-      setError(true);
-      setMensaje("Error al subir el producto. Intenta de nuevo.");
+      setEsError(true);
+      // Verificamos si es un error de permisos (403)
+      if (err.response && err.response.status === 403) {
+        setMensaje("No tienes permiso. Asegúrate de ser Vendedor.");
+      } else {
+        setMensaje("Error al subir el producto. Intenta de nuevo.");
+      }
     } finally {
       setCargando(false);
     }
@@ -67,66 +72,61 @@ const CrearProducto = () => {
 
   return (
     <Container maxWidth="sm">
-      <Paper elevation={3} sx={{ p: 4, mt: 5 }}>
-        <Typography variant="h5" gutterBottom>
-          Nuevo Producto (Amazon S3)
+      <Paper elevation={3} sx={{ p: 4, mt: 5, borderRadius: 2 }}>
+        <Typography variant="h5" gutterBottom fontWeight="bold" color="primary">
+          Publicar Nuevo Gig
+        </Typography>
+        <Typography variant="body2" color="text.secondary" paragraph>
+          Sube tu trabajo a Amazon S3 y empieza a vender.
         </Typography>
 
-        {mensaje && <Alert severity={error ? "error" : "success"} sx={{ mb: 2 }}>{mensaje}</Alert>}
+        {mensaje && <Alert severity={esError ? "error" : "success"} sx={{ mb: 2 }}>{mensaje}</Alert>}
 
         <Box component="form" onSubmit={handleSubmit}>
           <TextField
-            fullWidth
-            label="Título del producto"
-            margin="normal"
-            value={titulo}
-            onChange={(e) => setTitulo(e.target.value)}
+            fullWidth label="Título del Servicio" margin="normal"
+            value={titulo} onChange={(e) => setTitulo(e.target.value)}
           />
           
-          <TextField
-            fullWidth
-            label="Precio"
-            type="number"
-            margin="normal"
-            value={precio}
-            onChange={(e) => setPrecio(e.target.value)}
-          />
-
-          <TextField
-            fullWidth
-            label="Descripción"
-            multiline
-            rows={3}
-            margin="normal"
-            value={descripcion}
-            onChange={(e) => setDescripcion(e.target.value)}
-          />
-
-          {/* Input para archivos */}
-          <Button
-            variant="outlined"
-            component="label"
-            fullWidth
-            sx={{ mt: 2, mb: 2 }}
-          >
-            {archivo ? archivo.name : "Seleccionar Imagen"}
-            <input
-              type="file"
-              hidden
-              onChange={handleFileChange}
-              accept="image/*"
+          <Box sx={{ display: 'flex', gap: 2 }}>
+            <TextField
+              fullWidth label="Precio ($)" type="number" margin="normal"
+              value={precio} onChange={(e) => setPrecio(e.target.value)}
             />
+            
+            {/* SELECTOR DE TIPO (Crucial para Java Enum) */}
+            <TextField
+              select fullWidth label="Categoría" margin="normal"
+              value={tipo} onChange={(e) => setTipo(e.target.value)}
+            >
+              <MenuItem value="ILUSTRACION">Ilustración</MenuItem>
+              <MenuItem value="MODELO_3D">Modelo 3D</MenuItem>
+              <MenuItem value="PAQUETE">Paquete de Assets</MenuItem>
+              <MenuItem value="SERVICIO">Servicio Técnico</MenuItem>
+            </TextField>
+          </Box>
+
+          <TextField
+            fullWidth label="Descripción detallada" multiline rows={4} margin="normal"
+            value={descripcion} onChange={(e) => setDescripcion(e.target.value)}
+          />
+
+          {/* Botón de subida estilizado */}
+          <Button
+            variant="outlined" component="label" fullWidth
+            startIcon={<CloudUploadIcon />}
+            sx={{ mt: 2, mb: 2, height: 50, borderStyle: 'dashed' }}
+          >
+            {archivo ? archivo.name : "Subir Imagen de Portada"}
+            <input type="file" hidden accept="image/*" onChange={handleFileChange} />
           </Button>
 
           <Button
-            type="submit"
-            variant="contained"
-            color="primary"
-            fullWidth
-            size="large"
+            type="submit" variant="contained" color="primary" fullWidth size="large"
             disabled={cargando}
+            sx={{ mt: 2, fontWeight: 'bold' }}
           >
-            {cargando ? "Subiendo..." : "Publicar Producto"}
+            {cargando ? "Publicando..." : "Publicar Ahora"}
           </Button>
         </Box>
       </Paper>
