@@ -5,6 +5,8 @@ import Login from './pages/Login';
 import Registro from './pages/Registro';
 import Home from './pages/Home';
 import CrearProducto from './pages/CrearProducto'; 
+import Perfil from './pages/Perfil';
+import EditarPerfil from './pages/EditarPerfil';
 import ProtectedRoute from './components/ProtectedRoute'; 
 
 function App() {
@@ -22,6 +24,8 @@ function App() {
         <Route element={<ProtectedRoute />}>
             <Route path="/home" element={<Home />} />
             <Route path="/nuevo" element={<CrearProducto />} />
+            <Route path="/perfil" element={<Perfil />} />
+            <Route path="/editar-perfil" element={<EditarPerfil />} />
         </Route>
 
         {/* Redirección por defecto */}

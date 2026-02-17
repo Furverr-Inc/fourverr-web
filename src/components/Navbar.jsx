@@ -1,7 +1,8 @@
 import React, { useEffect } from 'react';
-import { AppBar, Toolbar, Typography, Button, Box } from '@mui/material';
+import { AppBar, Toolbar, Typography, Button, Box, IconButton } from '@mui/material';
 import { useNavigate, Link } from 'react-router-dom';
 import StorefrontIcon from '@mui/icons-material/Storefront';
+import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import api from '../services/api';
 
 const Navbar = () => {
@@ -68,6 +69,18 @@ const Navbar = () => {
           <Typography variant="body2" sx={{ color: '#555' }}>
             Hola, {usuarioNombre}
           </Typography>
+
+          {/* BOTÓN DE PERFIL */}
+          <IconButton 
+            component={Link} 
+            to="/perfil"
+            sx={{ 
+              color: '#1dbf73',
+              '&:hover': { backgroundColor: 'rgba(29, 191, 115, 0.1)' }
+            }}
+          >
+            <AccountCircleIcon />
+          </IconButton>
 
           {/* LÓGICA DE ROLES */}
           {usuarioRol === 'SELLER' || usuarioRol === 'ADMIN' ? (
