@@ -85,7 +85,9 @@ const EditarPerfil = () => {
       }, 1500);
     } catch (err) {
       console.error("Error guardando perfil:", err);
-      setError("Error al guardar los cambios");
+      const mensajeServidor = err.response?.data?.message || err.response?.data || "Error al guardar los cambios";
+      setError(mensajeServidor); // Esto mostrará el error real en tu UI
+      console.log("Detalle técnico del error:", err.response);
     } finally {
       setSaving(false);
     }
