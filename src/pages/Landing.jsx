@@ -192,7 +192,7 @@ const Landing = () => {
                 <CardMedia
                   component="img"
                   height="180"
-                  image={prod.urlPortada || "https://via.placeholder.com/300?text=Sin+Imagen"}
+                  image={prod.urlArchivo || prod.urlPortada || "https://via.placeholder.com/300?text=Sin+Imagen"}
                   alt={prod.titulo}
                 />
 
