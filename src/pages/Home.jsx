@@ -76,7 +76,7 @@ const Home = () => {
                 </Typography>
                 
                 <Typography variant="body2" color="text.secondary" paragraph>
-                  {prod.descripcion.substring(0, 100)}...
+                  {(prod.descripcion || '').substring(0, 100)}{prod.descripcion && prod.descripcion.length > 100 ? '...' : ''}
                 </Typography>
 
                 <Typography variant="caption" display="block" sx={{ mt: 1, color: 'gray' }}>
@@ -90,7 +90,7 @@ const Home = () => {
                 </Button>
 
                 {/* BOTÓN ELIMINAR PROTEGIDO POR AUTORÍA */}
-                {prod.vendedor && prod.vendedor.nombreUsuario === usuarioLogueado && (
+                {prod.vendedor && String(prod.vendedor.id) === usuarioLogueado && (
                   <Button 
                     size="small" 
                     color="error" 

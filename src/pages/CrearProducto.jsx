@@ -14,6 +14,8 @@ const CrearProducto = () => {
   const [descripcion, setDescripcion] = useState('');
   const [tipo, setTipo] = useState('ILUSTRACION'); // Valor por defecto del ENUM
   const [archivo, setArchivo] = useState(null);
+  const [portada, setPortada] = useState(null);
+  const [portadaPreview, setPortadaPreview] = useState(null);
   
   // UI States
   const [mensaje, setMensaje] = useState('');
@@ -34,6 +36,14 @@ const CrearProducto = () => {
     }
   };
 
+  const handlePortadaChange = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setPortada(file);
+      setPortadaPreview(URL.createObjectURL(file));
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMensaje('');
@@ -46,9 +56,9 @@ const CrearProducto = () => {
       return;
     }
     
-    if (!titulo || !precio || !archivo || !descripcion) {
+    if (!titulo || !precio || !archivo || !descripcion || !portada) {
       setEsError(true);
-      setMensaje("Todos los campos y la imagen son obligatorios.");
+      setMensaje("Todos los campos, la portada y el archivo son obligatorios.");
       return;
     }
 
@@ -62,6 +72,7 @@ const CrearProducto = () => {
     formData.append('tipo', tipo);
     // IMPORTANTE: 'archivo' debe coincidir con @RequestParam("archivo") en Java
     formData.append('archivo', archivo); 
+    formData.append('portada', portada);
 
     try {
       // La URL debe coincidir con tu Controller
@@ -93,7 +104,7 @@ const CrearProducto = () => {
           Publicar Nuevo Gig
         </Typography>
         <Typography variant="body2" color="text.secondary" paragraph>
-          Sube tu trabajo y empieza a vender.
+          Sube tu trabajo a Amazon S3 y empieza a vender.
         </Typography>
 
         {mensaje && <Alert severity={esError ? "error" : "success"} sx={{ mb: 2 }}>{mensaje}</Alert>}
@@ -115,10 +126,10 @@ const CrearProducto = () => {
               select fullWidth label="Categoría" margin="normal"
               value={tipo} onChange={(e) => setTipo(e.target.value)}
             >
-              <MenuItem value="SUSCRIPCION">Ilustración</MenuItem>
-              <MenuItem value="CURSO_DIGITAL">Modelo 3D</MenuItem>
-              <MenuItem value="RECURSO_DESCARGABLE">Paquete de Assets</MenuItem>
-              <MenuItem value="SERVICIO_GIG">Servicio Técnico</MenuItem>
+              <MenuItem value="ILUSTRACION">Ilustración</MenuItem>
+              <MenuItem value="MODELO_3D">Modelo 3D</MenuItem>
+              <MenuItem value="PAQUETE">Paquete de Assets</MenuItem>
+              <MenuItem value="SERVICIO">Servicio Técnico</MenuItem>
             </TextField>
           </Box>
 
@@ -127,14 +138,35 @@ const CrearProducto = () => {
             value={descripcion} onChange={(e) => setDescripcion(e.target.value)}
           />
 
-          {/* Botón de subida estilizado */}
+          {/* Portada del producto */}
           <Button
             variant="outlined" component="label" fullWidth
             startIcon={<CloudUploadIcon />}
-            sx={{ mt: 2, mb: 2, height: 50, borderStyle: 'dashed' }}
+            sx={{ mt: 2, mb: 1, height: 50, borderStyle: 'dashed' }}
           >
-            {archivo ? archivo.name : "Subir Imagen de Portada"}
-            <input type="file" hidden accept="image/*" onChange={handleFileChange} />
+            {portada ? `✅ Portada: ${portada.name}` : "📷 Subir Imagen de Portada *"}
+            <input type="file" hidden accept="image/*" onChange={handlePortadaChange} />
+          </Button>
+
+          {/* Preview de la portada */}
+          {portadaPreview && (
+            <Box sx={{ mb: 2, textAlign: 'center' }}>
+              <img
+                src={portadaPreview}
+                alt="preview"
+                style={{ maxHeight: 180, maxWidth: '100%', borderRadius: 8, objectFit: 'cover' }}
+              />
+            </Box>
+          )}
+
+          {/* Archivo del producto (descargable) */}
+          <Button
+            variant="outlined" component="label" fullWidth
+            startIcon={<CloudUploadIcon />}
+            sx={{ mb: 2, height: 50, borderStyle: 'dashed', borderColor: '#aaa', color: '#555' }}
+          >
+            {archivo ? `✅ Archivo: ${archivo.name}` : "📁 Subir Archivo del Producto *"}
+            <input type="file" hidden onChange={handleFileChange} />
           </Button>
 
           <Button
