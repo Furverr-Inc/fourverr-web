@@ -7,6 +7,7 @@ import Home from './pages/Home';
 import CrearProducto from './pages/CrearProducto'; 
 import Perfil from './pages/Perfil';
 import EditarPerfil from './pages/EditarPerfil';
+import MisPublicaciones from './pages/MisPublicaciones';
 import AdminDashboard from './pages/AdminDashboard';  // 👈 NUEVO
 import ProtectedRoute from './components/ProtectedRoute'; 
 
@@ -28,6 +29,7 @@ function App() {
             <Route path="/nuevo" element={<CrearProducto />} />
             <Route path="/perfil" element={<Perfil />} />
             <Route path="/editar-perfil" element={<EditarPerfil />} />
+            <Route path="/mis-publicaciones" element={<MisPublicaciones />} />
         </Route>
 
         {/* Redirección por defecto */}

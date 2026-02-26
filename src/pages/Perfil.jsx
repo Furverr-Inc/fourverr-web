@@ -5,6 +5,7 @@ import {
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import EditIcon from '@mui/icons-material/Edit';
+import StorefrontIcon from '@mui/icons-material/Storefront';
 import PhotoCamera from '@mui/icons-material/PhotoCamera';
 import api from '../services/api';
 
@@ -214,6 +215,27 @@ const Perfil = () => {
             <Alert severity="warning">
               Tu solicitud para ser vendedor está pendiente de aprobación por el Administrador.
             </Alert>
+          </Box>
+        )}
+
+        {/* Botón Mis Publicaciones - solo para vendedores */}
+        {perfil?.role === 'SELLER' && (
+          <Box sx={{ mb: 3 }}>
+            <Button
+              variant="contained"
+              fullWidth
+              startIcon={<StorefrontIcon />}
+              onClick={() => navigate('/mis-publicaciones')}
+              sx={{
+                backgroundColor: '#1dbf73',
+                '&:hover': { backgroundColor: '#19a463' },
+                fontWeight: 'bold',
+                py: 1.5,
+                fontSize: '1rem'
+              }}
+            >
+              Mis Publicaciones
+            </Button>
           </Box>
         )}
 
