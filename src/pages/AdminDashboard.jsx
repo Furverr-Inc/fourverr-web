@@ -3,7 +3,8 @@ import {
   Container, Paper, Box, Typography, Avatar, Button, IconButton,
   Badge, Menu, MenuItem, Divider, Alert, Chip, Dialog, DialogTitle,
   DialogContent, DialogContentText, DialogActions, Table, TableBody,
-  TableCell, TableContainer, TableHead, TableRow, CircularProgress, Tabs, Tab
+  TableCell, TableContainer, TableHead, TableRow, CircularProgress, 
+  Tabs, Tab, Checkbox, Toolbar
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import NotificationsIcon from '@mui/icons-material/Notifications';
@@ -13,6 +14,7 @@ import CancelIcon from '@mui/icons-material/Cancel';
 import BlockIcon from '@mui/icons-material/Block';
 import DeleteIcon from '@mui/icons-material/Delete';
 import PhotoCamera from '@mui/icons-material/PhotoCamera';
+import CheckBoxIcon from '@mui/icons-material/CheckBox';
 import api from '../services/api';
 
 const AdminDashboard = () => {
@@ -21,35 +23,69 @@ const AdminDashboard = () => {
   const [usuarios, setUsuarios] = useState([]);
   const [loading, setLoading] = useState(true);
   const [anchorEl, setAnchorEl] = useState(null);
-  const [deleteDialog, setDeleteDialog] = useState({ open: false, user: null });
+  const [deleteDialog, setDeleteDialog] = useState({ open: false, users: [] });
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
   const [tabValue, setTabValue] = useState(0);
   const [subiendoFoto, setSubiendoFoto] = useState(false);
+  const [selected, setSelected] = useState([]);
   
   const navigate = useNavigate();
 
   useEffect(() => {
     cargarDatos();
+    // Actualizar notificaciones cada 30 segundos
+    const interval = setInterval(cargarDatos, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   const cargarDatos = async () => {
-    try {
-      const perfilResponse = await api.get('/users/perfil');
-      setAdmin(perfilResponse.data);
+    // Cada llamada es INDEPENDIENTE: si una falla, las otras igual se ejecutan
+    const [perfilRes, solicitudesRes, usuariosRes] = await Promise.allSettled([
+      api.get('/users/perfil'),
+      api.get('/users/solicitudes-vendedor'),
+      api.get('/users/todos'),
+    ]);
 
-      const solicitudesResponse = await api.get('/users/solicitudes-vendedor');
-      setSolicitudes(solicitudesResponse.data);
-
-      const usuariosResponse = await api.get('/users/todos');
-      setUsuarios(usuariosResponse.data);
-
-      setLoading(false);
-    } catch (err) {
-      console.error('Error cargando datos:', err);
-      setError('Error al cargar los datos');
-      setLoading(false);
+    // Perfil
+    if (perfilRes.status === 'fulfilled') {
+      setAdmin(perfilRes.value.data);
+    } else {
+      console.error('Error /perfil:', perfilRes.reason);
+      const status = perfilRes.reason?.response?.status;
+      if (status === 401) {
+        setError('Sesión expirada. Por favor cierra sesión e inicia de nuevo.');
+        setLoading(false);
+        return;
+      }
     }
+
+    // Solicitudes de vendedor
+    if (solicitudesRes.status === 'fulfilled') {
+      setSolicitudes(Array.isArray(solicitudesRes.value.data) ? solicitudesRes.value.data : []);
+    } else {
+      console.error('Error /solicitudes-vendedor:', solicitudesRes.reason?.response?.status, solicitudesRes.reason?.response?.data);
+      setSolicitudes([]);
+    }
+
+    // Lista de usuarios
+    if (usuariosRes.status === 'fulfilled') {
+      setUsuarios(Array.isArray(usuariosRes.value.data) ? usuariosRes.value.data : []);
+    } else {
+      const status = usuariosRes.reason?.response?.status;
+      const msg = usuariosRes.reason?.response?.data;
+      console.error('Error /todos:', status, msg);
+      if (status === 403) {
+        setError(`El backend rechazó la petición (403). Respuesta: "${msg}". Revisa la consola del backend.`);
+      } else if (status === 401) {
+        setError('Sesión expirada. Por favor cierra sesión e inicia de nuevo.');
+      } else {
+        setError(`Error cargando usuarios (${status}): ${msg}`);
+      }
+      setUsuarios([]);
+    }
+
+    setLoading(false);
   };
 
   const handleLogout = () => {
@@ -68,10 +104,10 @@ const AdminDashboard = () => {
   const handleAprobarSolicitud = async (userId) => {
     try {
       await api.put(`/users/${userId}/aprobar-vendedor`);
-      setSuccess('Solicitud aprobada correctamente');
+      setSuccess('✅ Solicitud aprobada. El usuario ahora puede publicar productos.');
       handleCloseNotifications();
       cargarDatos();
-      setTimeout(() => setSuccess(''), 3000);
+      setTimeout(() => setSuccess(''), 4000);
     } catch (err) {
       setError('Error al aprobar la solicitud');
       setTimeout(() => setError(''), 3000);
@@ -87,39 +123,6 @@ const AdminDashboard = () => {
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
       setError('Error al rechazar la solicitud');
-      setTimeout(() => setError(''), 3000);
-    }
-  };
-
-  const handleToggleUsuario = async (userId, habilitado) => {
-    try {
-      await api.put(`/users/${userId}/toggle-habilitado`);
-      setSuccess(habilitado ? 'Usuario deshabilitado' : 'Usuario habilitado');
-      cargarDatos();
-      setTimeout(() => setSuccess(''), 3000);
-    } catch (err) {
-      setError('Error al cambiar el estado del usuario');
-      setTimeout(() => setError(''), 3000);
-    }
-  };
-
-  const handleOpenDeleteDialog = (user) => {
-    setDeleteDialog({ open: true, user });
-  };
-
-  const handleCloseDeleteDialog = () => {
-    setDeleteDialog({ open: false, user: null });
-  };
-
-  const handleConfirmDelete = async () => {
-    try {
-      await api.delete(`/users/${deleteDialog.user.id}`);
-      setSuccess('Usuario eliminado correctamente');
-      handleCloseDeleteDialog();
-      cargarDatos();
-      setTimeout(() => setSuccess(''), 3000);
-    } catch (err) {
-      setError('Error al eliminar el usuario');
       setTimeout(() => setError(''), 3000);
     }
   };
@@ -154,6 +157,79 @@ const AdminDashboard = () => {
     }
   };
 
+  // Selección de usuarios
+  const handleSelectAll = (event) => {
+    if (event.target.checked) {
+      setSelected(usuariosMostrar.map(u => u.id));
+    } else {
+      setSelected([]);
+    }
+  };
+
+  const handleSelectOne = (userId) => {
+    if (selected.includes(userId)) {
+      setSelected(selected.filter(id => id !== userId));
+    } else {
+      setSelected([...selected, userId]);
+    }
+  };
+
+  // Acciones en lote
+  const handleHabilitarSeleccionados = async () => {
+    try {
+      await Promise.all(
+        selected.map(userId => api.put(`/users/${userId}/habilitar`))
+      );
+      setSuccess(`✅ ${selected.length} usuario(s) habilitado(s)`);
+      setSelected([]);
+      cargarDatos();
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      setError('Error al habilitar usuarios');
+      setTimeout(() => setError(''), 3000);
+    }
+  };
+
+  const handleDeshabilitarSeleccionados = async () => {
+    try {
+      await Promise.all(
+        selected.map(userId => api.put(`/users/${userId}/deshabilitar`))
+      );
+      setSuccess(`⚠️ ${selected.length} usuario(s) deshabilitado(s)`);
+      setSelected([]);
+      cargarDatos();
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      setError('Error al deshabilitar usuarios');
+      setTimeout(() => setError(''), 3000);
+    }
+  };
+
+  const handleEliminarSeleccionados = () => {
+    const usuariosAEliminar = usuarios.filter(u => selected.includes(u.id));
+    setDeleteDialog({ open: true, users: usuariosAEliminar });
+  };
+
+  const handleCloseDeleteDialog = () => {
+    setDeleteDialog({ open: false, users: [] });
+  };
+
+  const handleConfirmDelete = async () => {
+    try {
+      await Promise.all(
+        deleteDialog.users.map(user => api.delete(`/users/${user.id}`))
+      );
+      setSuccess(`🗑️ ${deleteDialog.users.length} usuario(s) eliminado(s) de la base de datos`);
+      handleCloseDeleteDialog();
+      setSelected([]);
+      cargarDatos();
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      setError('Error al eliminar usuarios');
+      setTimeout(() => setError(''), 3000);
+    }
+  };
+
   const usuariosPorRol = {
     todos: usuarios,
     usuarios: usuarios.filter(u => u.role === 'USER'),
@@ -163,6 +239,8 @@ const AdminDashboard = () => {
   const usuariosMostrar = tabValue === 0 ? usuariosPorRol.todos : 
                           tabValue === 1 ? usuariosPorRol.usuarios : 
                           usuariosPorRol.vendedores;
+
+  const isSelected = (userId) => selected.includes(userId);
 
   if (loading) {
     return (
@@ -174,7 +252,7 @@ const AdminDashboard = () => {
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-      {/* Header del Admin con foto */}
+      {/* Header del Admin */}
       <Paper elevation={3} sx={{ p: 3, mb: 3 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -227,9 +305,18 @@ const AdminDashboard = () => {
           </Box>
 
           <Box sx={{ display: 'flex', gap: 2 }}>
+            {/* ICONO DE NOTIFICACIONES */}
             <IconButton 
               onClick={handleOpenNotifications}
-              sx={{ color: '#1dbf73' }}
+              sx={{ 
+                color: solicitudes.length > 0 ? '#d32f2f' : '#1dbf73',
+                animation: solicitudes.length > 0 ? 'pulse 2s infinite' : 'none',
+                '@keyframes pulse': {
+                  '0%': { transform: 'scale(1)' },
+                  '50%': { transform: 'scale(1.1)' },
+                  '100%': { transform: 'scale(1)' }
+                }
+              }}
             >
               <Badge badgeContent={solicitudes.length} color="error">
                 <NotificationsIcon fontSize="large" />
@@ -251,18 +338,62 @@ const AdminDashboard = () => {
       {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
-      {/* Tabla de Usuarios con Tabs */}
+      {/* Tabla de Usuarios */}
       <Paper elevation={3} sx={{ p: 3 }}>
         <Typography variant="h6" fontWeight="bold" gutterBottom>
           Gestión de Usuarios
         </Typography>
         <Divider sx={{ mb: 2 }} />
 
-        <Tabs value={tabValue} onChange={(e, newValue) => setTabValue(newValue)} sx={{ mb: 2 }}>
+        {/* TABS CON CATEGORÍAS */}
+        <Tabs value={tabValue} onChange={(e, newValue) => { setTabValue(newValue); setSelected([]); }} sx={{ mb: 2 }}>
           <Tab label={`Todos (${usuariosPorRol.todos.length})`} />
           <Tab label={`Usuarios (${usuariosPorRol.usuarios.length})`} />
           <Tab label={`Vendedores (${usuariosPorRol.vendedores.length})`} />
         </Tabs>
+
+        {/* TOOLBAR CON BOTONES DE ACCIÓN (aparece cuando hay usuarios seleccionados) */}
+        {selected.length > 0 && (
+          <Toolbar sx={{ 
+            bgcolor: 'rgba(29, 191, 115, 0.1)', 
+            borderRadius: 1, 
+            mb: 2,
+            border: '2px solid #1dbf73'
+          }}>
+            <Typography sx={{ flex: '1 1 100%' }} color="inherit" variant="subtitle1" fontWeight="bold">
+              {selected.length} seleccionado(s)
+            </Typography>
+            <Button 
+              variant="contained"
+              startIcon={<CheckBoxIcon />}
+              onClick={handleHabilitarSeleccionados}
+              sx={{ 
+                mr: 1,
+                backgroundColor: '#1dbf73',
+                '&:hover': { backgroundColor: '#19a463' }
+              }}
+            >
+              Habilitar
+            </Button>
+            <Button 
+              variant="contained"
+              startIcon={<BlockIcon />}
+              onClick={handleDeshabilitarSeleccionados}
+              sx={{ mr: 1 }}
+              color="warning"
+            >
+              Deshabilitar
+            </Button>
+            <Button 
+              variant="contained"
+              startIcon={<DeleteIcon />}
+              onClick={handleEliminarSeleccionados}
+              color="error"
+            >
+              Eliminar de BD
+            </Button>
+          </Toolbar>
+        )}
 
         {usuariosMostrar.length === 0 ? (
           <Alert severity="info">No hay usuarios en esta categoría</Alert>
@@ -271,70 +402,105 @@ const AdminDashboard = () => {
             <Table>
               <TableHead>
                 <TableRow>
+                  <TableCell padding="checkbox">
+                    <Checkbox
+                      indeterminate={selected.length > 0 && selected.length < usuariosMostrar.length}
+                      checked={usuariosMostrar.length > 0 && selected.length === usuariosMostrar.length}
+                      onChange={handleSelectAll}
+                    />
+                  </TableCell>
                   <TableCell><strong>Foto</strong></TableCell>
                   <TableCell><strong>Nombre</strong></TableCell>
                   <TableCell><strong>Usuario</strong></TableCell>
                   <TableCell><strong>Email</strong></TableCell>
                   <TableCell><strong>Rol</strong></TableCell>
                   <TableCell><strong>Estado</strong></TableCell>
-                  <TableCell align="center"><strong>Acciones</strong></TableCell>
+                  <TableCell><strong>Acciones</strong></TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {usuariosMostrar.map((usuario) => (
-                  <TableRow key={usuario.id}>
-                    <TableCell>
-                      <Avatar 
-                        src={usuario.fotoUrl}
-                        sx={{ width: 40, height: 40, backgroundColor: '#1dbf73' }}
-                      >
-                        {!usuario.fotoUrl && (usuario.nombreMostrado?.charAt(0) || usuario.username?.charAt(0))}
-                      </Avatar>
-                    </TableCell>
-                    <TableCell>{usuario.nombreMostrado || usuario.username}</TableCell>
-                    <TableCell>@{usuario.username}</TableCell>
-                    <TableCell>{usuario.email}</TableCell>
-                    <TableCell>
-                      <Chip 
-                        label={usuario.role === 'SELLER' ? 'Vendedor' : 'Usuario'} 
-                        color={usuario.role === 'SELLER' ? 'primary' : 'default'}
-                        size="small"
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Chip 
-                        label={usuario.habilitado ? 'Habilitado' : 'Deshabilitado'} 
-                        color={usuario.habilitado ? 'success' : 'error'}
-                        size="small"
-                      />
-                    </TableCell>
-                    <TableCell align="center">
-                      <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
-                        <IconButton
-                          color={usuario.habilitado ? 'warning' : 'success'}
-                          onClick={() => handleToggleUsuario(usuario.id, usuario.habilitado)}
-                          title={usuario.habilitado ? 'Deshabilitar' : 'Habilitar'}
+                {usuariosMostrar.map((usuario) => {
+                  const isItemSelected = isSelected(usuario.id);
+                  
+                  return (
+                    <TableRow 
+                      key={usuario.id}
+                      hover
+                      onClick={() => handleSelectOne(usuario.id)}
+                      role="checkbox"
+                      aria-checked={isItemSelected}
+                      selected={isItemSelected}
+                      sx={{ cursor: 'pointer' }}
+                    >
+                      <TableCell padding="checkbox">
+                        <Checkbox checked={isItemSelected} />
+                      </TableCell>
+                      <TableCell>
+                        <Avatar 
+                          src={usuario.fotoUrl}
+                          sx={{ width: 40, height: 40, backgroundColor: '#1dbf73' }}
                         >
-                          <BlockIcon />
-                        </IconButton>
-                        <IconButton
-                          color="error"
-                          onClick={() => handleOpenDeleteDialog(usuario)}
-                          title="Eliminar usuario"
-                        >
-                          <DeleteIcon />
-                        </IconButton>
-                      </Box>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                          {!usuario.fotoUrl && (usuario.nombreMostrado?.charAt(0) || usuario.username?.charAt(0))}
+                        </Avatar>
+                      </TableCell>
+                      <TableCell>{usuario.nombreMostrado || usuario.username}</TableCell>
+                      <TableCell>@{usuario.username}</TableCell>
+                      <TableCell>{usuario.email}</TableCell>
+                      <TableCell>
+                        <Chip 
+                          label={usuario.role === 'SELLER' ? 'Vendedor' : 'Usuario'} 
+                          color={usuario.role === 'SELLER' ? 'primary' : 'default'}
+                          size="small"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Chip 
+                          label={usuario.habilitado ? 'Habilitado' : 'Deshabilitado'} 
+                          color={usuario.habilitado ? 'success' : 'error'}
+                          size="small"
+                        />
+                      </TableCell>
+                      <TableCell onClick={(e) => e.stopPropagation()}>
+                        <Box sx={{ display: 'flex', gap: 0.5 }}>
+                          {usuario.habilitado ? (
+                            <IconButton 
+                              size="small" 
+                              color="warning" 
+                              title="Deshabilitar"
+                              onClick={async () => { await api.put(`/users/${usuario.id}/deshabilitar`); cargarDatos(); setSuccess('Usuario deshabilitado'); setTimeout(() => setSuccess(''), 3000); }}
+                            >
+                              <BlockIcon fontSize="small" />
+                            </IconButton>
+                          ) : (
+                            <IconButton 
+                              size="small" 
+                              color="success" 
+                              title="Habilitar"
+                              onClick={async () => { await api.put(`/users/${usuario.id}/habilitar`); cargarDatos(); setSuccess('Usuario habilitado'); setTimeout(() => setSuccess(''), 3000); }}
+                            >
+                              <CheckBoxIcon fontSize="small" />
+                            </IconButton>
+                          )}
+                          <IconButton 
+                            size="small" 
+                            color="error" 
+                            title="Eliminar"
+                            onClick={() => setDeleteDialog({ open: true, users: [usuario] })}
+                          >
+                            <DeleteIcon fontSize="small" />
+                          </IconButton>
+                        </Box>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </TableContainer>
         )}
       </Paper>
 
-      {/* Menu de Notificaciones */}
+      {/* MENU DE NOTIFICACIONES (con botones Aprobar/Rechazar) */}
       <Menu
         anchorEl={anchorEl}
         open={Boolean(anchorEl)}
@@ -345,7 +511,7 @@ const AdminDashboard = () => {
       >
         <MenuItem disabled>
           <Typography variant="h6" fontWeight="bold">
-            Solicitudes de Vendedor ({solicitudes.length})
+            🔔 Solicitudes de Vendedor ({solicitudes.length})
           </Typography>
         </MenuItem>
         <Divider />
@@ -372,6 +538,7 @@ const AdminDashboard = () => {
                   color="success"
                   startIcon={<CheckCircleIcon />}
                   onClick={() => handleAprobarSolicitud(solicitud.id)}
+                  sx={{ flex: 1 }}
                 >
                   Aprobar
                 </Button>
@@ -381,6 +548,7 @@ const AdminDashboard = () => {
                   color="error"
                   startIcon={<CancelIcon />}
                   onClick={() => handleRechazarSolicitud(solicitud.id)}
+                  sx={{ flex: 1 }}
                 >
                   Rechazar
                 </Button>
@@ -390,26 +558,35 @@ const AdminDashboard = () => {
         )}
       </Menu>
 
-      {/* Dialog de confirmación */}
+      {/* DIALOG DE CONFIRMACIÓN PARA ELIMINAR */}
       <Dialog
         open={deleteDialog.open}
         onClose={handleCloseDeleteDialog}
       >
         <DialogTitle>
-          ¿Estás seguro?
+          ⚠️ ¿Estás seguro?
         </DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Esta acción eliminará permanentemente al usuario <strong>{deleteDialog.user?.username}</strong>.
-            Esta acción no se puede deshacer.
+            Esta acción eliminará <strong>permanentemente</strong> {deleteDialog.users.length} usuario(s) de la base de datos:
+            {deleteDialog.users.map(u => (
+              <Box key={u.id} sx={{ mt: 1, ml: 2 }}>
+                • <strong>@{u.username}</strong> ({u.email})
+              </Box>
+            ))}
+            <Box sx={{ mt: 2, p: 2, bgcolor: '#ffebee', borderRadius: 1 }}>
+              <Typography variant="body2" color="error" fontWeight="bold">
+                ⚠️ Esta acción NO se puede deshacer
+              </Typography>
+            </Box>
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseDeleteDialog}>
+          <Button onClick={handleCloseDeleteDialog} variant="outlined">
             Cancelar
           </Button>
           <Button onClick={handleConfirmDelete} color="error" variant="contained">
-            Eliminar Usuario
+            Sí, Eliminar {deleteDialog.users.length} Usuario(s)
           </Button>
         </DialogActions>
       </Dialog>

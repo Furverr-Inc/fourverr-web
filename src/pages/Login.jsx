@@ -37,8 +37,12 @@ const Login = () => {
       localStorage.setItem('usuarioRol', role);
       localStorage.setItem('usuarioId', id);
 
-      // 4. Redirigir
-      navigate('/home');
+      // 4. Redirigir según el rol
+      if (role === 'ADMIN') {
+        navigate('/admin');  // Administrador va al panel de admin
+      } else {
+        navigate('/home');   // Usuarios normales van al home
+      }
 
     } catch (err) {
       console.error("Login fallido:", err);

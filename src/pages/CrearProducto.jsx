@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Container, TextField, Button, Typography, Paper, Box, Alert, MenuItem } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api'; 
@@ -6,6 +6,7 @@ import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 
 const CrearProducto = () => {
   const navigate = useNavigate();
+  const rol = localStorage.getItem('usuarioRol');
   
   // Estados
   const [titulo, setTitulo] = useState('');
@@ -19,6 +20,14 @@ const CrearProducto = () => {
   const [esError, setEsError] = useState(false);
   const [cargando, setCargando] = useState(false);
 
+  // Verificar rol al cargar
+  useEffect(() => {
+    if (rol !== 'SELLER' && rol !== 'ADMIN') {
+      setEsError(true);
+      setMensaje('Debes ser Vendedor para publicar productos. Solicita ser vendedor desde tu perfil.');
+    }
+  }, [rol]);
+
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files[0]) {
       setArchivo(e.target.files[0]);
@@ -29,6 +38,13 @@ const CrearProducto = () => {
     e.preventDefault();
     setMensaje('');
     setEsError(false);
+    
+    // Verificar rol antes de enviar
+    if (rol !== 'SELLER' && rol !== 'ADMIN') {
+      setEsError(true);
+      setMensaje("Debes ser Vendedor para publicar. Solicita ser vendedor desde tu perfil.");
+      return;
+    }
     
     if (!titulo || !precio || !archivo || !descripcion) {
       setEsError(true);
@@ -123,7 +139,7 @@ const CrearProducto = () => {
 
           <Button
             type="submit" variant="contained" color="primary" fullWidth size="large"
-            disabled={cargando}
+            disabled={cargando || (rol !== 'SELLER' && rol !== 'ADMIN')}
             sx={{ mt: 2, fontWeight: 'bold' }}
           >
             {cargando ? "Publicando..." : "Publicar Ahora"}

@@ -7,6 +7,7 @@ import Home from './pages/Home';
 import CrearProducto from './pages/CrearProducto'; 
 import Perfil from './pages/Perfil';
 import EditarPerfil from './pages/EditarPerfil';
+import AdminDashboard from './pages/AdminDashboard';  // 👈 NUEVO
 import ProtectedRoute from './components/ProtectedRoute'; 
 
 function App() {
@@ -19,6 +20,7 @@ function App() {
         {/* === RUTAS PÚBLICAS (Sin Navbar) === */}
         <Route path="/login" element={<Login />} />        
         <Route path="/registro" element={<Registro />} />
+        <Route path="/admin" element={<AdminDashboard />} />  {/* Panel admin SIN Navbar */}
 
         {/* === RUTAS PRIVADAS (Con Navbar automática) === */}
         <Route element={<ProtectedRoute />}>

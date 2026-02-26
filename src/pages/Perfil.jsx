@@ -13,6 +13,7 @@ const Perfil = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [subiendo, setSubiendo] = useState(false);
+  const [success, setSuccess] = useState('');
   const navigate = useNavigate();
 
   const cargarPerfil = async () => {
@@ -68,6 +69,18 @@ const Perfil = () => {
     navigate('/editar-perfil');
   };
 
+  const handleSolicitarVendedor = async () => {
+    try {
+      await api.post('/users/solicitar-vendedor');
+      setSuccess('Solicitud enviada. Esperando aprobación del Administrador.');
+      cargarPerfil(); // Recargar perfil
+      setTimeout(() => setSuccess(''), 5000);
+    } catch (err) {
+      setError('Error al enviar la solicitud');
+      setTimeout(() => setError(''), 3000);
+    }
+  };
+
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', mt: 10 }}>
@@ -86,6 +99,9 @@ const Perfil = () => {
 
   return (
     <Container maxWidth="md" sx={{ mt: 4, mb: 4 }}>
+      {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
+      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+      
       <Paper elevation={3} sx={{ p: 4, borderRadius: 2 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
@@ -170,6 +186,36 @@ const Perfil = () => {
         </Box>
 
         <Divider sx={{ my: 3 }} />
+
+        {/* Botón para solicitar ser vendedor */}
+        {perfil?.role === 'USER' && !perfil?.solicitudVendedor && (
+          <Box sx={{ mb: 3 }}>
+            <Alert severity="info" sx={{ mb: 2 }}>
+              ¿Quieres vender tus productos o servicios? Solicita convertirte en vendedor.
+            </Alert>
+            <Button
+              variant="contained"
+              color="primary"
+              fullWidth
+              onClick={handleSolicitarVendedor}
+              sx={{ 
+                backgroundColor: '#1dbf73',
+                '&:hover': { backgroundColor: '#19a463' }
+              }}
+            >
+              Solicitar ser Vendedor
+            </Button>
+          </Box>
+        )}
+
+        {/* Mensaje de solicitud pendiente */}
+        {perfil?.solicitudVendedor && perfil?.role === 'USER' && (
+          <Box sx={{ mb: 3 }}>
+            <Alert severity="warning">
+              Tu solicitud para ser vendedor está pendiente de aprobación por el Administrador.
+            </Alert>
+          </Box>
+        )}
 
         <Box sx={{ mb: 3 }}>
           <Typography variant="h6" fontWeight="bold" gutterBottom>
