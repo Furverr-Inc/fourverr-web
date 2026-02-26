@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { 
   Container, Grid, Card, CardMedia, CardContent, Typography, 
-  CardActions, Button, Chip, Box, CircularProgress, Alert 
+  CardActions, Button, Chip, Box, CircularProgress, Alert, Avatar
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
@@ -28,7 +28,6 @@ const Home = () => {
 
   const handleEliminar = async (id) => {
     if (!window.confirm("¿Seguro que quieres eliminar este producto?")) return;
-
     try {
       await api.delete(`/productos/${id}`);
       setProductos(productos.filter(p => p.id !== id));
@@ -47,56 +46,82 @@ const Home = () => {
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-      <Typography variant="h4" component="h1" gutterBottom fontWeight="bold" color="primary">
+      <Typography variant="h4" component="h1" gutterBottom fontWeight="bold" color="primary" sx={{ mb: 4 }}>
         Explora Servicios Digitales
       </Typography>
       
-      <Grid container spacing={4}>
+      <Grid container spacing={3}>
         {productos.map((prod) => (
-          <Grid item key={prod.id} xs={12} sm={6} md={4}>
-            <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', borderRadius: 2, boxShadow: 3 }}>
+          <Grid item key={prod.id} xs={12} sm={6} md={4} lg={3}>
+            <Card sx={{ 
+              height: '100%', 
+              display: 'flex', 
+              flexDirection: 'column', 
+              borderRadius: 3, 
+              boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+              transition: 'transform 0.2s',
+              '&:hover': { transform: 'translateY(-4px)' }
+            }}>
               
+              {/* LAZY LOADING Y CABLEADO DE S3 */}
               <CardMedia
                 component="img"
-                height="200"
-                image={prod.urlPortada || "https://via.placeholder.com/300?text=Sin+Imagen"}
+                height="180"
+                // Intentamos urlArchivo primero, luego urlPortada
+                image={prod.urlArchivo || prod.urlPortada || "https://via.placeholder.com/300?text=Sin+Imagen"}
                 alt={prod.titulo}
+                loading="lazy" // 🚀 Lazy Loading activado
+                sx={{ objectFit: 'cover' }}
               />
 
-              <CardContent sx={{ flexGrow: 1 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                  <Chip label={prod.tipo} color={prod.tipo === 'SERVICIO' ? 'secondary' : 'info'} size="small" />
-                  <Typography variant="h6" color="green" fontWeight="bold">
-                    ${prod.precio}
+              <CardContent sx={{ flexGrow: 1, pb: 1 }}>
+                {/* Info del Vendedor Estilo Landing */}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                  <Avatar 
+                    sx={{ width: 24, height: 24, fontSize: '0.8rem', bgcolor: 'primary.main' }}
+                    src={prod.vendedor?.fotoUrl} // Por si el vendedor tiene foto en S3
+                  >
+                    {prod.vendedor?.nombreMostrado?.charAt(0) || '?'}
+                  </Avatar>
+                  <Typography variant="caption" fontWeight="bold">
+                    {prod.vendedor?.nombreMostrado || 'Vendedor'}
                   </Typography>
                 </Box>
 
-                <Typography gutterBottom variant="h5" component="h2" fontWeight="medium">
+                <Typography gutterBottom variant="subtitle1" component="h2" fontWeight="bold" sx={{ lineHeight: 1.2, height: '2.4em', overflow: 'hidden' }}>
                   {prod.titulo}
                 </Typography>
-                
-                <Typography variant="body2" color="text.secondary" paragraph>
-                  {(prod.descripcion || '').substring(0, 100)}{prod.descripcion && prod.descripcion.length > 100 ? '...' : ''}
-                </Typography>
 
-                <Typography variant="caption" display="block" sx={{ mt: 1, color: 'gray' }}>
-                  Vendedor: <strong>{prod.vendedor ? prod.vendedor.nombreMostrado : 'Desconocido'}</strong>
-                </Typography>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 2 }}>
+                  <Chip 
+                    label={prod.tipo?.replace('_', ' ')} // Para que SERVICIO_GIG se vea como SERVICIO GIG
+                    size="small" 
+                    color="primary" 
+                    variant="outlined" 
+                  />
+                  <Typography variant="h6" color="success.main" fontWeight="bold">
+                    ${prod.precio}
+                  </Typography>
+                </Box>
               </CardContent>
 
-              <CardActions sx={{ p: 2, pt: 0 }}>
-                <Button variant="contained" startIcon={<ShoppingCartIcon />} fullWidth>
+              <CardActions sx={{ p: 2, pt: 0, gap: 1 }}>
+                <Button 
+                  variant="contained" 
+                  startIcon={<ShoppingCartIcon />} 
+                  fullWidth
+                  sx={{ borderRadius: 2 }}
+                >
                   Comprar
                 </Button>
 
-                {/* BOTÓN ELIMINAR PROTEGIDO POR AUTORÍA */}
                 {prod.vendedor && String(prod.vendedor.id) === usuarioLogueado && (
                   <Button 
                     size="small" 
                     color="error" 
-                    variant="outlined" 
+                    variant="tonal" 
                     onClick={() => handleEliminar(prod.id)}
-                    sx={{ ml: 1 }}
+                    sx={{ minWidth: '45px', borderRadius: 2 }}
                   >
                     <DeleteIcon />
                   </Button>
