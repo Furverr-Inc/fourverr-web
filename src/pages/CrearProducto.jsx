@@ -93,7 +93,7 @@ const CrearProducto = () => {
           Publicar Nuevo Gig
         </Typography>
         <Typography variant="body2" color="text.secondary" paragraph>
-          Sube tu trabajo a Amazon S3 y empieza a vender.
+          Sube tu trabajo y empieza a vender.
         </Typography>
 
         {mensaje && <Alert severity={esError ? "error" : "success"} sx={{ mb: 2 }}>{mensaje}</Alert>}
@@ -115,10 +115,10 @@ const CrearProducto = () => {
               select fullWidth label="Categoría" margin="normal"
               value={tipo} onChange={(e) => setTipo(e.target.value)}
             >
-              <MenuItem value="ILUSTRACION">Ilustración</MenuItem>
-              <MenuItem value="MODELO_3D">Modelo 3D</MenuItem>
-              <MenuItem value="PAQUETE">Paquete de Assets</MenuItem>
-              <MenuItem value="SERVICIO">Servicio Técnico</MenuItem>
+              <MenuItem value="SUSCRIPCION">Ilustración</MenuItem>
+              <MenuItem value="CURSO_DIGITAL">Modelo 3D</MenuItem>
+              <MenuItem value="RECURSO_DESCARGABLE">Paquete de Assets</MenuItem>
+              <MenuItem value="SERVICIO_GIG">Servicio Técnico</MenuItem>
             </TextField>
           </Box>
 
