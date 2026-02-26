@@ -29,13 +29,14 @@ const Login = () => {
       });
 
       // 2. Extraer datos del JwtResponse de Java
-      const { token, username: userAlias, role, id } = response.data;
+      const { token, username: userAlias, role, id, nombreMostrado, fotoUrl } = response.data;
 
-      // 3. Guardar en LocalStorage (Nuestra "Billetera")
+      // 3. Guardar en LocalStorage
       localStorage.setItem('token', token);
-      localStorage.setItem('usuarioNombre', userAlias);
+      localStorage.setItem('usuarioNombre', nombreMostrado || userAlias);
       localStorage.setItem('usuarioRol', role);
       localStorage.setItem('usuarioId', id);
+      localStorage.setItem('usuarioFoto', fotoUrl || '');
 
       // 4. Redirigir según el rol
       if (role === 'ADMIN') {
@@ -46,7 +47,9 @@ const Login = () => {
 
     } catch (err) {
       console.error("Login fallido:", err);
-      if (err.response && err.response.status === 401) {
+      if (err.response?.status === 403) {
+        setError(err.response.data || "Tu cuenta ha sido deshabilitada. Contacta al administrador.");
+      } else if (err.response?.status === 401) {
         setError("Usuario o contraseña incorrectos.");
       } else {
         setError("No se pudo conectar con el servidor.");

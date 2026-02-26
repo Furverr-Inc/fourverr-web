@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { AppBar, Toolbar, Typography, Button, Box, IconButton } from '@mui/material';
+import React, { useEffect, useState } from 'react';
+import { AppBar, Toolbar, Typography, Button, Box, IconButton, Avatar } from '@mui/material';
 import { useNavigate, Link } from 'react-router-dom';
 import StorefrontIcon from '@mui/icons-material/Storefront';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
@@ -9,6 +9,7 @@ const Navbar = () => {
   const navigate = useNavigate();
   const usuarioNombre = localStorage.getItem('usuarioNombre') || 'Usuario';
   const usuarioRol = localStorage.getItem('usuarioRol'); // 'USER', 'SELLER', 'ADMIN'
+  const [fotoUrl, setFotoUrl] = useState(localStorage.getItem('usuarioFoto') || '');
 
   // Función para pedir ser vendedor
   const handleSolicitar = async () => {
@@ -30,22 +31,33 @@ const Navbar = () => {
         const { token, role } = response.data;
 
         if (role === 'SELLER') {
-          // Actualizamos localStorage silenciosamente
           localStorage.setItem('token', token);
           localStorage.setItem('usuarioRol', role);
-          
           alert("¡Felicidades! Has sido aprobado como Vendedor.");
-          window.location.reload(); // Recargamos para ver los nuevos botones
+          window.location.reload();
         }
       } catch (err) {
         console.log("Verificación de estado fallida (normal si no hay red)");
       }
     }
+
+    // Actualizar foto si cambió en BD
+    try {
+      const res = await api.get('/users/perfil');
+      const nuevaFoto = res.data.fotoUrl || '';
+      const nuevoNombre = res.data.nombreMostrado || res.data.username || usuarioNombre;
+      if (nuevaFoto !== fotoUrl) {
+        setFotoUrl(nuevaFoto);
+        localStorage.setItem('usuarioFoto', nuevaFoto);
+      }
+      localStorage.setItem('usuarioNombre', nuevoNombre);
+    } catch (err) {
+      // silencioso
+    }
   };
 
   useEffect(() => {
     checkStatus();
-    // Podrías poner un setInterval aquí si quieres que revise cada 30 seg
   }, []);
 
   const handleLogout = () => {
@@ -70,23 +82,30 @@ const Navbar = () => {
             Hola, {usuarioNombre}
           </Typography>
 
-          {/* BOTÓN DE PERFIL */}
+          {/* BOTÓN DE PERFIL CON FOTO */}
           <IconButton 
             component={Link} 
             to="/perfil"
-            sx={{ 
-              color: '#1dbf73',
-              '&:hover': { backgroundColor: 'rgba(29, 191, 115, 0.1)' }
-            }}
+            sx={{ p: 0.5 }}
           >
-            <AccountCircleIcon />
+            {fotoUrl ? (
+              <Avatar 
+                src={fotoUrl} 
+                alt={usuarioNombre}
+                sx={{ width: 36, height: 36 }}
+              />
+            ) : (
+              <Avatar sx={{ width: 36, height: 36, backgroundColor: '#1dbf73' }}>
+                {usuarioNombre.charAt(0).toUpperCase()}
+              </Avatar>
+            )}
           </IconButton>
 
           {/* LÓGICA DE ROLES */}
           {usuarioRol === 'SELLER' || usuarioRol === 'ADMIN' ? (
             <Button 
               variant="contained" 
-              color="primary" // Usa el verde del tema
+              color="primary"
               component={Link} 
               to="/nuevo"
               startIcon={<StorefrontIcon />}
