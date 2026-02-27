@@ -90,7 +90,7 @@ const CrearProducto = () => {
           Publicar Nuevo Gig
         </Typography>
         <Typography variant="body2" color="text.secondary" paragraph>
-          Sube tu trabajo a Amazon S3 y empieza a vender.
+          Sube tu trabajo y empieza a ganar dinero
         </Typography>
 
         {mensaje && <Alert severity={esError ? "error" : "success"} sx={{ mb: 2 }}>{mensaje}</Alert>}
@@ -129,7 +129,7 @@ const CrearProducto = () => {
             startIcon={<CloudUploadIcon />}
             sx={{ mt: 2, mb: 1, height: 50, borderStyle: 'dashed' }}
           >
-            {portada ? `✅ ${portada.name}` : "📷 Subir Imagen de Portada *"}
+            {portada ? ` ${portada.name}` : "📷 Subir Imagen de Portada *"}
             <input type="file" hidden accept="image/*" onChange={handlePortadaChange} />
           </Button>
 
