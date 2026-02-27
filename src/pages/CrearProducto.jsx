@@ -8,33 +8,23 @@ const CrearProducto = () => {
   const navigate = useNavigate();
   const rol = localStorage.getItem('usuarioRol');
   
-  // Estados
   const [titulo, setTitulo] = useState('');
   const [precio, setPrecio] = useState('');
   const [descripcion, setDescripcion] = useState('');
-  const [tipo, setTipo] = useState('ILUSTRACION'); // Valor por defecto del ENUM
-  const [archivo, setArchivo] = useState(null);
+  const [tipo, setTipo] = useState('SERVICIO_GIG');
   const [portada, setPortada] = useState(null);
   const [portadaPreview, setPortadaPreview] = useState(null);
   
-  // UI States
   const [mensaje, setMensaje] = useState('');
   const [esError, setEsError] = useState(false);
   const [cargando, setCargando] = useState(false);
 
-  // Verificar rol al cargar
   useEffect(() => {
     if (rol !== 'SELLER' && rol !== 'ADMIN') {
       setEsError(true);
       setMensaje('Debes ser Vendedor para publicar productos. Solicita ser vendedor desde tu perfil.');
     }
   }, [rol]);
-
-  const handleFileChange = (e) => {
-    if (e.target.files && e.target.files[0]) {
-      setArchivo(e.target.files[0]);
-    }
-  };
 
   const handlePortadaChange = (e) => {
     if (e.target.files && e.target.files[0]) {
@@ -49,33 +39,29 @@ const CrearProducto = () => {
     setMensaje('');
     setEsError(false);
     
-    // Verificar rol antes de enviar
     if (rol !== 'SELLER' && rol !== 'ADMIN') {
       setEsError(true);
       setMensaje("Debes ser Vendedor para publicar. Solicita ser vendedor desde tu perfil.");
       return;
     }
     
-    if (!titulo || !precio || !archivo || !descripcion || !portada) {
+    if (!titulo || !precio || !descripcion || !portada) {
       setEsError(true);
-      setMensaje("Todos los campos, la portada y el archivo son obligatorios.");
+      setMensaje("Todos los campos y la imagen de portada son obligatorios.");
       return;
     }
 
     setCargando(true);
     
-    // PREPARAR DATOS PARA ENVÍO (MULTIPART)
     const formData = new FormData();
     formData.append('titulo', titulo);
     formData.append('precio', precio);
     formData.append('descripcion', descripcion);
     formData.append('tipo', tipo);
-    // IMPORTANTE: 'archivo' debe coincidir con @RequestParam("archivo") en Java
-    formData.append('archivo', archivo); 
+    formData.append('archivo', portada);  // backend requiere 'archivo', mandamos la portada
     formData.append('portada', portada);
 
     try {
-      // La URL debe coincidir con tu Controller
       await api.post('/productos', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
@@ -86,11 +72,11 @@ const CrearProducto = () => {
     } catch (err) {
       console.error(err);
       setEsError(true);
-      // Verificamos si es un error de permisos (403)
-      if (err.response && err.response.status === 403) {
+      if (err.response?.status === 403) {
         setMensaje("No tienes permiso. Asegúrate de ser Vendedor.");
       } else {
-        setMensaje("Error al subir el producto. Intenta de nuevo.");
+        const errorMsg = err.response?.data || err.message || "Error desconocido";
+        setMensaje("Error al subir el producto: " + errorMsg);
       }
     } finally {
       setCargando(false);
@@ -121,15 +107,14 @@ const CrearProducto = () => {
               value={precio} onChange={(e) => setPrecio(e.target.value)}
             />
             
-            {/* SELECTOR DE TIPO (Crucial para Java Enum) */}
             <TextField
               select fullWidth label="Categoría" margin="normal"
               value={tipo} onChange={(e) => setTipo(e.target.value)}
             >
-              <MenuItem value="ILUSTRACION">Ilustración</MenuItem>
-              <MenuItem value="MODELO_3D">Modelo 3D</MenuItem>
-              <MenuItem value="PAQUETE">Paquete de Assets</MenuItem>
-              <MenuItem value="SERVICIO">Servicio Técnico</MenuItem>
+              <MenuItem value="SERVICIO_GIG">Servicio / Gig</MenuItem>
+              <MenuItem value="CURSO_DIGITAL">Curso Digital</MenuItem>
+              <MenuItem value="RECURSO_DESCARGABLE">Recurso Descargable</MenuItem>
+              <MenuItem value="SUSCRIPCION">Suscripción</MenuItem>
             </TextField>
           </Box>
 
@@ -138,17 +123,16 @@ const CrearProducto = () => {
             value={descripcion} onChange={(e) => setDescripcion(e.target.value)}
           />
 
-          {/* Portada del producto */}
+          {/* Solo portada */}
           <Button
             variant="outlined" component="label" fullWidth
             startIcon={<CloudUploadIcon />}
             sx={{ mt: 2, mb: 1, height: 50, borderStyle: 'dashed' }}
           >
-            {portada ? `✅ Portada: ${portada.name}` : "📷 Subir Imagen de Portada *"}
+            {portada ? `✅ ${portada.name}` : "📷 Subir Imagen de Portada *"}
             <input type="file" hidden accept="image/*" onChange={handlePortadaChange} />
           </Button>
 
-          {/* Preview de la portada */}
           {portadaPreview && (
             <Box sx={{ mb: 2, textAlign: 'center' }}>
               <img
@@ -158,16 +142,6 @@ const CrearProducto = () => {
               />
             </Box>
           )}
-
-          {/* Archivo del producto (descargable) */}
-          <Button
-            variant="outlined" component="label" fullWidth
-            startIcon={<CloudUploadIcon />}
-            sx={{ mb: 2, height: 50, borderStyle: 'dashed', borderColor: '#aaa', color: '#555' }}
-          >
-            {archivo ? `✅ Archivo: ${archivo.name}` : "📁 Subir Archivo del Producto *"}
-            <input type="file" hidden onChange={handleFileChange} />
-          </Button>
 
           <Button
             type="submit" variant="contained" color="primary" fullWidth size="large"
