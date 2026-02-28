@@ -5,14 +5,19 @@ import {
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
-import api from '../services/api'; 
+import api from '../services/api';
+import ProductoModal from '../components/ProductoModal';
 
 const Home = () => {
   const [productos, setProductos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const usuarioLogueado = localStorage.getItem('usuarioId'); 
+  // Estado para el modal
+  const [modalOpen, setModalOpen] = useState(false);
+  const [productoSeleccionado, setProductoSeleccionado] = useState(null);
+
+  const usuarioLogueado = localStorage.getItem('usuarioId');
 
   const cargarProductos = async () => {
     try {
@@ -26,7 +31,8 @@ const Home = () => {
     }
   };
 
-  const handleEliminar = async (id) => {
+  const handleEliminar = async (e, id) => {
+    e.stopPropagation(); // Evita abrir el modal al eliminar
     if (!window.confirm("¿Seguro que quieres eliminar este producto?")) return;
     try {
       await api.delete(`/productos/${id}`);
@@ -35,6 +41,16 @@ const Home = () => {
     } catch (err) {
       alert("Error al eliminar. Tal vez no tienes permiso.");
     }
+  };
+
+  const handleAbrirModal = (producto) => {
+    setProductoSeleccionado(producto);
+    setModalOpen(true);
+  };
+
+  const handleCerrarModal = () => {
+    setModalOpen(false);
+    setProductoSeleccionado(null);
   };
 
   useEffect(() => {
@@ -53,33 +69,36 @@ const Home = () => {
       <Grid container spacing={3}>
         {productos.map((prod) => (
           <Grid item key={prod.id} xs={12} sm={6} md={4} lg={3}>
-            <Card sx={{ 
-              height: '100%', 
-              display: 'flex', 
-              flexDirection: 'column', 
-              borderRadius: 3, 
-              boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-              transition: 'transform 0.2s',
-              '&:hover': { transform: 'translateY(-4px)' }
-            }}>
-              
-              {/* LAZY LOADING Y CABLEADO DE S3 */}
+            <Card
+              onClick={() => handleAbrirModal(prod)}
+              sx={{ 
+                height: '100%', 
+                display: 'flex', 
+                flexDirection: 'column', 
+                borderRadius: 3, 
+                boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                transition: 'transform 0.2s, box-shadow 0.2s',
+                cursor: 'pointer',
+                '&:hover': {
+                  transform: 'translateY(-4px)',
+                  boxShadow: '0 8px 24px rgba(0,0,0,0.15)'
+                }
+              }}
+            >
               <CardMedia
                 component="img"
                 height="180"
-                // Intentamos urlArchivo primero, luego urlPortada
                 image={prod.urlArchivo || prod.urlPortada || "https://via.placeholder.com/300?text=Sin+Imagen"}
                 alt={prod.titulo}
-                loading="lazy" // 🚀 Lazy Loading activado
+                loading="lazy"
                 sx={{ objectFit: 'cover' }}
               />
 
               <CardContent sx={{ flexGrow: 1, pb: 1 }}>
-                {/* Info del Vendedor Estilo Landing */}
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
                   <Avatar 
                     sx={{ width: 24, height: 24, fontSize: '0.8rem', bgcolor: 'primary.main' }}
-                    src={prod.vendedor?.fotoUrl} // Por si el vendedor tiene foto en S3
+                    src={prod.vendedor?.fotoUrl}
                   >
                     {prod.vendedor?.nombreMostrado?.charAt(0) || '?'}
                   </Avatar>
@@ -94,7 +113,7 @@ const Home = () => {
 
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 2 }}>
                   <Chip 
-                    label={prod.tipo?.replace('_', ' ')} // Para que SERVICIO_GIG se vea como SERVICIO GIG
+                    label={prod.tipo?.replace('_', ' ')}
                     size="small" 
                     color="primary" 
                     variant="outlined" 
@@ -111,8 +130,12 @@ const Home = () => {
                   startIcon={<ShoppingCartIcon />} 
                   fullWidth
                   sx={{ borderRadius: 2 }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleAbrirModal(prod);
+                  }}
                 >
-                  Comprar
+                  Ver y Comprar
                 </Button>
 
                 {prod.vendedor && String(prod.vendedor.id) === usuarioLogueado && (
@@ -120,7 +143,7 @@ const Home = () => {
                     size="small" 
                     color="error" 
                     variant="tonal" 
-                    onClick={() => handleEliminar(prod.id)}
+                    onClick={(e) => handleEliminar(e, prod.id)}
                     sx={{ minWidth: '45px', borderRadius: 2 }}
                   >
                     <DeleteIcon />
@@ -131,6 +154,13 @@ const Home = () => {
           </Grid>
         ))}
       </Grid>
+
+      {/* Modal de detalle del producto */}
+      <ProductoModal
+        open={modalOpen}
+        onClose={handleCerrarModal}
+        producto={productoSeleccionado}
+      />
     </Container>
   );
 };

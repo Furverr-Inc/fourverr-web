@@ -1,6 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Landing from './pages/Landing';           // 👈 NUEVO
+import Landing from './pages/Landing';
 import Login from './pages/Login';
 import Registro from './pages/Registro';
 import Home from './pages/Home';
@@ -8,8 +8,9 @@ import CrearProducto from './pages/CrearProducto';
 import Perfil from './pages/Perfil';
 import EditarPerfil from './pages/EditarPerfil';
 import MisPublicaciones from './pages/MisPublicaciones';
-import AdminDashboard from './pages/AdminDashboard';  // 👈 NUEVO
+import AdminDashboard from './pages/AdminDashboard'; 
 import ProtectedRoute from './components/ProtectedRoute'; 
+import DetalleCompra from './pages/DetalleCompra';
 
 function App() {
   return (
@@ -25,6 +26,7 @@ function App() {
 
         {/* === RUTAS PRIVADAS (Con Navbar automática) === */}
         <Route element={<ProtectedRoute />}>
+            <Route path="/detalle-compra" element={<DetalleCompra />} />
             <Route path="/home" element={<Home />} />
             <Route path="/nuevo" element={<CrearProducto />} />
             <Route path="/perfil" element={<Perfil />} />
