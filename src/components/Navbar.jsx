@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { AppBar, Toolbar, Typography, Button, Box, IconButton, Avatar } from '@mui/material';
+import { AppBar, Toolbar, Typography, Button, Box, IconButton, Avatar, Tooltip } from '@mui/material'; // Añadido Tooltip
 import { useNavigate, Link } from 'react-router-dom';
 import StorefrontIcon from '@mui/icons-material/Storefront';
-import AccountCircleIcon from '@mui/icons-material/AccountCircle';
+import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder'; // Añadido el icono de corazón
 import api from '../services/api';
 
 const Navbar = () => {
@@ -78,6 +78,18 @@ const Navbar = () => {
         </Typography>
 
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          
+          {/* --- BOTÓN DE FAVORITOS (NUEVO) --- */}
+          <Tooltip title="Mis Favoritos">
+            <IconButton 
+              component={Link} 
+              to="/favoritos" 
+              sx={{ color: '#74767e' }}
+            >
+              <FavoriteBorderIcon />
+            </IconButton>
+          </Tooltip>
+
           <Typography variant="body2" sx={{ color: '#555' }}>
             Hola, {usuarioNombre}
           </Typography>
@@ -116,7 +128,7 @@ const Navbar = () => {
           ) : (
             <Button 
               variant="outlined" 
-              color="primary"
+              color="primary" 
               onClick={handleSolicitar}
             >
               Convertirse en Vendedor
