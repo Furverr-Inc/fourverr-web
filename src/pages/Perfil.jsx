@@ -20,7 +20,6 @@ const Perfil = () => {
   const cargarPerfil = async () => {
     try {
       const response = await api.get('/users/perfil');
-      console.log("Contenido del perfil desde el backend:", response.data); // PRUEBA BACKEND
       setPerfil(response.data);
     } catch (err) {
       console.error("Error cargando perfil:", err);
@@ -55,8 +54,6 @@ const Perfil = () => {
       const response = await api.post('/users/perfil/foto', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
-      
-      // Actualizamos el estado con la URL que devolvió tu S3Service
       setPerfil({ ...perfil, fotoUrl: response.data.url });
     } catch (err) {
       console.error("Error subiendo foto:", err);
@@ -66,15 +63,11 @@ const Perfil = () => {
     }
   };
 
-  const handleEditarPerfil = () => {
-    navigate('/editar-perfil');
-  };
-
   const handleSolicitarVendedor = async () => {
     try {
       await api.post('/users/solicitar-vendedor');
       setSuccess('Solicitud enviada. Esperando aprobación del Administrador.');
-      cargarPerfil(); // Recargar perfil
+      cargarPerfil();
       setTimeout(() => setSuccess(''), 5000);
     } catch (err) {
       setError('Error al enviar la solicitud');
@@ -90,7 +83,7 @@ const Perfil = () => {
     );
   }
 
-  if (error) {
+  if (error && !perfil) {
     return (
       <Container sx={{ mt: 5 }}>
         <Alert severity="error">{error}</Alert>
@@ -107,7 +100,6 @@ const Perfil = () => {
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
             
-            {/* LÓGICA DE FOTO DE PERFIL INTEGRADA */}
             <Box sx={{ position: 'relative' }}>
               <input
                 accept="image/jpeg,image/png"
@@ -119,25 +111,15 @@ const Perfil = () => {
               <IconButton 
                 onClick={handleFotoClick}
                 disabled={subiendo}
-                sx={{ 
-                  p: 0,
-                  '&:hover .overlay': { opacity: 1 }
-                }}
+                sx={{ p: 0, '&:hover .overlay': { opacity: 1 } }}
               >
                 <Avatar 
-                  src={perfil?.fotoUrl} // Aquí se carga la imagen de S3
-                  sx={{ 
-                    width: 120, 
-                    height: 120, 
-                    fontSize: '3rem',
-                    backgroundColor: '#1dbf73'
-                  }}
+                  src={perfil?.fotoUrl}
+                  sx={{ width: 120, height: 120, fontSize: '3rem', backgroundColor: '#1dbf73' }}
                 >
-                  {/* Si no hay fotoUrl, muestra la inicial */}
                   {!perfil?.fotoUrl && (perfil?.nombreMostrado?.charAt(0) || perfil?.username?.charAt(0) || 'U')}
                 </Avatar>
                 
-                {/* Overlay que aparece al pasar el mouse */}
                 <Box className="overlay" sx={{
                   position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
                   bgcolor: 'rgba(0,0,0,0.4)', borderRadius: '50%', display: 'flex',
@@ -147,13 +129,7 @@ const Perfil = () => {
                 </Box>
 
                 {subiendo && (
-                  <CircularProgress 
-                    size={120} 
-                    sx={{ 
-                      position: 'absolute', top: 0, left: 0, 
-                      color: '#1dbf73', zIndex: 1 
-                    }} 
-                  />
+                  <CircularProgress size={120} sx={{ position: 'absolute', top: 0, left: 0, color: '#1dbf73', zIndex: 1 }} />
                 )}
               </IconButton>
             </Box>
@@ -176,11 +152,8 @@ const Perfil = () => {
           <Button 
             variant="contained" 
             startIcon={<EditIcon />}
-            onClick={handleEditarPerfil}
-            sx={{ 
-              backgroundColor: '#1dbf73',
-              '&:hover': { backgroundColor: '#19a463' }
-            }}
+            onClick={() => navigate('/editar-perfil')}
+            sx={{ backgroundColor: '#1dbf73', '&:hover': { backgroundColor: '#19a463' } }}
           >
             Editar Perfil
           </Button>
@@ -188,7 +161,7 @@ const Perfil = () => {
 
         <Divider sx={{ my: 3 }} />
 
-        {/* Botón para solicitar ser vendedor */}
+        {/* Solicitar ser vendedor */}
         {perfil?.role === 'USER' && !perfil?.solicitudVendedor && (
           <Box sx={{ mb: 3 }}>
             <Alert severity="info" sx={{ mb: 2 }}>
@@ -196,20 +169,16 @@ const Perfil = () => {
             </Alert>
             <Button
               variant="contained"
-              color="primary"
               fullWidth
               onClick={handleSolicitarVendedor}
-              sx={{ 
-                backgroundColor: '#1dbf73',
-                '&:hover': { backgroundColor: '#19a463' }
-              }}
+              sx={{ backgroundColor: '#1dbf73', '&:hover': { backgroundColor: '#19a463' } }}
             >
               Solicitar ser Vendedor
             </Button>
           </Box>
         )}
 
-        {/* Mensaje de solicitud pendiente */}
+        {/* Solicitud pendiente */}
         {perfil?.solicitudVendedor && perfil?.role === 'USER' && (
           <Box sx={{ mb: 3 }}>
             <Alert severity="warning">
@@ -218,9 +187,11 @@ const Perfil = () => {
           </Box>
         )}
 
-        {/* Botón Mis Publicaciones - solo para vendedores */}
+        {/* Sección exclusiva para vendedores */}
         {perfil?.role === 'SELLER' && (
           <Box sx={{ mb: 3 }}>
+
+            {/* Botón mis publicaciones — igual que antes */}
             <Button
               variant="contained"
               fullWidth
@@ -231,36 +202,53 @@ const Perfil = () => {
                 '&:hover': { backgroundColor: '#19a463' },
                 fontWeight: 'bold',
                 py: 1.5,
-                fontSize: '1rem'
+                fontSize: '1rem',
+                mb: 2  // ← separación con el saldo
               }}
             >
               Mis Publicaciones
             </Button>
+
+            {/* ── SALDO DISPONIBLE ── */}
+            {/* Solo visible para SELLER. El backend ya retorna saldoDisponible en /users/perfil */}
+            <Paper
+              variant="outlined"
+              sx={{
+                p: 3,
+                borderRadius: 2,
+                borderColor: '#1dbf73',
+                backgroundColor: '#f0fdf4'
+              }}
+            >
+              <Typography variant="body2" color="text.secondary" gutterBottom>
+                💰 Saldo disponible
+              </Typography>
+              <Typography variant="h4" fontWeight="bold" color="success.main">
+                ${Number(perfil?.saldoDisponible ?? 0).toFixed(2)} MXN
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                Ganancias acumuladas · comisión de plataforma (10%) ya descontada
+              </Typography>
+            </Paper>
+
           </Box>
         )}
 
+        {/* Información personal */}
         <Box sx={{ mb: 3 }}>
           <Typography variant="h6" fontWeight="bold" gutterBottom>
             Información Personal
           </Typography>
           
           <Box sx={{ mt: 2 }}>
-            <Typography variant="body2" color="text.secondary" gutterBottom>
-              Email
-            </Typography>
-            <Typography variant="body1" gutterBottom>
-              {perfil?.email}
-            </Typography>
+            <Typography variant="body2" color="text.secondary" gutterBottom>Email</Typography>
+            <Typography variant="body1" gutterBottom>{perfil?.email}</Typography>
           </Box>
 
           {perfil?.descripcion ? (
             <Box sx={{ mt: 2 }}>
-              <Typography variant="body2" color="text.secondary" gutterBottom>
-                Descripción
-              </Typography>
-              <Typography variant="body1">
-                {perfil.descripcion}
-              </Typography>
+              <Typography variant="body2" color="text.secondary" gutterBottom>Descripción</Typography>
+              <Typography variant="body1">{perfil.descripcion}</Typography>
             </Box>
           ) : (
             <Box sx={{ mt: 2 }}>
