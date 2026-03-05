@@ -1,303 +1,118 @@
 import React, { useEffect, useState } from 'react';
-import { 
-  Container, Paper, Box, Typography, TextField, Button, 
-  CircularProgress, Alert, Avatar, IconButton, Divider,
-  Dialog, DialogTitle, DialogContent, DialogActions
+import {
+  Container, Paper, Box, Typography, TextField, Button,
+  Alert, CircularProgress, Divider, InputAdornment
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import SaveIcon from '@mui/icons-material/Save';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import LockIcon from '@mui/icons-material/Lock';
+import SaveIcon       from '@mui/icons-material/Save';
+import ArrowBackIcon  from '@mui/icons-material/ArrowBack';
+import InstagramIcon  from '@mui/icons-material/Instagram';
+import TwitterIcon    from '@mui/icons-material/Twitter';
+import LinkedInIcon   from '@mui/icons-material/LinkedIn';
+import LanguageIcon   from '@mui/icons-material/Language';
+import PhoneIcon      from '@mui/icons-material/Phone';
+import LocationOnIcon from '@mui/icons-material/LocationOn';
 import api from '../services/api';
 
 const EditarPerfil = () => {
-  const [perfil, setPerfil] = useState({
-    nombreMostrado: '',
-    email: '',
-    descripcion: ''
-  });
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(null);
-  
-  // Estados para el diálogo de cambio de contraseña
-  const [openPasswordDialog, setOpenPasswordDialog] = useState(false);
-  const [passwordData, setPasswordData] = useState({
-    passwordActual: '',
-    passwordNueva: '',
-    passwordConfirm: ''
-  });
-  const [passwordError, setPasswordError] = useState('');
-  const [changingPassword, setChangingPassword] = useState(false);
-
   const navigate = useNavigate();
+  const [loading,   setLoading]   = useState(true);
+  const [guardando, setGuardando] = useState(false);
+  const [mensaje,   setMensaje]   = useState('');
+  const [esError,   setEsError]   = useState(false);
 
-  const cargarPerfil = async () => {
-    try {
-      const response = await api.get('/users/perfil');
-      setPerfil({
-        nombreMostrado: response.data.nombreMostrado || '',
-        email: response.data.email || '',
-        descripcion: response.data.descripcion || ''
-      });
-    } catch (err) {
-      console.error("Error cargando perfil:", err);
-      setError("No se pudo cargar el perfil");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [form, setForm] = useState({
+    nombreMostrado: '', email: '', descripcion: '',
+    telefono: '', ciudad: '', pais: '',
+    sitioWeb: '', instagram: '', twitter: '', linkedin: '',
+  });
 
   useEffect(() => {
-    cargarPerfil();
+    api.get('/users/perfil').then(res => {
+      const d = res.data;
+      setForm({
+        nombreMostrado: d.nombreMostrado || '',
+        email:          d.email          || '',
+        descripcion:    d.descripcion    || '',
+        telefono:       d.telefono       || '',
+        ciudad:         d.ciudad         || '',
+        pais:           d.pais           || '',
+        sitioWeb:       d.sitioWeb       || '',
+        instagram:      d.instagram      || '',
+        twitter:        d.twitter        || '',
+        linkedin:       d.linkedin       || '',
+      });
+    }).catch(() => setEsError(true))
+      .finally(() => setLoading(false));
   }, []);
 
-  const handleChange = (e) => {
-    setPerfil({
-      ...perfil,
-      [e.target.name]: e.target.value
-    });
-  };
+  const f = field => e => setForm(prev => ({ ...prev, [field]: e.target.value }));
 
   const handleGuardar = async () => {
-    setSaving(true);
-    setError(null);
-    setSuccess(null);
-
+    setGuardando(true); setMensaje('');
     try {
-      await api.put('/users/perfil', {
-        nombreMostrado: perfil.nombreMostrado,
-        email: perfil.email,
-        descripcion: perfil.descripcion
-      });
-      
-      // Actualizar localStorage si se cambió el nombre
-      if (perfil.nombreMostrado) {
-        localStorage.setItem('usuarioNombre', perfil.nombreMostrado);
-      }
-      
-      setSuccess("Perfil actualizado correctamente");
-      
-      // Redirigir después de 1.5 segundos
-      setTimeout(() => {
-        navigate('/perfil');
-      }, 1500);
-    } catch (err) {
-      console.error("Error guardando perfil:", err);
-      const mensajeServidor = err.response?.data?.message || err.response?.data || "Error al guardar los cambios";
-      setError(mensajeServidor); // Esto mostrará el error real en tu UI
-      console.log("Detalle técnico del error:", err.response);
-    } finally {
-      setSaving(false);
-    }
+      await api.put('/users/perfil', form);
+      setMensaje('Perfil actualizado correctamente');
+      setEsError(false);
+      setTimeout(() => navigate('/perfil'), 1500);
+    } catch {
+      setMensaje('Error al guardar los cambios'); setEsError(true);
+    } finally { setGuardando(false); }
   };
 
-  const handlePasswordChange = (e) => {
-    setPasswordData({
-      ...passwordData,
-      [e.target.name]: e.target.value
-    });
-    setPasswordError('');
-  };
-
-  const handleCambiarPassword = async () => {
-    // Validaciones
-    if (!passwordData.passwordActual || !passwordData.passwordNueva || !passwordData.passwordConfirm) {
-      setPasswordError("Todos los campos son obligatorios");
-      return;
-    }
-
-    if (passwordData.passwordNueva !== passwordData.passwordConfirm) {
-      setPasswordError("Las contraseñas nuevas no coinciden");
-      return;
-    }
-
-    if (passwordData.passwordNueva.length < 6) {
-      setPasswordError("La contraseña debe tener al menos 6 caracteres");
-      return;
-    }
-
-    setChangingPassword(true);
-    setPasswordError('');
-
-    try {
-      await api.put('/users/perfil/password', {
-        passwordActual: passwordData.passwordActual,
-        passwordNueva: passwordData.passwordNueva
-      });
-
-      setSuccess("Contraseña actualizada correctamente");
-      setOpenPasswordDialog(false);
-      setPasswordData({ passwordActual: '', passwordNueva: '', passwordConfirm: '' });
-    } catch (err) {
-      console.error("Error cambiando contraseña:", err);
-      if (err.response?.data) {
-        setPasswordError(err.response.data);
-      } else {
-        setPasswordError("Error al cambiar la contraseña");
-      }
-    } finally {
-      setChangingPassword(false);
-    }
-  };
-
-  if (loading) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 10 }}>
-        <CircularProgress />
-      </Box>
-    );
-  }
+  if (loading) return <Box sx={{ display:'flex', justifyContent:'center', mt:10 }}><CircularProgress /></Box>;
 
   return (
-    <Container maxWidth="md" sx={{ mt: 4, mb: 4 }}>
-      <Paper elevation={3} sx={{ p: 4, borderRadius: 2 }}>
-        {/* Header */}
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-          <IconButton onClick={() => navigate('/perfil')} sx={{ mr: 2 }}>
-            <ArrowBackIcon />
-          </IconButton>
-          <Typography variant="h4" fontWeight="bold">
-            Editar Perfil
-          </Typography>
+    <Container maxWidth="sm" sx={{ mt:4, mb:4 }}>
+      <Paper elevation={3} sx={{ p:4, borderRadius:3 }}>
+        <Box sx={{ display:'flex', alignItems:'center', mb:3 }}>
+          <Button startIcon={<ArrowBackIcon />} onClick={() => navigate('/perfil')}>Volver</Button>
+          <Typography variant="h5" fontWeight="bold" sx={{ mx:'auto' }}>Editar Perfil</Typography>
         </Box>
 
-        {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
-        {success && <Alert severity="success" sx={{ mb: 3 }}>{success}</Alert>}
+        {mensaje && <Alert severity={esError ? 'error' : 'success'} sx={{ mb:2 }}>{mensaje}</Alert>}
 
-        {/* Avatar (solo visual, sin funcionalidad de cambio) */}
-        <Box sx={{ display: 'flex', justifyContent: 'center', mb: 4 }}>
-          <Avatar 
-            sx={{ 
-              width: 150, 
-              height: 150, 
-              fontSize: '4rem',
-              backgroundColor: '#1dbf73'
-            }}
-          >
-            {perfil.nombreMostrado?.charAt(0) || 'U'}
-          </Avatar>
+        {/* Info básica */}
+        <Typography variant="subtitle2" color="text.secondary" gutterBottom>Información básica</Typography>
+        <TextField fullWidth label="Nombre mostrado"   margin="normal" value={form.nombreMostrado} onChange={f('nombreMostrado')} />
+        <TextField fullWidth label="Email" type="email" margin="normal" value={form.email}          onChange={f('email')} />
+        <TextField fullWidth label="Descripción"       margin="normal" multiline rows={3}
+          value={form.descripcion} onChange={f('descripcion')}
+          placeholder="Cuéntale a todos quién eres y qué haces..." />
+
+        <Divider sx={{ my:3 }} />
+
+        {/* Datos de contacto */}
+        <Typography variant="subtitle2" color="text.secondary" gutterBottom>Datos de contacto</Typography>
+        <TextField fullWidth label="Teléfono" margin="normal" value={form.telefono} onChange={f('telefono')}
+          InputProps={{ startAdornment: <InputAdornment position="start"><PhoneIcon fontSize="small" /></InputAdornment> }} />
+        <Box sx={{ display:'flex', gap:2 }}>
+          <TextField fullWidth label="Ciudad" margin="normal" value={form.ciudad} onChange={f('ciudad')}
+            InputProps={{ startAdornment: <InputAdornment position="start"><LocationOnIcon fontSize="small" /></InputAdornment> }} />
+          <TextField fullWidth label="País" margin="normal" value={form.pais} onChange={f('pais')} />
         </Box>
 
-        <Divider sx={{ mb: 3 }} />
+        <Divider sx={{ my:3 }} />
 
-        {/* Formulario */}
-        <Box component="form" sx={{ mt: 3 }}>
-          <TextField
-            fullWidth
-            label="Nombre a Mostrar"
-            name="nombreMostrado"
-            value={perfil.nombreMostrado}
-            onChange={handleChange}
-            margin="normal"
-            helperText="Este es el nombre que verán otros usuarios"
-          />
+        {/* Redes sociales */}
+        <Typography variant="subtitle2" color="text.secondary" gutterBottom>Redes sociales</Typography>
+        <TextField fullWidth label="Sitio web" margin="normal" value={form.sitioWeb} onChange={f('sitioWeb')}
+          placeholder="https://tuweb.com"
+          InputProps={{ startAdornment: <InputAdornment position="start"><LanguageIcon fontSize="small" /></InputAdornment> }} />
+        <TextField fullWidth label="Instagram (usuario sin @)" margin="normal" value={form.instagram} onChange={f('instagram')}
+          InputProps={{ startAdornment: <InputAdornment position="start"><InstagramIcon fontSize="small" sx={{ color:'#E1306C' }} /></InputAdornment> }} />
+        <TextField fullWidth label="Twitter / X (usuario sin @)" margin="normal" value={form.twitter} onChange={f('twitter')}
+          InputProps={{ startAdornment: <InputAdornment position="start"><TwitterIcon fontSize="small" sx={{ color:'#1DA1F2' }} /></InputAdornment> }} />
+        <TextField fullWidth label="LinkedIn (URL completa)" margin="normal" value={form.linkedin} onChange={f('linkedin')}
+          placeholder="https://linkedin.com/in/tuperfil"
+          InputProps={{ startAdornment: <InputAdornment position="start"><LinkedInIcon fontSize="small" sx={{ color:'#0A66C2' }} /></InputAdornment> }} />
 
-          <TextField
-            fullWidth
-            label="Email"
-            name="email"
-            type="email"
-            value={perfil.email}
-            onChange={handleChange}
-            margin="normal"
-          />
-
-          <TextField
-            fullWidth
-            label="Descripción"
-            name="descripcion"
-            value={perfil.descripcion}
-            onChange={handleChange}
-            margin="normal"
-            multiline
-            rows={4}
-            helperText="Cuéntanos un poco sobre ti"
-          />
-
-          {/* Botones de acción */}
-          <Box sx={{ display: 'flex', gap: 2, mt: 4 }}>
-            <Button
-              fullWidth
-              variant="contained"
-              startIcon={<SaveIcon />}
-              onClick={handleGuardar}
-              disabled={saving}
-              sx={{ 
-                backgroundColor: '#1dbf73',
-                '&:hover': { backgroundColor: '#19a463' }
-              }}
-            >
-              {saving ? 'Guardando...' : 'Guardar Cambios'}
-            </Button>
-
-            <Button
-              fullWidth
-              variant="outlined"
-              startIcon={<LockIcon />}
-              onClick={() => setOpenPasswordDialog(true)}
-              color="secondary"
-            >
-              Cambiar Contraseña
-            </Button>
-          </Box>
-        </Box>
+        <Button fullWidth variant="contained" size="large" startIcon={<SaveIcon />}
+          onClick={handleGuardar} disabled={guardando}
+          sx={{ mt:3, py:1.5, borderRadius:2, fontWeight:'bold' }}>
+          {guardando ? 'Guardando...' : 'Guardar cambios'}
+        </Button>
       </Paper>
-
-      {/* Diálogo para cambiar contraseña */}
-      <Dialog open={openPasswordDialog} onClose={() => setOpenPasswordDialog(false)}>
-        <DialogTitle>Cambiar Contraseña</DialogTitle>
-        <DialogContent>
-          {passwordError && (
-            <Alert severity="error" sx={{ mb: 2 }}>
-              {passwordError}
-            </Alert>
-          )}
-
-          <TextField
-            fullWidth
-            label="Contraseña Actual"
-            name="passwordActual"
-            type="password"
-            value={passwordData.passwordActual}
-            onChange={handlePasswordChange}
-            margin="normal"
-          />
-
-          <TextField
-            fullWidth
-            label="Nueva Contraseña"
-            name="passwordNueva"
-            type="password"
-            value={passwordData.passwordNueva}
-            onChange={handlePasswordChange}
-            margin="normal"
-          />
-
-          <TextField
-            fullWidth
-            label="Confirmar Nueva Contraseña"
-            name="passwordConfirm"
-            type="password"
-            value={passwordData.passwordConfirm}
-            onChange={handlePasswordChange}
-            margin="normal"
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpenPasswordDialog(false)}>
-            Cancelar
-          </Button>
-          <Button 
-            onClick={handleCambiarPassword} 
-            disabled={changingPassword}
-            variant="contained"
-          >
-            {changingPassword ? 'Cambiando...' : 'Cambiar'}
-          </Button>
-        </DialogActions>
-      </Dialog>
     </Container>
   );
 };

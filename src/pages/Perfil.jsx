@@ -1,13 +1,20 @@
 import React, { useEffect, useState } from 'react';
 import { 
   Container, Paper, Box, Typography, Avatar, Button, 
-  CircularProgress, Alert, Chip, Divider, IconButton 
+  CircularProgress, Alert, Chip, Divider, IconButton,
+  Dialog, DialogTitle, DialogContent, List, ListItem,
+  ListItemAvatar, ListItemText, DialogActions
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import EditIcon from '@mui/icons-material/Edit';
 import StorefrontIcon from '@mui/icons-material/Storefront';
 import PhotoCamera from '@mui/icons-material/PhotoCamera';
+import ShoppingBagIcon from '@mui/icons-material/ShoppingBag';
+import CloseIcon from '@mui/icons-material/Close';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
 import api from '../services/api';
+import { useThemeMode } from '../ThemeContext';
 
 const Perfil = () => {
   const [perfil, setPerfil] = useState(null);
@@ -16,22 +23,42 @@ const Perfil = () => {
   const [subiendo, setSubiendo] = useState(false);
   const [success, setSuccess] = useState('');
   const navigate = useNavigate();
+  const { isDark } = useThemeMode();
+
+  // Estado para modal de compras
+  const [comprasOpen, setComprasOpen] = useState(false);
+  const [compras, setCompras] = useState([]);
+  const [loadingCompras, setLoadingCompras] = useState(false);
 
   const cargarPerfil = async () => {
     try {
       const response = await api.get('/users/perfil');
       setPerfil(response.data);
     } catch (err) {
-      console.error("Error cargando perfil:", err);
       setError("No se pudo cargar el perfil");
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    cargarPerfil();
-  }, []);
+  const cargarCompras = async () => {
+    setLoadingCompras(true);
+    try {
+      const response = await api.get('/pedidos/mis-compras');
+      setCompras(response.data);
+    } catch (err) {
+      setCompras([]);
+    } finally {
+      setLoadingCompras(false);
+    }
+  };
+
+  const handleAbrirCompras = () => {
+    setComprasOpen(true);
+    cargarCompras();
+  };
+
+  useEffect(() => { cargarPerfil(); }, []);
 
   const handleFotoClick = () => {
     document.getElementById('input-foto').click();
@@ -40,15 +67,12 @@ const Perfil = () => {
   const handleCambiarFoto = async (event) => {
     const archivo = event.target.files[0];
     if (!archivo) return;
-
     if (!['image/jpeg', 'image/png'].includes(archivo.type)) {
       alert("Solo se permiten imágenes JPG o PNG");
       return;
     }
-
     const formData = new FormData();
     formData.append('archivo', archivo);
-
     try {
       setSubiendo(true);
       const response = await api.post('/users/perfil/foto', formData, {
@@ -56,7 +80,6 @@ const Perfil = () => {
       });
       setPerfil({ ...perfil, fotoUrl: response.data.url });
     } catch (err) {
-      console.error("Error subiendo foto:", err);
       alert("Error al actualizar la foto");
     } finally {
       setSubiendo(false);
@@ -75,21 +98,17 @@ const Perfil = () => {
     }
   };
 
-  if (loading) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 10 }}>
-        <CircularProgress />
-      </Box>
-    );
-  }
+  const estadoColor = (estado) => {
+    switch (estado) {
+      case 'PAGADO': return 'success';
+      case 'PENDIENTE': return 'warning';
+      case 'CANCELADO': return 'error';
+      default: return 'default';
+    }
+  };
 
-  if (error && !perfil) {
-    return (
-      <Container sx={{ mt: 5 }}>
-        <Alert severity="error">{error}</Alert>
-      </Container>
-    );
-  }
+  if (loading) return <Box sx={{ display: 'flex', justifyContent: 'center', mt: 10 }}><CircularProgress /></Box>;
+  if (error) return <Container sx={{ mt: 5 }}><Alert severity="error">{error}</Alert></Container>;
 
   return (
     <Container maxWidth="md" sx={{ mt: 4, mb: 4 }}>
@@ -100,6 +119,7 @@ const Perfil = () => {
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
             
+            {/* FOTO DE PERFIL */}
             <Box sx={{ position: 'relative' }}>
               <input
                 accept="image/jpeg,image/png"
@@ -115,11 +135,10 @@ const Perfil = () => {
               >
                 <Avatar 
                   src={perfil?.fotoUrl}
-                  sx={{ width: 120, height: 120, fontSize: '3rem', backgroundColor: '#1dbf73' }}
+                  sx={{ width: 120, height: 120, fontSize: '3rem', bgcolor: 'primary.main' }}
                 >
                   {!perfil?.fotoUrl && (perfil?.nombreMostrado?.charAt(0) || perfil?.username?.charAt(0) || 'U')}
                 </Avatar>
-                
                 <Box className="overlay" sx={{
                   position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
                   bgcolor: 'rgba(0,0,0,0.4)', borderRadius: '50%', display: 'flex',
@@ -127,9 +146,8 @@ const Perfil = () => {
                 }}>
                   <PhotoCamera sx={{ color: 'white' }} />
                 </Box>
-
                 {subiendo && (
-                  <CircularProgress size={120} sx={{ position: 'absolute', top: 0, left: 0, color: '#1dbf73', zIndex: 1 }} />
+                  <CircularProgress size={120} sx={{ position: 'absolute', top: 0, left: 0, color: 'primary.main', zIndex: 1 }} />
                 )}
               </IconButton>
             </Box>
@@ -153,7 +171,6 @@ const Perfil = () => {
             variant="contained" 
             startIcon={<EditIcon />}
             onClick={() => navigate('/editar-perfil')}
-            sx={{ backgroundColor: '#1dbf73', '&:hover': { backgroundColor: '#19a463' } }}
           >
             Editar Perfil
           </Button>
@@ -161,90 +178,63 @@ const Perfil = () => {
 
         <Divider sx={{ my: 3 }} />
 
-        {/* Solicitar ser vendedor */}
+        {/* BOTÓN MIS COMPRAS - visible para todos */}
+        <Box sx={{ mb: 2 }}>
+          <Button
+            variant="outlined"
+            color="primary"
+            fullWidth
+            startIcon={<ShoppingBagIcon />}
+            onClick={handleAbrirCompras}
+            sx={{ fontWeight: 'bold', py: 1.5, fontSize: '1rem', borderRadius: 2 }}
+          >
+            Mis Compras
+          </Button>
+        </Box>
+
+        {/* Solicitar vendedor */}
         {perfil?.role === 'USER' && !perfil?.solicitudVendedor && (
           <Box sx={{ mb: 3 }}>
             <Alert severity="info" sx={{ mb: 2 }}>
               ¿Quieres vender tus productos o servicios? Solicita convertirte en vendedor.
             </Alert>
-            <Button
-              variant="contained"
-              fullWidth
-              onClick={handleSolicitarVendedor}
-              sx={{ backgroundColor: '#1dbf73', '&:hover': { backgroundColor: '#19a463' } }}
-            >
+            <Button variant="contained" color="primary" fullWidth onClick={handleSolicitarVendedor}>
               Solicitar ser Vendedor
             </Button>
           </Box>
         )}
 
-        {/* Solicitud pendiente */}
         {perfil?.solicitudVendedor && perfil?.role === 'USER' && (
           <Box sx={{ mb: 3 }}>
             <Alert severity="warning">
-              Tu solicitud para ser vendedor está pendiente de aprobación por el Administrador.
+              Tu solicitud para ser vendedor está pendiente de aprobación.
             </Alert>
           </Box>
         )}
 
-        {/* Sección exclusiva para vendedores */}
+        {/* Mis Publicaciones - solo vendedores */}
         {perfil?.role === 'SELLER' && (
           <Box sx={{ mb: 3 }}>
-
-            {/* Botón mis publicaciones — igual que antes */}
             <Button
               variant="contained"
               fullWidth
               startIcon={<StorefrontIcon />}
               onClick={() => navigate('/mis-publicaciones')}
-              sx={{
-                backgroundColor: '#1dbf73',
-                '&:hover': { backgroundColor: '#19a463' },
-                fontWeight: 'bold',
-                py: 1.5,
-                fontSize: '1rem',
-                mb: 2  // ← separación con el saldo
-              }}
+              sx={{ fontWeight: 'bold', py: 1.5, fontSize: '1rem' }}
             >
               Mis Publicaciones
             </Button>
-
-            {/* ── SALDO DISPONIBLE ── */}
-            {/* Solo visible para SELLER. El backend ya retorna saldoDisponible en /users/perfil */}
-            <Paper
-              variant="outlined"
-              sx={{
-                p: 3,
-                borderRadius: 2,
-                borderColor: '#1dbf73',
-                backgroundColor: '#f0fdf4'
-              }}
-            >
-              <Typography variant="body2" color="text.secondary" gutterBottom>
-                💰 Saldo disponible
-              </Typography>
-              <Typography variant="h4" fontWeight="bold" color="success.main">
-                ${Number(perfil?.saldoDisponible ?? 0).toFixed(2)} MXN
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                Ganancias acumuladas · comisión de plataforma (10%) ya descontada
-              </Typography>
-            </Paper>
-
           </Box>
         )}
 
-        {/* Información personal */}
         <Box sx={{ mb: 3 }}>
           <Typography variant="h6" fontWeight="bold" gutterBottom>
             Información Personal
           </Typography>
-          
           <Box sx={{ mt: 2 }}>
             <Typography variant="body2" color="text.secondary" gutterBottom>Email</Typography>
             <Typography variant="body1" gutterBottom>{perfil?.email}</Typography>
           </Box>
-
           {perfil?.descripcion ? (
             <Box sx={{ mt: 2 }}>
               <Typography variant="body2" color="text.secondary" gutterBottom>Descripción</Typography>
@@ -259,6 +249,102 @@ const Perfil = () => {
           )}
         </Box>
       </Paper>
+
+      {/* ========== MODAL MIS COMPRAS ========== */}
+      <Dialog
+        open={comprasOpen}
+        onClose={() => setComprasOpen(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 4,
+            boxShadow: isDark ? '0 20px 60px rgba(124,58,237,0.3)' : '0 20px 60px rgba(55,48,163,0.15)',
+          }
+        }}
+      >
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', pb: 1 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <ShoppingBagIcon sx={{ color: 'primary.main' }} />
+            <Typography variant="h6" fontWeight="bold">Mis Compras</Typography>
+          </Box>
+          <IconButton onClick={() => setComprasOpen(false)} size="small">
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+
+        <Divider />
+
+        <DialogContent sx={{ p: 0 }}>
+          {loadingCompras ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 5 }}>
+              <CircularProgress />
+            </Box>
+          ) : compras.length === 0 ? (
+            <Box sx={{ textAlign: 'center', py: 6 }}>
+              <ShoppingBagIcon sx={{ fontSize: 60, color: 'text.disabled', mb: 2 }} />
+              <Typography variant="body1" color="text.secondary">
+                Aún no has realizado ninguna compra
+              </Typography>
+            </Box>
+          ) : (
+            <List disablePadding>
+              {compras.map((pedido, index) => (
+                <React.Fragment key={pedido.id}>
+                  <ListItem sx={{ px: 3, py: 2 }}>
+                    <ListItemAvatar>
+                      <Avatar
+                        src={pedido.producto?.urlArchivo || pedido.producto?.urlPortada}
+                        variant="rounded"
+                        sx={{ width: 56, height: 56, borderRadius: 2, bgcolor: 'primary.main' }}
+                      >
+                        {pedido.producto?.titulo?.charAt(0) || '?'}
+                      </Avatar>
+                    </ListItemAvatar>
+                    <ListItemText
+                      sx={{ ml: 1.5 }}
+                      primary={
+                        <Typography variant="subtitle2" fontWeight="bold">
+                          {pedido.producto?.titulo || 'Producto'}
+                        </Typography>
+                      }
+                      secondary={
+                        <Box>
+                          <Typography variant="caption" color="text.secondary">
+                            Vendedor: {pedido.producto?.vendedor?.nombreMostrado || 'N/A'}
+                          </Typography>
+                          <br />
+                          <Typography variant="caption" color="text.secondary">
+                            {pedido.fechaPedido ? new Date(pedido.fechaPedido).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' }) : ''}
+                          </Typography>
+                        </Box>
+                      }
+                    />
+                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 0.5 }}>
+                      <Typography variant="subtitle1" fontWeight="bold" color="success.main">
+                        ${pedido.producto?.precio}
+                      </Typography>
+                      <Chip
+                        icon={pedido.estado === 'PAGADO' ? <CheckCircleIcon /> : <HourglassEmptyIcon />}
+                        label={pedido.estado}
+                        color={estadoColor(pedido.estado)}
+                        size="small"
+                      />
+                    </Box>
+                  </ListItem>
+                  {index < compras.length - 1 && <Divider />}
+                </React.Fragment>
+              ))}
+            </List>
+          )}
+        </DialogContent>
+
+        <DialogActions sx={{ p: 2 }}>
+          <Button onClick={() => setComprasOpen(false)} variant="outlined" fullWidth sx={{ borderRadius: 2 }}>
+            Cerrar
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Container>
   );
 };
