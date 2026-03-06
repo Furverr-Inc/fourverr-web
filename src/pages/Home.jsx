@@ -60,13 +60,16 @@ const Home = () => {
   }, [busqueda, tipoFiltro, cargar]);
 
   const handleEliminar = async (e, id) => {
-    e.stopPropagation();
-    if (!window.confirm('¿Seguro que quieres eliminar este producto?')) return;
-    try {
-      await api.delete(`/productos/${id}`);
-      setProductos(p => p.filter(x => x.id !== id));
-    } catch { alert('Error al eliminar.'); }
-  };
+  e.stopPropagation();
+  if (!window.confirm('¿Seguro que quieres eliminar este producto?')) return;
+  try {
+    await api.delete(`/productos/${id}`);
+    setProductos(p => p.filter(x => x.id !== id));
+  } catch (error) {
+    console.error("Error al eliminar:", error.response?.data || error.message);
+    alert('Error al eliminar el producto. Intenta de nuevo.');
+  }
+};
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
