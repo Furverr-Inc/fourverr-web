@@ -16,79 +16,73 @@ const MisPublicaciones = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [eliminando, setEliminando] = useState(false);
   const [deleteDialog, setDeleteDialog] = useState({ open: false, producto: null });
   const navigate = useNavigate();
 
   const cargarProductos = async () => {
+    setLoading(true);
+    setError('');
     try {
       const response = await api.get('/productos/mis-publicaciones');
       setProductos(Array.isArray(response.data) ? response.data : []);
     } catch (err) {
-      setError('Error al cargar tus publicaciones');
+      setError('Error al cargar tus publicaciones: ' + (err.response?.data || err.message));
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    cargarProductos();
-  }, []);
+  useEffect(() => { cargarProductos(); }, []);
 
   const handleEliminar = async () => {
     if (!deleteDialog.producto) return;
+    setEliminando(true);
     try {
       await api.delete(`/productos/${deleteDialog.producto.id}`);
+      // Actualizar lista localmente sin recargar para evitar errores de red
+      setProductos(prev => prev.filter(p => p.id !== deleteDialog.producto.id));
       setSuccess('Publicación eliminada correctamente');
       setDeleteDialog({ open: false, producto: null });
-      cargarProductos();
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
-      setError('Error al eliminar la publicación');
-      setTimeout(() => setError(''), 3000);
+      setError('Error al eliminar: ' + (err.response?.data || err.message));
+      setDeleteDialog({ open: false, producto: null });
+      setTimeout(() => setError(''), 4000);
+    } finally {
+      setEliminando(false);
     }
   };
 
   const tipoLabel = (tipo) => {
-    const tipos = { DIGITAL: 'Digital', SERVICIO: 'Servicio', FISICO: 'Físico' };
+    const tipos = {
+      SERVICIO_GIG: 'Servicio', CURSO_DIGITAL: 'Curso', RECURSO_DESCARGABLE: 'Descargable',
+      SUSCRIPCION: 'Suscripción', PRODUCTO_FISICO: 'Producto', CONSULTORIA: 'Consultoría',
+      DISENO_GRAFICO: 'Diseño', DESARROLLO_WEB: 'Dev Web', MARKETING_DIGITAL: 'Marketing', MUSICA_AUDIO: 'Música',
+    };
     return tipos[tipo] || tipo;
   };
 
-  const tipoColor = (tipo) => {
-    const colores = { DIGITAL: 'primary', SERVICIO: 'success', FISICO: 'warning' };
-    return colores[tipo] || 'default';
-  };
-
-  if (loading) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
-        <CircularProgress sx={{ color: '#1dbf73' }} />
-      </Box>
-    );
-  }
+  if (loading) return (
+    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
+      <CircularProgress />
+    </Box>
+  );
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 6 }}>
-
-      {/* Header */}
       <Paper elevation={2} sx={{ p: 3, mb: 4, borderRadius: 2 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <StoreIcon sx={{ fontSize: 36, color: '#1dbf73' }} />
+            <StoreIcon sx={{ fontSize: 36, color: 'primary.main' }} />
             <Box>
-              <Typography variant="h5" fontWeight="bold">
-                Mis Publicaciones
-              </Typography>
+              <Typography variant="h5" fontWeight="bold">Mis Publicaciones</Typography>
               <Typography variant="body2" color="text.secondary">
-                {productos.length} publicación{productos.length !== 1 ? 'es' : ''} activa{productos.length !== 1 ? 's' : ''}
+                {productos.length} publicación{productos.length !== 1 ? 'es' : ''}
               </Typography>
             </Box>
           </Box>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => navigate('/nuevo')}
-            sx={{ backgroundColor: '#1dbf73', '&:hover': { backgroundColor: '#19a463' }, fontWeight: 'bold' }}
-          >
+          <Button variant="contained" startIcon={<AddIcon />} onClick={() => navigate('/nuevo')} sx={{ fontWeight: 'bold' }}>
             Nueva Publicación
           </Button>
         </Box>
@@ -97,22 +91,11 @@ const MisPublicaciones = () => {
       {success && <Alert severity="success" sx={{ mb: 3 }}>{success}</Alert>}
       {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
 
-      {/* Sin publicaciones */}
       {productos.length === 0 ? (
         <Paper elevation={1} sx={{ p: 8, textAlign: 'center', borderRadius: 2 }}>
-          <StoreIcon sx={{ fontSize: 80, color: '#ccc', mb: 2 }} />
-          <Typography variant="h6" color="text.secondary" gutterBottom>
-            Aún no tienes publicaciones
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-            Comparte tus productos o servicios con la comunidad
-          </Typography>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => navigate('/nuevo')}
-            sx={{ backgroundColor: '#1dbf73', '&:hover': { backgroundColor: '#19a463' } }}
-          >
+          <StoreIcon sx={{ fontSize: 80, color: 'text.disabled', mb: 2 }} />
+          <Typography variant="h6" color="text.secondary" gutterBottom>Aún no tienes publicaciones</Typography>
+          <Button variant="contained" startIcon={<AddIcon />} onClick={() => navigate('/nuevo')} sx={{ mt: 2 }}>
             Crear mi primera publicación
           </Button>
         </Paper>
@@ -121,48 +104,27 @@ const MisPublicaciones = () => {
           {productos.map((producto) => (
             <Grid item xs={12} sm={6} md={4} key={producto.id}>
               <Card elevation={2} sx={{ borderRadius: 2, height: '100%', display: 'flex', flexDirection: 'column', transition: '0.2s', '&:hover': { transform: 'translateY(-3px)', boxShadow: 4 } }}>
-
-                {/* Portada o placeholder */}
                 {producto.urlPortada ? (
-                  <CardMedia
-                    component="img"
-                    height="180"
-                    image={producto.urlPortada}
-                    alt={producto.titulo}
-                    sx={{ objectFit: 'cover' }}
-                  />
+                  <CardMedia component="img" height="180" image={producto.urlPortada} alt={producto.titulo} sx={{ objectFit: 'cover' }} />
                 ) : (
-                  <Box sx={{ height: 180, bgcolor: '#f0faf5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <StoreIcon sx={{ fontSize: 60, color: '#1dbf73', opacity: 0.4 }} />
+                  <Box sx={{ height: 180, bgcolor: 'action.hover', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <StoreIcon sx={{ fontSize: 60, color: 'text.disabled' }} />
                   </Box>
                 )}
-
                 <CardContent sx={{ flexGrow: 1 }}>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
-                    <Typography variant="subtitle1" fontWeight="bold" sx={{ lineHeight: 1.3, flex: 1, mr: 1 }}>
-                      {producto.titulo}
-                    </Typography>
-                    <Chip label={tipoLabel(producto.tipo)} color={tipoColor(producto.tipo)} size="small" />
+                    <Typography variant="subtitle1" fontWeight="bold" sx={{ flex: 1, mr: 1 }}>{producto.titulo}</Typography>
+                    <Chip label={tipoLabel(producto.tipo)} color="primary" size="small" variant="outlined" />
                   </Box>
-
-                  <Typography variant="body2" color="text.secondary" sx={{
-                    display: '-webkit-box', WebkitLineClamp: 2,
-                    WebkitBoxOrient: 'vertical', overflow: 'hidden', mb: 2
-                  }}>
+                  <Typography variant="body2" color="text.secondary" sx={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', mb: 2 }}>
                     {producto.descripcion}
                   </Typography>
-
-                  <Typography variant="h6" fontWeight="bold" sx={{ color: '#1dbf73' }}>
+                  <Typography variant="h6" fontWeight="bold" color="success.main">
                     ${Number(producto.precio).toFixed(2)}
                   </Typography>
                 </CardContent>
-
                 <CardActions sx={{ px: 2, pb: 2, justifyContent: 'flex-end' }}>
-                  <IconButton
-                    color="error"
-                    title="Eliminar publicación"
-                    onClick={() => setDeleteDialog({ open: true, producto })}
-                  >
+                  <IconButton color="error" title="Eliminar publicación" onClick={() => setDeleteDialog({ open: true, producto })}>
                     <DeleteIcon />
                   </IconButton>
                 </CardActions>
@@ -172,25 +134,22 @@ const MisPublicaciones = () => {
         </Grid>
       )}
 
-      {/* Dialog de confirmación */}
-      <Dialog open={deleteDialog.open} onClose={() => setDeleteDialog({ open: false, producto: null })}>
+      <Dialog open={deleteDialog.open} onClose={() => !eliminando && setDeleteDialog({ open: false, producto: null })}>
         <DialogTitle>⚠️ ¿Eliminar publicación?</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Estás a punto de eliminar <strong>"{deleteDialog.producto?.titulo}"</strong>.
-            Esta acción no se puede deshacer.
+            Estás a punto de eliminar <strong>"{deleteDialog.producto?.titulo}"</strong>. Esta acción no se puede deshacer.
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDeleteDialog({ open: false, producto: null })} variant="outlined">
+          <Button onClick={() => setDeleteDialog({ open: false, producto: null })} variant="outlined" disabled={eliminando}>
             Cancelar
           </Button>
-          <Button onClick={handleEliminar} color="error" variant="contained">
-            Eliminar
+          <Button onClick={handleEliminar} color="error" variant="contained" disabled={eliminando}>
+            {eliminando ? <CircularProgress size={20} color="inherit" /> : 'Eliminar'}
           </Button>
         </DialogActions>
       </Dialog>
-
     </Container>
   );
 };

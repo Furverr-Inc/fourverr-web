@@ -34,11 +34,32 @@ const Landing = () => {
   return (
     <>
       {/* Navbar público */}
-      <AppBar position="static" elevation={0}>
-        <Toolbar>
-          <Typography variant="h5" component="div" sx={{ flexGrow: 1, fontWeight: 'bold', color: isDark ? 'primary.light' : 'primary.main' }}>
-            FOURVERR
-          </Typography>
+      <AppBar position="static" elevation={0} sx={{
+        background: isDark
+          ? 'linear-gradient(90deg, rgba(10,10,20,0.97) 0%, rgba(20,10,40,0.97) 100%)'
+          : 'rgba(255,255,255,0.96)',
+        backdropFilter: 'blur(16px)',
+        borderBottom: isDark ? '1px solid rgba(99,102,241,0.2)' : '1px solid rgba(99,102,241,0.12)',
+        boxShadow: isDark ? '0 2px 20px rgba(99,102,241,0.15)' : '0 2px 20px rgba(99,102,241,0.08)',
+      }}>
+        <Toolbar sx={{ minHeight: 64 }}>
+          <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Box sx={{
+              width: 34, height: 34, borderRadius: '10px',
+              background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              boxShadow: '0 4px 14px rgba(99,102,241,0.5)', flexShrink: 0,
+            }}>
+              <Typography sx={{ color: '#fff', fontWeight: 900, fontSize: '1rem', lineHeight: 1 }}>Z</Typography>
+            </Box>
+            <Typography sx={{
+              fontWeight: 800, fontSize: '1.75rem', letterSpacing: '-0.5px',
+              background: isDark ? 'linear-gradient(90deg, #a5b4fc, #c4b5fd)' : 'linear-gradient(90deg, #4f46e5, #7c3aed)',
+              WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', lineHeight: 1,
+            }}>
+              Zento
+            </Typography>
+          </Box>
           <Tooltip title={isDark ? 'Modo claro' : 'Modo oscuro'}>
             <IconButton onClick={toggleTheme} sx={{ color: 'text.secondary', mr: 1 }}>
               {isDark ? <LightModeIcon /> : <DarkModeIcon />}
@@ -76,7 +97,6 @@ const Landing = () => {
           <Typography variant="h4" component="h2" gutterBottom sx={{ color: '#cbd5e1' }}>
             adecuado de inmediato
           </Typography>
-
           <Box sx={{ mt: 4, display: 'flex', justifyContent: 'center', gap: 4 }}>
             {[{ icon: '💬', label: 'Soporte 24 horas' }, { icon: '🔒', label: 'Pago seguro' }].map(item => (
               <Box key={item.label} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -156,7 +176,7 @@ const Landing = () => {
       </Container>
 
       {/* Footer CTA */}
-      <Box sx={{ background: 'background.paper', borderTop: '1px solid', borderColor: 'divider', py: 6, textAlign: 'center', bgcolor: 'background.paper' }}>
+      <Box sx={{ borderTop: '1px solid', borderColor: 'divider', py: 6, textAlign: 'center', bgcolor: 'background.paper' }}>
         <Container maxWidth="sm">
           <Typography variant="h4" gutterBottom fontWeight="bold">¿Listo para comenzar?</Typography>
           <Typography variant="body1" color="text.secondary" paragraph>Únete a miles de freelancers y clientes</Typography>

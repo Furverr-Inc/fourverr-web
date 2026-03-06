@@ -1,52 +1,33 @@
 import React, { useState, useEffect } from 'react';
-import { Container, TextField, Button, Typography, Paper, Box, Alert, Link } from '@mui/material';
+import { TextField, Button, Typography, Box, Alert, Link } from '@mui/material';
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
-import api from '../services/api'; 
+import api from '../services/api';
+import { useThemeMode } from '../ThemeContext';
 
 const Login = () => {
-  const [username, setUsername] = useState(''); // Spring Security usa 'username' por defecto
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [cargando, setCargando] = useState(false);
   const navigate = useNavigate();
+  const { isDark } = useThemeMode();
 
-  // Limpieza de seguridad al entrar
-  useEffect(() => {
-    localStorage.clear();
-  }, []);
+  useEffect(() => { localStorage.clear(); }, []);
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setError('');
     setCargando(true);
-    
     try {
-      // 1. Petición al Backend
-      // NOTA: Java espera { "username": "...", "password": "..." }
-      const response = await api.post('/auth/login', {
-        username: username, 
-        password: password
-      });
-
-      // 2. Extraer datos del JwtResponse de Java
+      const response = await api.post('/auth/login', { username, password });
       const { token, username: userAlias, role, id, nombreMostrado, fotoUrl } = response.data;
-
-      // 3. Guardar en LocalStorage
       localStorage.setItem('token', token);
       localStorage.setItem('usuarioNombre', nombreMostrado || userAlias);
       localStorage.setItem('usuarioRol', role);
       localStorage.setItem('usuarioId', id);
       localStorage.setItem('usuarioFoto', fotoUrl || '');
-
-      // 4. Redirigir según el rol
-      if (role === 'ADMIN') {
-        navigate('/admin');  // Administrador va al panel de admin
-      } else {
-        navigate('/home');   // Usuarios normales van al home
-      }
-
+      if (role === 'ADMIN') { navigate('/admin'); } else { navigate('/home'); }
     } catch (err) {
-      console.error("Login fallido:", err);
       if (err.response?.status === 403) {
         setError(err.response.data || "Tu cuenta ha sido deshabilitada. Contacta al administrador.");
       } else if (err.response?.status === 401) {
@@ -59,45 +40,105 @@ const Login = () => {
     }
   };
 
+  const inputSx = {
+    mb: 2,
+    '& .MuiOutlinedInput-root': {
+      borderRadius: 2,
+      backgroundColor: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.03)',
+      '& fieldset': { borderColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)' },
+      '&:hover fieldset': { borderColor: 'primary.main' },
+      '&.Mui-focused fieldset': { borderColor: 'primary.main' },
+    },
+    '& .MuiInputLabel-root': {
+      color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.5)',
+      '&.Mui-focused': { color: 'primary.main' },
+    },
+    '& .MuiOutlinedInput-input': {
+      color: isDark ? '#fff' : '#111',
+    },
+  };
+
   return (
-    <Container maxWidth="xs">
-      <Paper elevation={6} sx={{ p: 4, mt: 10, borderRadius: 2 }}>
-        <Typography variant="h4" align="center" color="primary" fontWeight="bold">
-          Fourverr
+    <Box sx={{
+      minHeight: '100vh',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      background: isDark
+        ? 'linear-gradient(135deg, #0d0d1a 0%, #1e0a3c 100%)'
+        : 'linear-gradient(135deg, #f0f4ff 0%, #e8eeff 100%)',
+    }}>
+      <Box sx={{
+        width: '100%',
+        maxWidth: 420,
+        mx: 2,
+        p: 4,
+        borderRadius: 4,
+        background: isDark ? 'rgba(255,255,255,0.05)' : '#fff',
+        backdropFilter: 'blur(20px)',
+        border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.08)',
+        boxShadow: isDark
+          ? '0 20px 60px rgba(0,0,0,0.5)'
+          : '0 20px 60px rgba(55,48,163,0.12)',
+      }}>
+        <Typography variant="h3" align="center" fontWeight="bold" sx={{
+          mb: 0.5,
+          background: 'linear-gradient(90deg, #6366f1, #8b5cf6)',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+        }}>
+          Zento
         </Typography>
-        <Typography variant="subtitle1" align="center" sx={{ mb: 3, color: 'text.secondary' }}>
+        <Typography variant="body1" align="center" sx={{ mb: 3, color: isDark ? 'rgba(255,255,255,0.5)' : 'text.secondary' }}>
           Bienvenido de nuevo
         </Typography>
-        
-        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-        
+
+        {error && <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>{error}</Alert>}
+
         <Box component="form" onSubmit={handleLogin}>
-          <TextField 
-            fullWidth label="Usuario o Correo" margin="normal" required
-            value={username} onChange={(e) => setUsername(e.target.value)} 
+          <TextField
+            fullWidth
+            label="Usuario o Correo"
+            required
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
             autoFocus
+            sx={inputSx}
           />
-          
-          <TextField 
-            fullWidth label="Contraseña" type="password" margin="normal" required
-            value={password} onChange={(e) => setPassword(e.target.value)} 
+          <TextField
+            fullWidth
+            label="Contraseña"
+            type="password"
+            required
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            sx={inputSx}
           />
-          
-          <Button 
-            fullWidth variant="contained" size="large" type="submit" 
+          <Button
+            fullWidth
+            variant="contained"
+            size="large"
+            type="submit"
             disabled={cargando}
-            sx={{ mt: 3, mb: 2, py: 1.5, fontWeight: 'bold' }}>
+            sx={{
+              mt: 1, mb: 2, py: 1.5, fontWeight: 'bold', borderRadius: 2,
+              background: 'linear-gradient(90deg, #6366f1, #8b5cf6)',
+              '&:hover': { background: 'linear-gradient(90deg, #4f46e5, #7c3aed)' },
+            }}
+          >
             {cargando ? 'Entrando...' : 'Iniciar Sesión'}
           </Button>
-          
           <Box textAlign="center">
-            <Typography variant="body2">
-              ¿Nuevo aquí? <Link component={RouterLink} to="/registro" underline="hover" fontWeight="bold">Crea una cuenta</Link>
+            <Typography variant="body2" sx={{ color: isDark ? 'rgba(255,255,255,0.5)' : 'text.secondary' }}>
+              ¿Nuevo aquí?{' '}
+              <Link component={RouterLink} to="/registro" underline="hover" fontWeight="bold" sx={{ color: 'primary.main' }}>
+                Crea una cuenta
+              </Link>
             </Typography>
           </Box>
         </Box>
-      </Paper>
-    </Container>
+      </Box>
+    </Box>
   );
 };
 
