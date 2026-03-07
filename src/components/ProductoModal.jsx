@@ -9,6 +9,7 @@ import ShoppingCartIcon   from '@mui/icons-material/ShoppingCart';
 import StarIcon           from '@mui/icons-material/Star';
 import StarBorderIcon     from '@mui/icons-material/StarBorder';
 import SendIcon           from '@mui/icons-material/Send';
+import DeleteIcon         from '@mui/icons-material/Delete';
 import QuestionAnswerIcon from '@mui/icons-material/QuestionAnswer';
 import { useNavigate }    from 'react-router-dom';
 import api from '../services/api';
@@ -21,21 +22,22 @@ const ProductoModal = ({ open, onClose, producto }) => {
   const [loadingWish,  setLoadingWish]  = useState(false);
   const [snack,        setSnack]        = useState({ open: false, msg: '', severity: 'success' });
 
-  // Preguntas
-  const [preguntas,       setPreguntas]       = useState([]);
-  const [loadingPregs,    setLoadingPregs]    = useState(false);
-  const [nuevaPregunta,   setNuevaPregunta]   = useState('');
-  const [enviando,        setEnviando]        = useState(false);
-  const [respondiendo,    setRespondiendo]    = useState(null); // id de pregunta
-  const [textoRespuesta,  setTextoRespuesta]  = useState('');
+  const [preguntas,      setPreguntas]      = useState([]);
+  const [loadingPregs,   setLoadingPregs]   = useState(false);
+  const [nuevaPregunta,  setNuevaPregunta]  = useState('');
+  const [enviando,       setEnviando]       = useState(false);
+  const [respondiendo,   setRespondiendo]   = useState(null);
+  const [textoRespuesta, setTextoRespuesta] = useState('');
+  const [eliminandoPregId, setEliminandoPregId] = useState(null);
 
+  // Identificar usuario actual
   const usernameLocal = localStorage.getItem('usuarioUsername') || localStorage.getItem('usuarioNombre');
+  const usuarioId     = localStorage.getItem('usuarioId');
   const esVendedor = producto?.vendedor?.username === usernameLocal ||
                      producto?.vendedor?.nombreMostrado === usernameLocal;
 
   useEffect(() => {
     if (!producto || !open) return;
-    // Check wishlist solo si hay sesión
     if (localStorage.getItem('token')) {
       api.get(`/favoritos/check/${producto.id}`)
         .then(r => setEnWishlist(r.data.esFavorito))
@@ -102,6 +104,17 @@ const ProductoModal = ({ open, onClose, producto }) => {
     }
   };
 
+  const handleEliminarPregunta = async (preguntaId) => {
+    setEliminandoPregId(preguntaId);
+    try {
+      await api.delete(`/preguntas/${preguntaId}`);
+      setPreguntas(prev => prev.filter(p => p.id !== preguntaId));
+      setSnack({ open: true, msg: 'Pregunta eliminada', severity: 'info' });
+    } catch {
+      setSnack({ open: true, msg: 'Error al eliminar la pregunta', severity: 'error' });
+    } finally { setEliminandoPregId(null); }
+  };
+
   const handleVerVendedor = () => {
     if (producto?.vendedor?.username) {
       onClose();
@@ -148,7 +161,7 @@ const ProductoModal = ({ open, onClose, producto }) => {
         </Box>
 
         <DialogContent sx={{ p: 3 }}>
-          {/* ── Vendedor (clickeable → perfil público) ── */}
+          {/* Vendedor */}
           <Tooltip title="Ver perfil del vendedor">
             <Box onClick={handleVerVendedor}
               sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2,
@@ -221,56 +234,77 @@ const ProductoModal = ({ open, onClose, producto }) => {
             </Typography>
           ) : (
             <Stack spacing={1.5}>
-              {preguntas.map(p => (
-                <Paper key={p.id} variant="outlined"
-                  sx={{ p: 1.5, borderRadius: 2, bgcolor: isDark ? 'rgba(255,255,255,0.03)' : 'grey.50' }}>
-                  {/* Pregunta */}
-                  <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
-                    <Avatar src={p.usuario?.fotoUrl}
-                      sx={{ width: 26, height: 26, fontSize: '0.7rem', bgcolor: 'secondary.main', flexShrink: 0 }}>
-                      {p.usuario?.nombreMostrado?.charAt(0) || '?'}
-                    </Avatar>
-                    <Box sx={{ flex: 1 }}>
-                      <Typography variant="caption" fontWeight="bold" color="text.secondary">
-                        {p.usuario?.nombreMostrado || 'Usuario'}
-                      </Typography>
-                      <Typography variant="body2">{p.texto}</Typography>
-                    </Box>
-                  </Box>
+              {preguntas.map(p => {
+                const esAutorPregunta = String(p.usuario?.id) === String(usuarioId);
+                const puedeEliminar  = esAutorPregunta || esVendedor;
 
-                  {/* Respuesta */}
-                  {p.respuesta && (
-                    <Box sx={{ mt: 1, ml: 4, pl: 1.5, borderLeft: '2px solid', borderColor: 'primary.main' }}>
-                      <Typography variant="caption" fontWeight="bold" color="primary.main">
-                        {p.respondidoPor?.nombreMostrado || 'Vendedor'} · Vendedor
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">{p.respuesta}</Typography>
-                    </Box>
-                  )}
-
-                  {/* Botón responder (solo vendedor, si no hay respuesta) */}
-                  {esVendedor && !p.respuesta && (
-                    respondiendo === p.id ? (
-                      <Box sx={{ mt: 1, ml: 4, display: 'flex', gap: 1 }}>
-                        <TextField fullWidth size="small" placeholder="Tu respuesta..."
-                          value={textoRespuesta} onChange={e => setTextoRespuesta(e.target.value)}
-                          sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }} />
-                        <Button size="small" variant="contained" onClick={() => handleResponder(p.id)}
-                          sx={{ borderRadius: 2, minWidth: 44, px: 1 }}>
-                          <SendIcon fontSize="small" />
-                        </Button>
-                        <Button size="small" onClick={() => { setRespondiendo(null); setTextoRespuesta(''); }}>
-                          Cancelar
-                        </Button>
+                return (
+                  <Paper key={p.id} variant="outlined"
+                    sx={{ p: 1.5, borderRadius: 2, bgcolor: isDark ? 'rgba(255,255,255,0.03)' : 'grey.50' }}>
+                    {/* Encabezado pregunta */}
+                    <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
+                      <Avatar src={p.usuario?.fotoUrl}
+                        sx={{ width: 26, height: 26, fontSize: '0.7rem', bgcolor: 'secondary.main', flexShrink: 0 }}>
+                        {p.usuario?.nombreMostrado?.charAt(0) || '?'}
+                      </Avatar>
+                      <Box sx={{ flex: 1 }}>
+                        <Typography variant="caption" fontWeight="bold" color="text.secondary">
+                          {p.usuario?.nombreMostrado || 'Usuario'}
+                        </Typography>
+                        <Typography variant="body2">{p.texto}</Typography>
                       </Box>
-                    ) : (
-                      <Button size="small" sx={{ mt: 0.5, ml: 4 }} onClick={() => setRespondiendo(p.id)}>
-                        Responder
-                      </Button>
-                    )
-                  )}
-                </Paper>
-              ))}
+                      {/* Botón eliminar pregunta */}
+                      {puedeEliminar && (
+                        <Tooltip title={esVendedor && !esAutorPregunta ? 'Eliminar pregunta (moderación)' : 'Eliminar mi pregunta'}>
+                          <IconButton
+                            size="small"
+                            color="error"
+                            disabled={eliminandoPregId === p.id}
+                            onClick={() => handleEliminarPregunta(p.id)}
+                            sx={{ mt: -0.5, opacity: 0.6, '&:hover': { opacity: 1 } }}
+                          >
+                            {eliminandoPregId === p.id
+                              ? <CircularProgress size={14} color="error" />
+                              : <DeleteIcon sx={{ fontSize: 16 }} />}
+                          </IconButton>
+                        </Tooltip>
+                      )}
+                    </Box>
+
+                    {/* Respuesta */}
+                    {p.respuesta && (
+                      <Box sx={{ mt: 1, ml: 4, pl: 1.5, borderLeft: '2px solid', borderColor: 'primary.main' }}>
+                        <Typography variant="caption" fontWeight="bold" color="primary.main">
+                          {p.respondidoPor?.nombreMostrado || 'Vendedor'} · Vendedor
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">{p.respuesta}</Typography>
+                      </Box>
+                    )}
+
+                    {/* Botón responder — solo vendedor, si no hay respuesta */}
+                    {esVendedor && !p.respuesta && (
+                      respondiendo === p.id ? (
+                        <Box sx={{ mt: 1, ml: 4, display: 'flex', gap: 1 }}>
+                          <TextField fullWidth size="small" placeholder="Tu respuesta..."
+                            value={textoRespuesta} onChange={e => setTextoRespuesta(e.target.value)}
+                            sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }} />
+                          <Button size="small" variant="contained" onClick={() => handleResponder(p.id)}
+                            sx={{ borderRadius: 2, minWidth: 44, px: 1 }}>
+                            <SendIcon fontSize="small" />
+                          </Button>
+                          <Button size="small" onClick={() => { setRespondiendo(null); setTextoRespuesta(''); }}>
+                            Cancelar
+                          </Button>
+                        </Box>
+                      ) : (
+                        <Button size="small" sx={{ mt: 0.5, ml: 4 }} onClick={() => setRespondiendo(p.id)}>
+                          Responder
+                        </Button>
+                      )
+                    )}
+                  </Paper>
+                );
+              })}
             </Stack>
           )}
         </DialogContent>
