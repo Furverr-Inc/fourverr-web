@@ -1,111 +1,121 @@
 import React, { useState } from 'react';
-import { Container, TextField, Button, Typography, Paper, Box, Alert, Link } from '@mui/material';
+import { TextField, Button, Typography, Box, Alert, Link } from '@mui/material';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
-import api from '../services/api'; // Usamos tu instancia configurada
+import api from '../services/api';
+import { useThemeMode } from '../ThemeContext';
+import { useLanguage } from '../LanguageContext';
 
 const Registro = () => {
   const navigate = useNavigate();
-  
-  // Estado inicial limpio
+  const { isDark } = useThemeMode();
+  const { t } = useLanguage();
+
   const [form, setForm] = useState({
-    nombreMostrado: '', // Nombre real (ej: Juan Perez)
-    username: '',       // Nickname (ej: juanperez99)
+    nombreMostrado: '',
+    username: '',
     email: '',
-    password: ''
+    password: '',
   });
-  
   const [error, setError] = useState('');
   const [cargando, setCargando] = useState(false);
 
-  const handleChange = (e) => {
-    setForm({
-      ...form,
-      [e.target.name]: e.target.value
-    });
-  };
+  const handleChange = e => setForm({ ...form, [e.target.name]: e.target.value });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setCargando(true);
-
     try {
-      // Enviamos exactamente lo que pide la entidad User en Java
       await api.post('/auth/register', form);
-      
-      // Si pasa, redirigimos al login
       alert("¡Cuenta creada con éxito! Ahora inicia sesión.");
       navigate('/login');
-
     } catch (err) {
-      console.error(err);
-      // Mensaje de error amigable
-      if (err.response && err.response.status === 409) {
-        setError("El usuario o correo ya existen.");
-      } else {
-        setError("Error al registrarse. Intenta nuevamente.");
-      }
+      setError(err.response?.status === 409
+        ? "El usuario o correo ya existen."
+        : "Error al registrarse. Intenta nuevamente."
+      );
     } finally {
       setCargando(false);
     }
   };
 
+  const inputSx = {
+    mb: 2,
+    '& .MuiOutlinedInput-root': {
+      borderRadius: 2,
+      backgroundColor: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.03)',
+      '& fieldset': { borderColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)' },
+      '&:hover fieldset': { borderColor: 'primary.main' },
+      '&.Mui-focused fieldset': { borderColor: 'primary.main' },
+    },
+    '& .MuiInputLabel-root': {
+      color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.5)',
+      '&.Mui-focused': { color: 'primary.main' },
+    },
+    '& .MuiOutlinedInput-input': { color: isDark ? '#fff' : '#111' },
+  };
+
   return (
-    <Container maxWidth="xs">
-      <Paper elevation={6} sx={{ p: 4, mt: 8, borderRadius: 2 }}>
-        <Typography variant="h4" align="center" fontWeight="bold" gutterBottom color="primary">
-          Crear Cuenta
+    <Box sx={{
+      minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
+      background: isDark
+        ? 'linear-gradient(135deg, #0d0d1a 0%, #1e0a3c 100%)'
+        : 'linear-gradient(135deg, #f0f4ff 0%, #e8eeff 100%)',
+    }}>
+      <Box sx={{
+        width: '100%', maxWidth: 420, mx: 2, p: 4, borderRadius: 4,
+        background: isDark ? 'rgba(255,255,255,0.05)' : '#fff',
+        backdropFilter: 'blur(20px)',
+        border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.08)',
+        boxShadow: isDark ? '0 20px 60px rgba(0,0,0,0.5)' : '0 20px 60px rgba(55,48,163,0.12)',
+      }}>
+        <Typography variant="h3" align="center" fontWeight="bold" sx={{
+          mb: 0.5,
+          background: 'linear-gradient(90deg, #6366f1, #8b5cf6)',
+          WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+        }}>
+          Zento
         </Typography>
-        <Typography variant="body2" align="center" color="text.secondary" sx={{ mb: 3 }}>
-          Únete a la comunidad de creativos
+        <Typography variant="body1" align="center"
+          sx={{ mb: 3, color: isDark ? 'rgba(255,255,255,0.5)' : 'text.secondary' }}>
+          {t.joinCommunity}
         </Typography>
 
-        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+        {error && <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>{error}</Alert>}
 
         <Box component="form" onSubmit={handleSubmit}>
-          <TextField
-            fullWidth label="Nombre Completo" name="nombreMostrado"
-            margin="normal" required
-            value={form.nombreMostrado} onChange={handleChange}
-          />
-          
-          <TextField
-            fullWidth label="Usuario (Nickname)" name="username"
-            margin="normal" required
-            value={form.username} onChange={handleChange}
-          />
-          
-          <TextField
-            fullWidth label="Correo Electrónico" name="email" type="email"
-            margin="normal" required
-            value={form.email} onChange={handleChange}
-          />
-          
-          <TextField
-            fullWidth label="Contraseña" name="password" type="password"
-            margin="normal" required
-            value={form.password} onChange={handleChange}
-          />
+          <TextField fullWidth label={t.fullName} name="nombreMostrado"
+            required value={form.nombreMostrado} onChange={handleChange} sx={inputSx} />
+          <TextField fullWidth label={t.username} name="username"
+            required value={form.username} onChange={handleChange} sx={inputSx} />
+          <TextField fullWidth label={t.email} name="email" type="email"
+            required value={form.email} onChange={handleChange} sx={inputSx} />
+          <TextField fullWidth label={t.password} name="password" type="password"
+            required value={form.password} onChange={handleChange} sx={inputSx} />
 
-          <Button
-            fullWidth variant="contained" size="large" type="submit"
+          <Button fullWidth variant="contained" size="large" type="submit"
             disabled={cargando}
-            sx={{ mt: 3, mb: 2, fontWeight: 'bold' }}
-          >
-            {cargando ? 'Registrando...' : 'Registrarse'}
+            sx={{
+              mt: 1, mb: 2, py: 1.5, fontWeight: 'bold', borderRadius: 2,
+              background: 'linear-gradient(90deg, #6366f1, #8b5cf6)',
+              '&:hover': { background: 'linear-gradient(90deg, #4f46e5, #7c3aed)' },
+            }}>
+            {cargando ? t.registering : t.register}
           </Button>
 
-          <Box textAlign="center" sx={{ mt: 2 }}>
-            <Typography variant="body2">
-              ¿Ya tienes cuenta?{' '}
-              <Link component={RouterLink} to="/login" underline="hover" fontWeight="bold">
-                Inicia sesión
+          <Box textAlign="center">
+            <Typography variant="body2"
+              sx={{ color: isDark ? 'rgba(255,255,255,0.5)' : 'text.secondary' }}>
+              {t.alreadyHaveAccount}{' '}
+              <Link component={RouterLink} to="/login" underline="hover" fontWeight="bold"
+                sx={{ color: 'primary.main' }}>
+                {t.signIn}
               </Link>
             </Typography>
           </Box>
         </Box>
-      </Paper>
-    </Container>
+      </Box>
+    </Box>
   );
 };
 

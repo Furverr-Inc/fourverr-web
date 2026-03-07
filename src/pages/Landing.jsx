@@ -8,6 +8,7 @@ import LightModeIcon from '@mui/icons-material/LightMode';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { useThemeMode } from '../ThemeContext';
+import { useLanguage } from '../LanguageContext';
 
 const Landing = () => {
   const [productos, setProductos] = useState([]);
@@ -15,21 +16,20 @@ const Landing = () => {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
   const { isDark, toggleTheme } = useThemeMode();
+  const { t } = useLanguage();
 
-  const cargarProductos = async () => {
-    try {
-      const response = await api.get('/productos');
-      setProductos(response.data);
-    } catch (err) {
-      setError("No se pudieron cargar los servicios.");
-    } finally {
-      setLoading(false);
-    }
-  };
+  useEffect(() => {
+    api.get('/productos')
+      .then(r => setProductos(r.data))
+      .catch(() => setError("No se pudieron cargar los servicios."))
+      .finally(() => setLoading(false));
+  }, []);
 
-  useEffect(() => { cargarProductos(); }, []);
-
-  if (loading) return <Box sx={{ display: 'flex', justifyContent: 'center', mt: 10 }}><CircularProgress /></Box>;
+  if (loading) return (
+    <Box sx={{ display: 'flex', justifyContent: 'center', mt: 10 }}>
+      <CircularProgress />
+    </Box>
+  );
 
   return (
     <>
@@ -60,50 +60,51 @@ const Landing = () => {
               Zento
             </Typography>
           </Box>
-          <Tooltip title={isDark ? 'Modo claro' : 'Modo oscuro'}>
+          <Tooltip title={isDark ? t.lightMode : t.darkMode}>
             <IconButton onClick={toggleTheme} sx={{ color: 'text.secondary', mr: 1 }}>
               {isDark ? <LightModeIcon /> : <DarkModeIcon />}
             </IconButton>
           </Tooltip>
-          <Button variant="contained" onClick={() => navigate('/login')} sx={{ fontWeight: 'bold', px: 3 }}>
-            Acceder
+          <Button variant="contained" onClick={() => navigate('/login')}
+            sx={{ fontWeight: 'bold', px: 3 }}>
+            {t.access}
           </Button>
         </Toolbar>
       </AppBar>
 
-      {/* Hero Section */}
+      {/* Hero */}
       <Box sx={{
         background: isDark
           ? 'linear-gradient(135deg, #0d0d1a 0%, #1e0a3c 50%, #0c4a6e 100%)'
           : 'linear-gradient(135deg, #1e1b4b 0%, #3730a3 100%)',
-        color: 'white',
-        py: 8,
-        textAlign: 'center',
+        color: 'white', py: 8, textAlign: 'center',
       }}>
         <Container maxWidth="md">
           <Typography variant="h2" component="h1" gutterBottom fontWeight="bold" sx={{ mb: 2 }}>
-            Encuentra el servicio{' '}
+            {t.heroTitle}{' '}
             <Box component="span" sx={{
               fontStyle: 'italic',
               background: isDark
                 ? 'linear-gradient(90deg, #a78bfa, #06b6d4)'
                 : 'linear-gradient(90deg, #fbbf24, #f59e0b)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
+              WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
             }}>
-              freelance
+              {t.heroTitleItalic}
             </Box>
           </Typography>
           <Typography variant="h4" component="h2" gutterBottom sx={{ color: '#cbd5e1' }}>
-            adecuado de inmediato
+            {t.heroSubtitle}
           </Typography>
           <Box sx={{ mt: 4, display: 'flex', justifyContent: 'center', gap: 4 }}>
-            {[{ icon: '💬', label: 'Soporte 24 horas' }, { icon: '🔒', label: 'Pago seguro' }].map(item => (
+            {[
+              { icon: '💬', label: t.support24 },
+              { icon: '🔒', label: t.securePay },
+            ].map(item => (
               <Box key={item.label} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <Box sx={{
                   width: 40, height: 40, borderRadius: '50%',
                   background: isDark ? 'linear-gradient(135deg, #7c3aed, #06b6d4)' : 'linear-gradient(135deg, #3730a3, #6366f1)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center'
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
                 }}>
                   {item.icon}
                 </Box>
@@ -117,46 +118,59 @@ const Landing = () => {
       {/* Categorías */}
       <Container maxWidth="lg" sx={{ mt: 6, mb: 4 }}>
         <Grid container spacing={2} justifyContent="center">
-          {['Programación', 'Diseño Gráfico', 'Marketing', 'Escritura', 'Video', 'Música'].map((cat) => (
+          {['Programación', 'Diseño Gráfico', 'Marketing', 'Escritura', 'Video', 'Música'].map(cat => (
             <Grid item key={cat}>
               <Chip label={cat} sx={{
                 py: 2.5, px: 2, fontSize: '1rem', fontWeight: 500, cursor: 'pointer',
                 color: 'text.primary', border: '1px solid', borderColor: 'divider',
-                '&:hover': { background: isDark ? 'linear-gradient(90deg, #7c3aed, #06b6d4)' : 'linear-gradient(90deg, #3730a3, #6366f1)', color: 'white', borderColor: 'transparent' }
+                '&:hover': {
+                  background: isDark ? 'linear-gradient(90deg, #7c3aed, #06b6d4)' : 'linear-gradient(90deg, #3730a3, #6366f1)',
+                  color: 'white', borderColor: 'transparent',
+                }
               }} />
             </Grid>
           ))}
         </Grid>
       </Container>
 
-      {/* Servicios Populares */}
+      {/* Servicios populares */}
       <Container maxWidth="lg" sx={{ mt: 6, mb: 8 }}>
         <Typography variant="h4" component="h2" gutterBottom fontWeight="bold" sx={{ mb: 4 }}>
-          Servicios populares
+          {t.popularServices}
         </Typography>
         {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
         <Grid container spacing={4}>
-          {productos.map((prod) => (
+          {productos.map(prod => (
             <Grid item key={prod.id} xs={12} sm={6} md={4} lg={3}>
               <Card onClick={() => navigate('/login')} sx={{
                 height: '100%', display: 'flex', flexDirection: 'column', cursor: 'pointer',
                 transition: 'transform 0.2s, box-shadow 0.2s',
-                '&:hover': { transform: 'translateY(-5px)', boxShadow: isDark ? '0 8px 30px rgba(124,58,237,0.3)' : '0 8px 30px rgba(55,48,163,0.2)' }
+                '&:hover': {
+                  transform: 'translateY(-5px)',
+                  boxShadow: isDark ? '0 8px 30px rgba(124,58,237,0.3)' : '0 8px 30px rgba(55,48,163,0.2)',
+                }
               }}>
-                <CardMedia component="img" height="180" image={prod.urlArchivo || prod.urlPortada || "https://via.placeholder.com/300?text=Sin+Imagen"} alt={prod.titulo} />
+                <CardMedia component="img" height="180"
+                  image={prod.urlArchivo || prod.urlPortada || 'https://via.placeholder.com/300?text=Sin+Imagen'}
+                  alt={prod.titulo} />
                 <CardContent sx={{ flexGrow: 1, pb: 1 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
                     <Box sx={{
                       width: 24, height: 24, borderRadius: '50%',
                       background: isDark ? 'linear-gradient(135deg, #7c3aed, #06b6d4)' : 'linear-gradient(135deg, #3730a3, #6366f1)',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      color: 'white', fontSize: '0.75rem', fontWeight: 'bold'
+                      color: 'white', fontSize: '0.75rem', fontWeight: 'bold',
                     }}>
                       {prod.vendedor?.nombreMostrado?.charAt(0) || '?'}
                     </Box>
-                    <Typography variant="body2" fontWeight="500">{prod.vendedor?.nombreMostrado || 'Vendedor'}</Typography>
+                    <Typography variant="body2" fontWeight="500">
+                      {prod.vendedor?.nombreMostrado || t.seller}
+                    </Typography>
                   </Box>
-                  <Typography variant="body1" gutterBottom sx={{ fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', minHeight: '48px' }}>
+                  <Typography variant="body1" gutterBottom sx={{
+                    fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis',
+                    display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', minHeight: '48px',
+                  }}>
                     {prod.titulo}
                   </Typography>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
@@ -165,23 +179,28 @@ const Landing = () => {
                   </Box>
                 </CardContent>
                 <Box sx={{ borderTop: '1px solid', borderColor: 'divider', p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase' }}>Desde</Typography>
+                  <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase' }}>
+                    {t.from}
+                  </Typography>
                   <Typography variant="h6" fontWeight="bold" sx={{ color: 'success.main' }}>${prod.precio}</Typography>
                 </Box>
               </Card>
             </Grid>
           ))}
         </Grid>
-        {productos.length === 0 && !error && <Alert severity="info" sx={{ mt: 3 }}>No hay servicios disponibles en este momento</Alert>}
+        {productos.length === 0 && !error && (
+          <Alert severity="info" sx={{ mt: 3 }}>{t.noServices}</Alert>
+        )}
       </Container>
 
       {/* Footer CTA */}
       <Box sx={{ borderTop: '1px solid', borderColor: 'divider', py: 6, textAlign: 'center', bgcolor: 'background.paper' }}>
         <Container maxWidth="sm">
-          <Typography variant="h4" gutterBottom fontWeight="bold">¿Listo para comenzar?</Typography>
-          <Typography variant="body1" color="text.secondary" paragraph>Únete a miles de freelancers y clientes</Typography>
-          <Button variant="contained" size="large" onClick={() => navigate('/login')} sx={{ fontWeight: 'bold', px: 5, py: 1.5 }}>
-            Comenzar Ahora
+          <Typography variant="h4" gutterBottom fontWeight="bold">{t.ctaTitle}</Typography>
+          <Typography variant="body1" color="text.secondary" paragraph>{t.ctaSubtitle}</Typography>
+          <Button variant="contained" size="large" onClick={() => navigate('/login')}
+            sx={{ fontWeight: 'bold', px: 5, py: 1.5 }}>
+            {t.ctaButton}
           </Button>
         </Container>
       </Box>

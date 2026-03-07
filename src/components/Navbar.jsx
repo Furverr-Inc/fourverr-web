@@ -7,11 +7,13 @@ import DarkModeIcon from '@mui/icons-material/DarkMode';
 import LightModeIcon from '@mui/icons-material/LightMode';
 import api from '../services/api';
 import { useThemeMode } from '../ThemeContext';
+import { useLanguage } from '../LanguageContext';
 import WishlistDrawer from './WishlistDrawer';
 
 const Navbar = () => {
   const navigate = useNavigate();
   const { isDark, toggleTheme } = useThemeMode();
+  const { t } = useLanguage();
   const usuarioNombre = localStorage.getItem('usuarioNombre') || 'Usuario';
   const usuarioRol = localStorage.getItem('usuarioRol');
   const [fotoUrl, setFotoUrl] = useState(localStorage.getItem('usuarioFoto') || '');
@@ -63,47 +65,26 @@ const Navbar = () => {
           : 'rgba(255,255,255,0.96)',
         backdropFilter: 'blur(16px)',
         borderBottom: isDark ? '1px solid rgba(99,102,241,0.2)' : '1px solid rgba(99,102,241,0.12)',
-        boxShadow: isDark
-          ? '0 2px 20px rgba(99,102,241,0.15)'
-          : '0 2px 20px rgba(99,102,241,0.08)',
+        boxShadow: isDark ? '0 2px 20px rgba(99,102,241,0.15)' : '0 2px 20px rgba(99,102,241,0.08)',
       }}>
         <Toolbar sx={{ minHeight: 64 }}>
-
-          {/* LOGO ZENTO */}
           <Box component={Link} to="/home" sx={{ flexGrow: 1, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 1 }}>
-            {/* Ícono decorativo */}
-            <Box sx={{
-              width: 34, height: 34, borderRadius: '10px',
-              background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              boxShadow: '0 4px 14px rgba(99,102,241,0.5)',
-              flexShrink: 0,
-            }}>
+            <Box sx={{ width: 34, height: 34, borderRadius: '10px', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 14px rgba(99,102,241,0.5)', flexShrink: 0 }}>
               <Typography sx={{ color: '#fff', fontWeight: 900, fontSize: '1rem', lineHeight: 1 }}>Z</Typography>
             </Box>
-            <Typography sx={{
-              fontWeight: 800,
-              fontSize: '1.75rem',
-              letterSpacing: '-0.5px',
-              background: isDark
-                ? 'linear-gradient(90deg, #a5b4fc, #c4b5fd)'
-                : 'linear-gradient(90deg, #4f46e5, #7c3aed)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              lineHeight: 1,
-            }}>
+            <Typography sx={{ fontWeight: 800, fontSize: '1.75rem', letterSpacing: '-0.5px', background: isDark ? 'linear-gradient(90deg, #a5b4fc, #c4b5fd)' : 'linear-gradient(90deg, #4f46e5, #7c3aed)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', lineHeight: 1 }}>
               Zento
             </Typography>
           </Box>
 
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Tooltip title={isDark ? 'Modo claro' : 'Modo oscuro'}>
+            <Tooltip title={isDark ? t.lightMode : t.darkMode}>
               <IconButton onClick={toggleTheme} sx={{ color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.5)' }}>
                 {isDark ? <LightModeIcon /> : <DarkModeIcon />}
               </IconButton>
             </Tooltip>
 
-            <Tooltip title="Mi Wishlist">
+            <Tooltip title={t.wishlist}>
               <IconButton onClick={() => setWishlistOpen(true)} sx={{ color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.5)' }}>
                 <Badge badgeContent={wishlistCount} color="primary" max={99}>
                   <StarIcon />
@@ -112,7 +93,7 @@ const Navbar = () => {
             </Tooltip>
 
             <Typography variant="body2" sx={{ color: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)', mx: 0.5 }}>
-              Hola, {usuarioNombre}
+              {t.hello}, {usuarioNombre}
             </Typography>
 
             <IconButton component={Link} to="/perfil" sx={{ p: 0.5 }}>
@@ -126,30 +107,20 @@ const Navbar = () => {
             </IconButton>
 
             {usuarioRol === 'SELLER' || usuarioRol === 'ADMIN' ? (
-              <Button
-                variant="contained"
-                component={Link}
-                to="/nuevo"
-                startIcon={<StorefrontIcon />}
-                sx={{
-                  fontWeight: 'bold',
-                  background: 'linear-gradient(90deg, #6366f1, #8b5cf6)',
-                  boxShadow: '0 4px 14px rgba(99,102,241,0.4)',
-                  '&:hover': { background: 'linear-gradient(90deg, #4f46e5, #7c3aed)', boxShadow: '0 4px 20px rgba(99,102,241,0.6)' },
-                  borderRadius: 2,
-                  px: 2,
-                }}
-              >
-                Publicar Gig
+              <Button variant="contained" component={Link} to="/nuevo" startIcon={<StorefrontIcon />}
+                sx={{ fontWeight: 'bold', background: 'linear-gradient(90deg, #6366f1, #8b5cf6)', boxShadow: '0 4px 14px rgba(99,102,241,0.4)', '&:hover': { background: 'linear-gradient(90deg, #4f46e5, #7c3aed)' }, borderRadius: 2, px: 2 }}>
+                {t.publishGig}
               </Button>
             ) : (
-              <Button variant="outlined" onClick={handleSolicitar} sx={{ borderRadius: 2, borderColor: '#6366f1', color: '#6366f1', '&:hover': { borderColor: '#4f46e5', bgcolor: 'rgba(99,102,241,0.05)' } }}>
-                Ser Vendedor
+              <Button variant="outlined" onClick={handleSolicitar}
+                sx={{ borderRadius: 2, borderColor: '#6366f1', color: '#6366f1', '&:hover': { borderColor: '#4f46e5', bgcolor: 'rgba(99,102,241,0.05)' } }}>
+                {t.beSeller}
               </Button>
             )}
 
-            <Button onClick={handleLogout} sx={{ borderRadius: 2, color: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.4)', '&:hover': { color: '#ef4444' } }}>
-              Salir
+            <Button onClick={handleLogout}
+              sx={{ borderRadius: 2, color: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.4)', '&:hover': { color: '#ef4444' } }}>
+              {t.logout}
             </Button>
           </Box>
         </Toolbar>

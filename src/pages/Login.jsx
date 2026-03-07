@@ -1,18 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import { TextField, Button, Typography, Box, Alert, Link } from '@mui/material';
-import { useNavigate, Link as RouterLink } from 'react-router-dom';
+import { useNavigate, Link as RouterLink, useLocation } from 'react-router-dom';
 import api from '../services/api';
 import { useThemeMode } from '../ThemeContext';
+import { useLanguage } from '../LanguageContext';
 
 const Login = () => {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [cargando, setCargando] = useState(false);
-  const navigate = useNavigate();
-  const { isDark } = useThemeMode();
+  const [username, setUsername]         = useState('');
+  const [password, setPassword]         = useState('');
+  const [error, setError]               = useState('');
+  const [cargando, setCargando]         = useState(false);
+  const [mensajeExito, setMensajeExito] = useState('');
 
-  useEffect(() => { localStorage.clear(); }, []);
+  const navigate  = useNavigate();
+  const location  = useLocation();
+  const { isDark } = useThemeMode();
+  const { t }     = useLanguage();
+
+  // Si viene de Registro con mensaje de éxito, lo mostramos
+  useEffect(() => {
+    if (location.state?.mensaje) {
+      setMensajeExito(location.state.mensaje);
+    }
+    localStorage.clear();
+  }, []);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -29,7 +40,7 @@ const Login = () => {
       if (role === 'ADMIN') { navigate('/admin'); } else { navigate('/home'); }
     } catch (err) {
       if (err.response?.status === 403) {
-        setError(err.response.data || "Tu cuenta ha sido deshabilitada. Contacta al administrador.");
+        setError(err.response.data || "Tu cuenta ha sido deshabilitada.");
       } else if (err.response?.status === 401) {
         setError("Usuario o contraseña incorrectos.");
       } else {
@@ -53,72 +64,61 @@ const Login = () => {
       color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.5)',
       '&.Mui-focused': { color: 'primary.main' },
     },
-    '& .MuiOutlinedInput-input': {
-      color: isDark ? '#fff' : '#111',
-    },
+    '& .MuiOutlinedInput-input': { color: isDark ? '#fff' : '#111' },
   };
 
   return (
     <Box sx={{
-      minHeight: '100vh',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
+      minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
       background: isDark
         ? 'linear-gradient(135deg, #0d0d1a 0%, #1e0a3c 100%)'
         : 'linear-gradient(135deg, #f0f4ff 0%, #e8eeff 100%)',
     }}>
       <Box sx={{
-        width: '100%',
-        maxWidth: 420,
-        mx: 2,
-        p: 4,
-        borderRadius: 4,
+        width: '100%', maxWidth: 420, mx: 2, p: 4, borderRadius: 4,
         background: isDark ? 'rgba(255,255,255,0.05)' : '#fff',
         backdropFilter: 'blur(20px)',
         border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.08)',
-        boxShadow: isDark
-          ? '0 20px 60px rgba(0,0,0,0.5)'
-          : '0 20px 60px rgba(55,48,163,0.12)',
+        boxShadow: isDark ? '0 20px 60px rgba(0,0,0,0.5)' : '0 20px 60px rgba(55,48,163,0.12)',
       }}>
         <Typography variant="h3" align="center" fontWeight="bold" sx={{
           mb: 0.5,
           background: 'linear-gradient(90deg, #6366f1, #8b5cf6)',
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
+          WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
         }}>
           Zento
         </Typography>
-        <Typography variant="body1" align="center" sx={{ mb: 3, color: isDark ? 'rgba(255,255,255,0.5)' : 'text.secondary' }}>
-          Bienvenido de nuevo
+        <Typography variant="body1" align="center"
+          sx={{ mb: 3, color: isDark ? 'rgba(255,255,255,0.5)' : 'text.secondary' }}>
+          {t.welcome}
         </Typography>
 
-        {error && <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>{error}</Alert>}
+        {/* Mensaje de éxito si viene de Registro */}
+        {mensajeExito && (
+          <Alert severity="success" sx={{ mb: 2, borderRadius: 2 }}>
+            {mensajeExito}
+          </Alert>
+        )}
+
+        {error && (
+          <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>
+            {error}
+          </Alert>
+        )}
 
         <Box component="form" onSubmit={handleLogin}>
           <TextField
-            fullWidth
-            label="Usuario o Correo"
-            required
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            autoFocus
-            sx={inputSx}
+            fullWidth label={t.userOrEmail} required
+            value={username} onChange={e => setUsername(e.target.value)}
+            autoFocus sx={inputSx}
           />
           <TextField
-            fullWidth
-            label="Contraseña"
-            type="password"
-            required
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            fullWidth label={t.password} type="password" required
+            value={password} onChange={e => setPassword(e.target.value)}
             sx={inputSx}
           />
           <Button
-            fullWidth
-            variant="contained"
-            size="large"
-            type="submit"
+            fullWidth variant="contained" size="large" type="submit"
             disabled={cargando}
             sx={{
               mt: 1, mb: 2, py: 1.5, fontWeight: 'bold', borderRadius: 2,
@@ -126,13 +126,15 @@ const Login = () => {
               '&:hover': { background: 'linear-gradient(90deg, #4f46e5, #7c3aed)' },
             }}
           >
-            {cargando ? 'Entrando...' : 'Iniciar Sesión'}
+            {cargando ? t.loggingIn : t.login}
           </Button>
           <Box textAlign="center">
-            <Typography variant="body2" sx={{ color: isDark ? 'rgba(255,255,255,0.5)' : 'text.secondary' }}>
-              ¿Nuevo aquí?{' '}
-              <Link component={RouterLink} to="/registro" underline="hover" fontWeight="bold" sx={{ color: 'primary.main' }}>
-                Crea una cuenta
+            <Typography variant="body2"
+              sx={{ color: isDark ? 'rgba(255,255,255,0.5)' : 'text.secondary' }}>
+              {t.newHere}{' '}
+              <Link component={RouterLink} to="/registro" underline="hover"
+                fontWeight="bold" sx={{ color: 'primary.main' }}>
+                {t.createAccount}
               </Link>
             </Typography>
           </Box>

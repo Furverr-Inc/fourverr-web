@@ -3,10 +3,10 @@ import {
   Container, Paper, Box, Typography, Avatar, Button, IconButton,
   Badge, Menu, MenuItem, Divider, Alert, Chip, Dialog, DialogTitle,
   DialogContent, DialogContentText, DialogActions, Table, TableBody,
-  TableCell, TableContainer, TableHead, TableRow, CircularProgress, 
+  TableCell, TableContainer, TableHead, TableRow, CircularProgress,
   Tabs, Tab, Checkbox, Toolbar
 } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';  // ← solo una vez
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import LogoutIcon from '@mui/icons-material/Logout';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
@@ -18,6 +18,18 @@ import CheckBoxIcon from '@mui/icons-material/CheckBox';
 import api from '../services/api';
 
 const AdminDashboard = () => {
+  const navigate = useNavigate();  // ← solo una vez
+
+  // ── PROTECCIÓN DE RUTA ──────────────────────────────────────
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    const rol   = localStorage.getItem('usuarioRol');
+    if (!token || rol !== 'ADMIN') {
+      navigate('/', { replace: true });
+    }
+  }, []);
+
+  // ... todo lo demás igual
   const [admin, setAdmin] = useState(null);
   const [solicitudes, setSolicitudes] = useState([]);
   const [usuarios, setUsuarios] = useState([]);
@@ -29,8 +41,6 @@ const AdminDashboard = () => {
   const [tabValue, setTabValue] = useState(0);
   const [subiendoFoto, setSubiendoFoto] = useState(false);
   const [selected, setSelected] = useState([]);
-  
-  const navigate = useNavigate();
 
   useEffect(() => {
     cargarDatos();
