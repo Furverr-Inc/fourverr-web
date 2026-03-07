@@ -16,6 +16,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import PhotoCamera from '@mui/icons-material/PhotoCamera';
 import CheckBoxIcon from '@mui/icons-material/CheckBox';
 import api from '../services/api';
+import SoporteAdmin from '../components/SoporteAdmin';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();  // ← solo una vez
@@ -509,6 +510,9 @@ const AdminDashboard = () => {
           </TableContainer>
         )}
       </Paper>
+
+      {/* PANEL DE SOPORTE */}
+      <SoporteAdmin />
 
       {/* MENU DE NOTIFICACIONES (con botones Aprobar/Rechazar) */}
       <Menu

@@ -9,6 +9,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { useThemeMode } from '../ThemeContext';
 import { useLanguage } from '../LanguageContext';
+import ContactoWidget from '../components/ContactoWidget';
 
 const Landing = () => {
   const [productos, setProductos] = useState([]);
@@ -204,6 +205,8 @@ const Landing = () => {
           </Button>
         </Container>
       </Box>
+
+      <ContactoWidget />
     </>
   );
 };
