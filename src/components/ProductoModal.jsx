@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Dialog, DialogContent, DialogActions, Button, Typography, Box,
   Avatar, Chip, Divider, IconButton, Stack, Tooltip,
-  Snackbar, Alert, TextField, CircularProgress, Paper
+  Snackbar, Alert, TextField, CircularProgress, Paper, Rating
 } from '@mui/material';
 import CloseIcon          from '@mui/icons-material/Close';
 import ShoppingCartIcon   from '@mui/icons-material/ShoppingCart';
@@ -11,17 +11,20 @@ import StarBorderIcon     from '@mui/icons-material/StarBorder';
 import SendIcon           from '@mui/icons-material/Send';
 import DeleteIcon         from '@mui/icons-material/Delete';
 import QuestionAnswerIcon from '@mui/icons-material/QuestionAnswer';
+import RateReviewIcon     from '@mui/icons-material/RateReview';
 import { useNavigate }    from 'react-router-dom';
 import api from '../services/api';
 import { useThemeMode } from '../ThemeContext';
+import { useLanguage } from '../LanguageContext';
 
 const ProductoModal = ({ open, onClose, producto }) => {
   const navigate = useNavigate();
   const { isDark } = useThemeMode();
+  const { t } = useLanguage();
+
   const [enWishlist,   setEnWishlist]   = useState(false);
   const [loadingWish,  setLoadingWish]  = useState(false);
   const [snack,        setSnack]        = useState({ open: false, msg: '', severity: 'success' });
-
   const [preguntas,      setPreguntas]      = useState([]);
   const [loadingPregs,   setLoadingPregs]   = useState(false);
   const [nuevaPregunta,  setNuevaPregunta]  = useState('');
@@ -30,7 +33,12 @@ const ProductoModal = ({ open, onClose, producto }) => {
   const [textoRespuesta, setTextoRespuesta] = useState('');
   const [eliminandoPregId, setEliminandoPregId] = useState(null);
 
-  // Identificar usuario actual
+  // Reseñas
+  const [resenas,       setResenas]       = useState([]);
+  const [promedioRating,setPromedioRating]= useState(0);
+  const [totalResenas,  setTotalResenas]  = useState(0);
+  const [loadingResenas,setLoadingResenas]= useState(false);
+
   const usernameLocal = localStorage.getItem('usuarioUsername') || localStorage.getItem('usuarioNombre');
   const usuarioId     = localStorage.getItem('usuarioId');
   const esVendedor = producto?.vendedor?.username === usernameLocal ||
@@ -44,16 +52,27 @@ const ProductoModal = ({ open, onClose, producto }) => {
         .catch(() => {});
     }
     cargarPreguntas();
+    cargarResenas();
   }, [producto, open]);
 
   const cargarPreguntas = async () => {
     if (!producto) return;
     setLoadingPregs(true);
+    try { const r = await api.get(`/preguntas/producto/${producto.id}`); setPreguntas(r.data); }
+    catch { setPreguntas([]); }
+    finally { setLoadingPregs(false); }
+  };
+
+  const cargarResenas = async () => {
+    if (!producto) return;
+    setLoadingResenas(true);
     try {
-      const r = await api.get(`/preguntas/producto/${producto.id}`);
-      setPreguntas(r.data);
-    } catch { setPreguntas([]); }
-    finally   { setLoadingPregs(false); }
+      const r = await api.get(`/resenas/producto/${producto.id}`);
+      setResenas(r.data.resenas || []);
+      setPromedioRating(r.data.promedio || 0);
+      setTotalResenas(r.data.total || 0);
+    } catch { setResenas([]); }
+    finally { setLoadingResenas(false); }
   };
 
   const handleToggleWishlist = async (e) => {
@@ -87,21 +106,17 @@ const ProductoModal = ({ open, onClose, producto }) => {
       setNuevaPregunta('');
       await cargarPreguntas();
       setSnack({ open: true, msg: 'Pregunta enviada ✓', severity: 'success' });
-    } catch {
-      setSnack({ open: true, msg: 'Error al enviar la pregunta', severity: 'error' });
-    } finally { setEnviando(false); }
+    } catch { setSnack({ open: true, msg: 'Error al enviar la pregunta', severity: 'error' }); }
+    finally { setEnviando(false); }
   };
 
   const handleResponder = async (preguntaId) => {
     if (!textoRespuesta.trim()) return;
     try {
       await api.put(`/preguntas/${preguntaId}/responder`, { respuesta: textoRespuesta });
-      setRespondiendo(null);
-      setTextoRespuesta('');
+      setRespondiendo(null); setTextoRespuesta('');
       await cargarPreguntas();
-    } catch {
-      setSnack({ open: true, msg: 'Error al responder', severity: 'error' });
-    }
+    } catch { setSnack({ open: true, msg: 'Error al responder', severity: 'error' }); }
   };
 
   const handleEliminarPregunta = async (preguntaId) => {
@@ -110,16 +125,12 @@ const ProductoModal = ({ open, onClose, producto }) => {
       await api.delete(`/preguntas/${preguntaId}`);
       setPreguntas(prev => prev.filter(p => p.id !== preguntaId));
       setSnack({ open: true, msg: 'Pregunta eliminada', severity: 'info' });
-    } catch {
-      setSnack({ open: true, msg: 'Error al eliminar la pregunta', severity: 'error' });
-    } finally { setEliminandoPregId(null); }
+    } catch { setSnack({ open: true, msg: 'Error al eliminar la pregunta', severity: 'error' }); }
+    finally { setEliminandoPregId(null); }
   };
 
   const handleVerVendedor = () => {
-    if (producto?.vendedor?.username) {
-      onClose();
-      navigate(`/perfil/${producto.vendedor.username}`);
-    }
+    if (producto?.vendedor?.username) { onClose(); navigate(`/perfil/${producto.vendedor.username}`); }
   };
 
   if (!producto) return null;
@@ -132,7 +143,7 @@ const ProductoModal = ({ open, onClose, producto }) => {
           boxShadow: isDark ? '0 20px 60px rgba(124,58,237,0.3)' : '0 20px 60px rgba(55,48,163,0.15)',
         }}}>
 
-        {/* Imagen */}
+        {/* Imagen portada */}
         <Box sx={{ position: 'relative' }}>
           <Box component="img"
             src={producto.urlArchivo || producto.urlPortada || 'https://via.placeholder.com/600x300?text=Sin+Imagen'}
@@ -144,7 +155,7 @@ const ProductoModal = ({ open, onClose, producto }) => {
               bgcolor: 'rgba(0,0,0,0.5)', color: 'white', '&:hover': { bgcolor: 'rgba(0,0,0,0.7)' } }}>
             <CloseIcon />
           </IconButton>
-          <Tooltip title={enWishlist ? 'Quitar de wishlist' : 'Agregar a wishlist'}>
+          <Tooltip title={enWishlist ? t.removeWishlist : t.addWishlist}>
             <IconButton onClick={handleToggleWishlist} disabled={loadingWish}
               sx={{
                 position: 'absolute', top: 10, left: 10,
@@ -158,6 +169,24 @@ const ProductoModal = ({ open, onClose, producto }) => {
                 : <StarBorderIcon sx={{ color: isDark ? '#a78bfa' : '#3730a3', fontSize: 22 }} />}
             </IconButton>
           </Tooltip>
+
+          {/* Badge de rating encima de imagen si hay reseñas */}
+          {totalResenas > 0 && (
+            <Box sx={{
+              position: 'absolute', bottom: 10, right: 10,
+              bgcolor: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(8px)',
+              borderRadius: 2, px: 1.5, py: 0.5,
+              display: 'flex', alignItems: 'center', gap: 0.5,
+            }}>
+              <StarIcon sx={{ color: '#fbbf24', fontSize: 16 }} />
+              <Typography variant="body2" fontWeight="bold" sx={{ color: 'white' }}>
+                {promedioRating.toFixed(1)}
+              </Typography>
+              <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.7)' }}>
+                ({totalResenas})
+              </Typography>
+            </Box>
+          )}
         </Box>
 
         <DialogContent sx={{ p: 3 }}>
@@ -177,7 +206,7 @@ const ProductoModal = ({ open, onClose, producto }) => {
                 </Typography>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                   <StarIcon sx={{ fontSize: 14, color: '#fbbf24' }} />
-                  <Typography variant="caption" color="text.secondary">Vendedor verificado</Typography>
+                  <Typography variant="caption" color="text.secondary">{t.verifiedSeller}</Typography>
                 </Box>
               </Box>
             </Box>
@@ -192,56 +221,102 @@ const ProductoModal = ({ open, onClose, producto }) => {
           </Stack>
 
           <Divider sx={{ my: 2 }} />
-          <Typography variant="subtitle1" fontWeight="bold" gutterBottom>Descripción</Typography>
+          <Typography variant="subtitle1" fontWeight="bold" gutterBottom>{t.description}</Typography>
           <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.8, whiteSpace: 'pre-line' }}>
-            {producto.descripcion || 'Este vendedor no ha añadido una descripción.'}
+            {producto.descripcion || t.noDescription}
           </Typography>
+
+          {/* ── RESEÑAS ── */}
+          <Divider sx={{ my: 3 }} />
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+            <RateReviewIcon color="primary" fontSize="small" />
+            <Typography variant="subtitle1" fontWeight="bold">{t.reviews}</Typography>
+            {totalResenas > 0 && (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, ml: 'auto' }}>
+                <Rating value={promedioRating} precision={0.1} size="small" readOnly />
+                <Typography variant="caption" color="text.secondary">
+                  {promedioRating.toFixed(1)} ({totalResenas})
+                </Typography>
+              </Box>
+            )}
+          </Box>
+
+          {loadingResenas ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}><CircularProgress size={24} /></Box>
+          ) : resenas.length === 0 ? (
+            <Typography variant="body2" color="text.disabled" sx={{ textAlign: 'center', py: 1.5 }}>
+              {t.noReviews}
+            </Typography>
+          ) : (
+            <Stack spacing={1.5} sx={{ mb: 1 }}>
+              {resenas.slice(0, 5).map(r => (
+                <Paper key={r.id} variant="outlined"
+                  sx={{ p: 1.5, borderRadius: 2, bgcolor: isDark ? 'rgba(255,255,255,0.03)' : 'grey.50' }}>
+                  <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+                    <Avatar src={r.cliente?.fotoUrl}
+                      sx={{ width: 28, height: 28, fontSize: '0.75rem', bgcolor: 'secondary.main', flexShrink: 0 }}>
+                      {r.cliente?.nombreMostrado?.charAt(0) || '?'}
+                    </Avatar>
+                    <Box sx={{ flex: 1 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                        <Typography variant="caption" fontWeight="bold">
+                          {r.cliente?.nombreMostrado || 'Usuario'}
+                        </Typography>
+                        <Chip label={t.verifiedBuyer} size="small"
+                          sx={{ height: 16, fontSize: '0.6rem', bgcolor: 'rgba(16,185,129,0.1)', color: '#10b981' }} />
+                        <Rating value={r.calificacion} size="small" readOnly sx={{ ml: 'auto' }} />
+                      </Box>
+                      {r.comentario && (
+                        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                          {r.comentario}
+                        </Typography>
+                      )}
+                      <Typography variant="caption" color="text.disabled">
+                        {r.fechaResena ? new Date(r.fechaResena).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' }) : ''}
+                      </Typography>
+                    </Box>
+                  </Box>
+                </Paper>
+              ))}
+            </Stack>
+          )}
 
           {/* ── PREGUNTAS Y RESPUESTAS ── */}
           <Divider sx={{ my: 3 }} />
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
             <QuestionAnswerIcon color="primary" fontSize="small" />
-            <Typography variant="subtitle1" fontWeight="bold">Preguntas y Respuestas</Typography>
+            <Typography variant="subtitle1" fontWeight="bold">{t.qa}</Typography>
             {preguntas.length > 0 && <Chip label={preguntas.length} size="small" color="primary" />}
           </Box>
 
-          {/* Input nueva pregunta */}
           {localStorage.getItem('token') && (
             <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
-              <TextField fullWidth size="small"
-                placeholder="Pregúntale al vendedor..."
-                value={nuevaPregunta}
-                onChange={e => setNuevaPregunta(e.target.value)}
+              <TextField fullWidth size="small" placeholder={t.askSeller}
+                value={nuevaPregunta} onChange={e => setNuevaPregunta(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleEnviarPregunta(); } }}
                 sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
               />
               <Button variant="contained" size="small" onClick={handleEnviarPregunta}
-                disabled={enviando || !nuevaPregunta.trim()}
-                sx={{ minWidth: 44, px: 1.5, borderRadius: 2 }}>
+                disabled={enviando || !nuevaPregunta.trim()} sx={{ minWidth: 44, px: 1.5, borderRadius: 2 }}>
                 {enviando ? <CircularProgress size={18} color="inherit" /> : <SendIcon fontSize="small" />}
               </Button>
             </Box>
           )}
 
-          {/* Lista de preguntas */}
           {loadingPregs ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
-              <CircularProgress size={24} />
-            </Box>
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}><CircularProgress size={24} /></Box>
           ) : preguntas.length === 0 ? (
             <Typography variant="body2" color="text.disabled" sx={{ textAlign: 'center', py: 1.5 }}>
-              Aún no hay preguntas. ¡Sé el primero en preguntar!
+              {t.noQuestions}
             </Typography>
           ) : (
             <Stack spacing={1.5}>
               {preguntas.map(p => {
                 const esAutorPregunta = String(p.usuario?.id) === String(usuarioId);
                 const puedeEliminar  = esAutorPregunta || esVendedor;
-
                 return (
                   <Paper key={p.id} variant="outlined"
                     sx={{ p: 1.5, borderRadius: 2, bgcolor: isDark ? 'rgba(255,255,255,0.03)' : 'grey.50' }}>
-                    {/* Encabezado pregunta */}
                     <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
                       <Avatar src={p.usuario?.fotoUrl}
                         sx={{ width: 26, height: 26, fontSize: '0.7rem', bgcolor: 'secondary.main', flexShrink: 0 }}>
@@ -253,16 +328,11 @@ const ProductoModal = ({ open, onClose, producto }) => {
                         </Typography>
                         <Typography variant="body2">{p.texto}</Typography>
                       </Box>
-                      {/* Botón eliminar pregunta */}
                       {puedeEliminar && (
-                        <Tooltip title={esVendedor && !esAutorPregunta ? 'Eliminar pregunta (moderación)' : 'Eliminar mi pregunta'}>
-                          <IconButton
-                            size="small"
-                            color="error"
-                            disabled={eliminandoPregId === p.id}
+                        <Tooltip title={esVendedor && !esAutorPregunta ? 'Eliminar (moderación)' : 'Eliminar mi pregunta'}>
+                          <IconButton size="small" color="error" disabled={eliminandoPregId === p.id}
                             onClick={() => handleEliminarPregunta(p.id)}
-                            sx={{ mt: -0.5, opacity: 0.6, '&:hover': { opacity: 1 } }}
-                          >
+                            sx={{ mt: -0.5, opacity: 0.6, '&:hover': { opacity: 1 } }}>
                             {eliminandoPregId === p.id
                               ? <CircularProgress size={14} color="error" />
                               : <DeleteIcon sx={{ fontSize: 16 }} />}
@@ -270,18 +340,14 @@ const ProductoModal = ({ open, onClose, producto }) => {
                         </Tooltip>
                       )}
                     </Box>
-
-                    {/* Respuesta */}
                     {p.respuesta && (
                       <Box sx={{ mt: 1, ml: 4, pl: 1.5, borderLeft: '2px solid', borderColor: 'primary.main' }}>
                         <Typography variant="caption" fontWeight="bold" color="primary.main">
-                          {p.respondidoPor?.nombreMostrado || 'Vendedor'} · Vendedor
+                          {p.respondidoPor?.nombreMostrado || 'Vendedor'} · {t.seller || 'Vendedor'}
                         </Typography>
                         <Typography variant="body2" color="text.secondary">{p.respuesta}</Typography>
                       </Box>
                     )}
-
-                    {/* Botón responder — solo vendedor, si no hay respuesta */}
                     {esVendedor && !p.respuesta && (
                       respondiendo === p.id ? (
                         <Box sx={{ mt: 1, ml: 4, display: 'flex', gap: 1 }}>
@@ -293,12 +359,12 @@ const ProductoModal = ({ open, onClose, producto }) => {
                             <SendIcon fontSize="small" />
                           </Button>
                           <Button size="small" onClick={() => { setRespondiendo(null); setTextoRespuesta(''); }}>
-                            Cancelar
+                            {t.cancel}
                           </Button>
                         </Box>
                       ) : (
                         <Button size="small" sx={{ mt: 0.5, ml: 4 }} onClick={() => setRespondiendo(p.id)}>
-                          Responder
+                          {t.reply}
                         </Button>
                       )
                     )}
@@ -310,11 +376,11 @@ const ProductoModal = ({ open, onClose, producto }) => {
         </DialogContent>
 
         <DialogActions sx={{ p: 3, pt: 0, gap: 1 }}>
-          <Button onClick={onClose} variant="outlined" sx={{ flex: 1 }}>Cerrar</Button>
+          <Button onClick={onClose} variant="outlined" sx={{ flex: 1 }}>{t.close}</Button>
           <Button variant="contained" startIcon={<ShoppingCartIcon />}
             onClick={() => { onClose(); navigate('/detalle-compra', { state: { producto } }); }}
             sx={{ flex: 2, py: 1.2 }}>
-            Comprar ahora
+            {t.buyNow}
           </Button>
         </DialogActions>
       </Dialog>

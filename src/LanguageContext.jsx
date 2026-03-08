@@ -6,6 +6,7 @@ export const useLanguage = () => useContext(LanguageContext);
 
 export const translations = {
   es: {
+    // Navbar
     hello: 'Hola',
     publishGig: 'Publicar Gig',
     beSeller: 'Ser Vendedor',
@@ -13,6 +14,13 @@ export const translations = {
     wishlist: 'Mi Wishlist',
     darkMode: 'Modo oscuro',
     lightMode: 'Modo claro',
+    notifications: 'Mis Ventas',
+    noNotifications: 'Sin notificaciones nuevas',
+    noPendingNotif: 'No tienes ventas aún',
+    fullPanel: 'Ver panel completo →',
+    pending: 'Pendiente(s)',
+
+    // Landing
     heroTitle: 'Encuentra el servicio',
     heroTitleItalic: 'freelance',
     heroSubtitle: 'adecuado de inmediato',
@@ -26,6 +34,8 @@ export const translations = {
     seller: 'Vendedor',
     from: 'Desde',
     noServices: 'No hay servicios disponibles en este momento',
+
+    // Auth
     welcome: 'Bienvenido de nuevo',
     userOrEmail: 'Usuario o Correo',
     password: 'Contraseña',
@@ -42,13 +52,23 @@ export const translations = {
     registering: 'Registrando...',
     alreadyHaveAccount: '¿Ya tienes cuenta?',
     signIn: 'Inicia sesión',
+
+    // Home
     exploreServices: 'Explora Servicios Digitales',
     searchPlaceholder: 'Buscar servicios, cursos, recursos...',
     buyAndView: 'Ver y Comprar',
     noResults: 'Sin resultados',
     noResultsHint: 'Prueba con otras palabras o categoría',
-    myPurchases: 'Mis Compras',
+    showing: 'Mostrando',
+    of: 'de',
+    products: 'producto(s)',
+    loadMore: 'Ver más',
+
+    // Perfil
+    myActivity: 'Mi Actividad',
+    myPurchases: 'Historial de Compras',
     myPublications: 'Mis Publicaciones',
+    saved: 'Guardados',
     requestSeller: 'Solicitar ser Vendedor',
     pendingRequest: 'Tu solicitud está pendiente de aprobación.',
     editProfile: 'Editar',
@@ -57,12 +77,52 @@ export const translations = {
     availableBalance: 'Saldo disponible',
     totalEarned: 'Total ganado',
     completedSales: 'Ventas completadas',
-    pending: 'Pendientes',
+    pendingLabel: 'Pendientes',
     avgPerSale: 'Promedio por venta',
     latestSales: 'Últimas ventas',
     noSalesYet: 'Aún no tienes ventas',
     noPurchasesYet: 'Aún no has realizado ninguna compra',
+    purchasesTotal: 'compra(s) en total',
+    morePurchases: 'compra(s) más',
+    moreItems: 'más guardados',
     close: 'Cerrar',
+    purchases: 'Compras',
+    favorites: 'Favoritos',
+    level: 'Nivel',
+
+    // Membresía
+    levelNew: 'Nuevo',
+    levelActive: 'Activo',
+    levelVip: 'VIP',
+
+    // Rating
+    reviews: 'Reseñas',
+    noReviews: 'Aún no hay reseñas. ¡Sé el primero!',
+    rateProduct: 'Calificar compra',
+    ratingTitle: '¿Cómo fue tu experiencia?',
+    ratingComment: 'Comparte tu experiencia (opcional)',
+    submitRating: 'Publicar reseña',
+    submittingRating: 'Publicando...',
+    alreadyRated: 'Ya reseñaste este producto',
+    ratingSuccess: '¡Reseña publicada! ⭐',
+    ratingError: 'Error al publicar la reseña',
+    verifiedBuyer: 'Comprador verificado',
+    avgRating: 'Calificación promedio',
+
+    // ProductoModal
+    verifiedSeller: 'Vendedor verificado',
+    description: 'Descripción',
+    noDescription: 'Este vendedor no ha añadido una descripción.',
+    qa: 'Preguntas y Respuestas',
+    askSeller: 'Pregúntale al vendedor...',
+    noQuestions: '¡Sé el primero en preguntar!',
+    reply: 'Responder',
+    cancel: 'Cancelar',
+    buyNow: 'Comprar ahora',
+    removeWishlist: 'Quitar de wishlist',
+    addWishlist: 'Agregar a wishlist',
+
+    // Categorías
     categories: {
       all: 'Todos',
       gig: 'Servicio / Gig',
@@ -79,6 +139,7 @@ export const translations = {
   },
 
   en: {
+    // Navbar
     hello: 'Hello',
     publishGig: 'Post a Gig',
     beSeller: 'Become a Seller',
@@ -86,6 +147,13 @@ export const translations = {
     wishlist: 'My Wishlist',
     darkMode: 'Dark mode',
     lightMode: 'Light mode',
+    notifications: 'My Sales',
+    noNotifications: 'No new notifications',
+    noPendingNotif: 'No sales yet',
+    fullPanel: 'View full dashboard →',
+    pending: 'Pending',
+
+    // Landing
     heroTitle: 'Find the right',
     heroTitleItalic: 'freelance',
     heroSubtitle: 'service immediately',
@@ -99,6 +167,8 @@ export const translations = {
     seller: 'Seller',
     from: 'From',
     noServices: 'No services available at this time',
+
+    // Auth
     welcome: 'Welcome back',
     userOrEmail: 'Username or Email',
     password: 'Password',
@@ -115,13 +185,23 @@ export const translations = {
     registering: 'Registering...',
     alreadyHaveAccount: 'Already have an account?',
     signIn: 'Sign in',
+
+    // Home
     exploreServices: 'Explore Digital Services',
     searchPlaceholder: 'Search services, courses, resources...',
     buyAndView: 'View & Buy',
     noResults: 'No results',
     noResultsHint: 'Try different words or category',
-    myPurchases: 'My Purchases',
+    showing: 'Showing',
+    of: 'of',
+    products: 'product(s)',
+    loadMore: 'Load more',
+
+    // Perfil
+    myActivity: 'My Activity',
+    myPurchases: 'Purchase History',
     myPublications: 'My Listings',
+    saved: 'Saved',
     requestSeller: 'Become a Seller',
     pendingRequest: 'Your request is pending approval.',
     editProfile: 'Edit',
@@ -130,12 +210,52 @@ export const translations = {
     availableBalance: 'Available balance',
     totalEarned: 'Total earned',
     completedSales: 'Completed sales',
-    pending: 'Pending',
+    pendingLabel: 'Pending',
     avgPerSale: 'Avg per sale',
     latestSales: 'Latest sales',
     noSalesYet: "You don't have any sales yet",
     noPurchasesYet: "You haven't made any purchases yet",
+    purchasesTotal: 'purchase(s) total',
+    morePurchases: 'more purchase(s)',
+    moreItems: 'more saved',
     close: 'Close',
+    purchases: 'Purchases',
+    favorites: 'Favorites',
+    level: 'Level',
+
+    // Membership
+    levelNew: 'New',
+    levelActive: 'Active',
+    levelVip: 'VIP',
+
+    // Rating
+    reviews: 'Reviews',
+    noReviews: 'No reviews yet. Be the first!',
+    rateProduct: 'Rate purchase',
+    ratingTitle: 'How was your experience?',
+    ratingComment: 'Share your experience (optional)',
+    submitRating: 'Post review',
+    submittingRating: 'Posting...',
+    alreadyRated: 'You already reviewed this product',
+    ratingSuccess: 'Review posted! ⭐',
+    ratingError: 'Error posting the review',
+    verifiedBuyer: 'Verified buyer',
+    avgRating: 'Average rating',
+
+    // ProductoModal
+    verifiedSeller: 'Verified seller',
+    description: 'Description',
+    noDescription: 'This seller has not added a description.',
+    qa: 'Questions & Answers',
+    askSeller: 'Ask the seller...',
+    noQuestions: 'Be the first to ask!',
+    reply: 'Reply',
+    cancel: 'Cancel',
+    buyNow: 'Buy now',
+    removeWishlist: 'Remove from wishlist',
+    addWishlist: 'Add to wishlist',
+
+    // Categories
     categories: {
       all: 'All',
       gig: 'Service / Gig',

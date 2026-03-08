@@ -10,6 +10,7 @@ import api from '../services/api';
 import { useThemeMode } from '../ThemeContext';
 import { useLanguage } from '../LanguageContext';
 import ContactoWidget from '../components/ContactoWidget';
+import LanguageSwitcher from '../components/LanguageSwitcher';
 
 const Landing = () => {
   const [productos, setProductos] = useState([]);
@@ -206,6 +207,7 @@ const Landing = () => {
         </Container>
       </Box>
 
+      <LanguageSwitcher />
       <ContactoWidget />
     </>
   );

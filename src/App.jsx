@@ -11,22 +11,23 @@ import EditarPerfil   from './pages/EditarPerfil';
 import MisPublicaciones from './pages/MisPublicaciones';
 import AdminDashboard from './pages/AdminDashboard';
 import ProtectedRoute from './components/ProtectedRoute';
-import DetalleCompra  from './pages/DetalleCompra';
-import LanguageSwitcher from './components/LanguageSwitcher'; // ← nuevo
+import DetalleCompra        from './pages/DetalleCompra';
+import ConfirmacionCompra  from './pages/ConfirmacionCompra';
 
 function App() {
   return (
     <Router>
-      {/* El switcher aparece en TODAS las páginas, siempre en la esquina */}
-      <LanguageSwitcher />
-
       <Routes>
+        {/* Públicas sin Navbar */}
         <Route path="/"        element={<Landing />} />
         <Route path="/login"   element={<Login />} />
         <Route path="/registro"element={<Registro />} />
         <Route path="/admin"   element={<AdminDashboard />} />
+
+        {/* Perfil público — accesible sin login */}
         <Route path="/perfil/:username" element={<PerfilPublico />} />
 
+        {/* Privadas con Navbar */}
         <Route element={<ProtectedRoute />}>
           <Route path="/home"              element={<Home />} />
           <Route path="/nuevo"             element={<CrearProducto />} />
@@ -34,6 +35,7 @@ function App() {
           <Route path="/editar-perfil"     element={<EditarPerfil />} />
           <Route path="/mis-publicaciones" element={<MisPublicaciones />} />
           <Route path="/detalle-compra"    element={<DetalleCompra />} />
+          <Route path="/compra-exitosa"    element={<ConfirmacionCompra />} />
         </Route>
 
         <Route path="*" element={<Landing />} />

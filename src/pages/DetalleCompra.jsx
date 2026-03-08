@@ -60,7 +60,9 @@ const DetalleCompra = () => {
         stripePaymentIntentId: paymentIntent.id,
         cantidad,
       });
-      setCompraExitosa(true);
+      const pedidoRes = await api.get("/pedidos/mis-compras");
+      const ultimoPedido = pedidoRes.data?.[0] || null;
+      navigate("/compra-exitosa", { state: { pedido: ultimoPedido } });
     } catch {
       setError('Pago procesado pero error al registrar el pedido. Contacta soporte.');
     }
