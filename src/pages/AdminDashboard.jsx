@@ -291,8 +291,7 @@ const AdminDashboard = () => {
                       onChange={handleSelectAll} />
                   </TableCell>
                   <TableCell><strong>Foto</strong></TableCell>
-                  <TableCell><strong>Nombre</strong></TableCell>
-                  <TableCell><strong>Usuario</strong></TableCell>
+                  <TableCell><strong>Nombre / Usuario</strong></TableCell>
                   <TableCell><strong>Email</strong></TableCell>
                   <TableCell><strong>Rol</strong></TableCell>
                   <TableCell><strong>Estado</strong></TableCell>
@@ -324,6 +323,12 @@ const AdminDashboard = () => {
                       </TableCell>
                       <TableCell onClick={(e) => e.stopPropagation()}>
                         <Box sx={{ display: 'flex', gap: 0.5 }}>
+                          <Tooltip title="Ver detalles">
+                            <IconButton size="small" color="info"
+                              onClick={() => setDetalleDialog({ open: true, usuario })}>
+                              <PersonIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
                           {usuario.habilitado ? (
                             <IconButton size="small" color="warning" title="Deshabilitar"
                               onClick={async () => { await api.put(`/users/${usuario.id}/deshabilitar`); cargarDatos(); setSuccess('Deshabilitado'); setTimeout(() => setSuccess(''), 3000); }}>
