@@ -8,7 +8,7 @@ export const translations = {
   es: {
     // Navbar
     hello: 'Hola',
-    publishGig: 'Publicar Gig',
+    publishGig: 'Publicar',
     beSeller: 'Ser Vendedor',
     logout: 'Salir',
     wishlist: 'Mi Wishlist',
@@ -141,7 +141,7 @@ export const translations = {
   en: {
     // Navbar
     hello: 'Hello',
-    publishGig: 'Post a Gig',
+    publishGig: 'Publish',
     beSeller: 'Become a Seller',
     logout: 'Sign Out',
     wishlist: 'My Wishlist',

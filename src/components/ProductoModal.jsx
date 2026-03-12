@@ -8,6 +8,7 @@ import {
 import CloseIcon          from '@mui/icons-material/Close';
 import ShoppingCartIcon   from '@mui/icons-material/ShoppingCart';
 import StarIcon           from '@mui/icons-material/Star';
+import ZoomInIcon         from '@mui/icons-material/ZoomIn';
 import StarBorderIcon     from '@mui/icons-material/StarBorder';
 import SendIcon           from '@mui/icons-material/Send';
 import DeleteIcon         from '@mui/icons-material/Delete';
@@ -49,6 +50,9 @@ const ProductoModal = ({ open, onClose, producto }) => {
   // ── Panel vendedor (Popover) ──
   const [vendorAnchor,  setVendorAnchor]  = useState(null);
   const vendorPanelOpen = Boolean(vendorAnchor);
+
+  // ── Lightbox de imagen ──
+  const [imagenOpen, setImagenOpen] = useState(false);
 
   // ── Dialog de reporte ──
   const [reporteOpen,   setReporteOpen]   = useState(false);
@@ -183,13 +187,30 @@ const ProductoModal = ({ open, onClose, producto }) => {
           boxShadow: isDark ? '0 20px 60px rgba(124,58,237,0.3)' : '0 20px 60px rgba(55,48,163,0.15)',
         }}}>
 
-        {/* Imagen */}
+        {/* Imagen con lightbox */}
         <Box sx={{ position: 'relative' }}>
-          <Box component="img"
+          <Box
+            component="img"
             src={producto.urlArchivo || producto.urlPortada || 'https://via.placeholder.com/600x300?text=Sin+Imagen'}
             alt={producto.titulo}
-            sx={{ width: '100%', height: 240, objectFit: 'cover', display: 'block' }}
+            onClick={() => setImagenOpen(true)}
+            sx={{
+              width: '100%', height: 240, objectFit: 'cover', display: 'block',
+              cursor: 'zoom-in',
+              transition: 'filter 0.2s',
+              '&:hover': { filter: 'brightness(0.85)' },
+            }}
           />
+          {/* Ícono zoom sobre la imagen */}
+          <Box onClick={() => setImagenOpen(true)} sx={{
+            position: 'absolute', inset: 0,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            opacity: 0, transition: 'opacity 0.2s', cursor: 'zoom-in',
+            '&:hover': { opacity: 1 },
+          }}>
+            <ZoomInIcon sx={{ fontSize: 48, color: 'rgba(255,255,255,0.9)',
+              filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.5))' }} />
+          </Box>
           <IconButton onClick={onClose}
             sx={{ position: 'absolute', top: 10, right: 10,
               bgcolor: 'rgba(0,0,0,0.5)', color: 'white', '&:hover': { bgcolor: 'rgba(0,0,0,0.7)' } }}>
@@ -509,6 +530,47 @@ const ProductoModal = ({ open, onClose, producto }) => {
             {enviandoR ? 'Enviando...' : 'Enviar reporte'}
           </Button>
         </DialogActions>
+      </Dialog>
+
+      {/* ══ LIGHTBOX IMAGEN ══════════════════════════════════════ */}
+      <Dialog
+        open={imagenOpen}
+        onClose={() => setImagenOpen(false)}
+        maxWidth="xl"
+        PaperProps={{
+          sx: {
+            background: 'rgba(0,0,0,0.95)',
+            boxShadow: 'none',
+            borderRadius: 2,
+            overflow: 'hidden',
+            position: 'relative',
+          }
+        }}
+      >
+        <IconButton
+          onClick={() => setImagenOpen(false)}
+          sx={{
+            position: 'absolute', top: 12, right: 12, zIndex: 10,
+            bgcolor: 'rgba(255,255,255,0.12)', color: 'white',
+            '&:hover': { bgcolor: 'rgba(255,255,255,0.25)' },
+          }}
+        >
+          <CloseIcon />
+        </IconButton>
+        <Box
+          component="img"
+          src={producto.urlArchivo || producto.urlPortada}
+          alt={producto.titulo}
+          sx={{
+            maxWidth: '90vw', maxHeight: '85vh',
+            objectFit: 'contain', display: 'block',
+          }}
+        />
+        <Box sx={{ px: 2, py: 1.5, textAlign: 'center' }}>
+          <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)' }}>
+            {producto.titulo}
+          </Typography>
+        </Box>
       </Dialog>
 
       <Snackbar open={snack.open} autoHideDuration={3500}

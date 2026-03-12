@@ -13,6 +13,7 @@ import ShoppingBagIcon from '@mui/icons-material/ShoppingBag';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import ChatCompra from '../components/ChatCompra';
 import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
@@ -75,11 +76,6 @@ const Perfil = () => {
   const [ratingComment, setRatingComment] = useState('');
   const [ratingLoading, setRatingLoading] = useState(false);
   const [ratingCheck, setRatingCheck]     = useState({}); // { [pedidoId]: boolean }
-
-  // Dialog de retiro
-  const [retiroDialog, setRetiroDialog]   = useState(false);
-  const [retiroMonto, setRetiroMonto]     = useState('');
-  const [retiroLoading, setRetiroLoading] = useState(false);
 
   const getBadge = (n) => {
     if (n >= 10) return { label: t.levelVip,    color: '#f59e0b', icon: '👑', bg: 'rgba(245,158,11,0.12)' };
@@ -146,22 +142,6 @@ const Perfil = () => {
       setSuccess('Solicitud enviada. Esperando aprobación del Administrador.');
       cargarPerfil(); setTimeout(() => setSuccess(''), 5000);
     } catch { setError('Error al enviar la solicitud'); setTimeout(() => setError(''), 3000); }
-  };
-
-  const handleSolicitarRetiro = async () => {
-    if (!retiroMonto || parseFloat(retiroMonto) <= 0) return;
-    setRetiroLoading(true);
-    try {
-      const r = await api.post('/users/solicitar-retiro', { monto: retiroMonto });
-      setPerfil(p => ({ ...p, saldoDisponible: r.data.saldoRestante }));
-      setRetiroDialog(false);
-      setRetiroMonto('');
-      setSuccess(r.data.mensaje);
-      setTimeout(() => setSuccess(''), 6000);
-    } catch (e) {
-      setError(e.response?.data || 'Error al solicitar retiro');
-      setTimeout(() => setError(''), 3000);
-    } finally { setRetiroLoading(false); }
   };
 
   const handleAbrirRating = (pedido) => {
@@ -360,16 +340,6 @@ const Perfil = () => {
                 ))}
               </Grid>
 
-              <Button
-                variant="contained" fullWidth
-                startIcon={<AccountBalanceWalletIcon />}
-                onClick={() => setRetiroDialog(true)}
-                disabled={!perfil?.saldoDisponible || Number(perfil.saldoDisponible) <= 0}
-                sx={{ mb: 2.5, borderRadius: 2, background: 'linear-gradient(90deg,#10b981,#059669)', '&:hover': { background: 'linear-gradient(90deg,#059669,#047857)' }, '&:disabled': { opacity: 0.5 } }}
-              >
-                Solicitar Retiro · Saldo: ${Number(perfil?.saldoDisponible || 0).toFixed(2)} MXN
-              </Button>
-
               {ventasPagadas.length > 0 && (
                 <Box sx={{ p: 2, borderRadius: 2, background: isDark ? 'rgba(99,102,241,0.1)' : 'rgba(99,102,241,0.05)', border: '1px solid', borderColor: isDark ? 'rgba(99,102,241,0.3)' : 'rgba(99,102,241,0.15)', mb: 2.5 }}>
                   <Typography variant="caption" color="text.secondary">{t.avgPerSale}</Typography>
@@ -401,9 +371,17 @@ const Perfil = () => {
                             </Typography>
                           </Box>
                         </Box>
-                        <Box sx={{ textAlign: 'right' }}>
-                          <Typography variant="body2" fontWeight="bold" color="success.main">+${Number(v.montoVendedor || 0).toFixed(2)}</Typography>
-                          <Chip label={v.estado} color={estadoColor(v.estado)} size="small" sx={{ height: 18, fontSize: '0.65rem' }} />
+                        <Box sx={{ textAlign: 'right', display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Box>
+                            <Typography variant="body2" fontWeight="bold" color="success.main">+${Number(v.montoVendedor || 0).toFixed(2)}</Typography>
+                            <Chip label={v.estado} color={estadoColor(v.estado)} size="small" sx={{ height: 18, fontSize: '0.65rem' }} />
+                          </Box>
+                          <ChatCompra
+                            pedidoId={v.id}
+                            vendedorNombre={v.cliente?.nombreMostrado || v.cliente?.username}
+                            vendedorFoto={v.cliente?.fotoUrl}
+                            vendedorId={v.cliente?.id}
+                          />
                         </Box>
                       </Box>
                       {i < Math.min(ventas.length - 1, 9) && <Divider />}
@@ -494,6 +472,15 @@ const Perfil = () => {
                         {pedido.estado === 'PAGADO' && ratingCheck[pedido.id] && (
                           <Typography variant="caption" sx={{ display: 'block', mt: 0.8, textAlign: 'center', color: '#f59e0b' }}>⭐ Reseñado</Typography>
                         )}
+                        {/* Chat con el vendedor */}
+                        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
+                          <ChatCompra
+                            pedidoId={pedido.id}
+                            vendedorNombre={pedido.producto?.vendedor?.nombreMostrado || pedido.producto?.vendedor?.username}
+                            vendedorFoto={pedido.producto?.vendedor?.fotoUrl}
+                            vendedorId={pedido.producto?.vendedor?.id}
+                          />
+                        </Box>
                       </CardContent>
                     </Card>
                   </Grid>
@@ -562,37 +549,6 @@ const Perfil = () => {
           <Button onClick={handleEnviarRating} variant="contained" disabled={!ratingVal || ratingLoading}
             sx={{ borderRadius: 2, background: 'linear-gradient(90deg,#6366f1,#8b5cf6)', flex: 1 }}>
             {ratingLoading ? <CircularProgress size={20} color="inherit" /> : t.submitRating}
-          </Button>
-        </DialogActions>
-      </Dialog>
-      {/* ── Dialog de retiro ── */}
-      <Dialog open={retiroDialog} onClose={() => setRetiroDialog(false)} maxWidth="xs" fullWidth
-        PaperProps={{ sx: { borderRadius: 4 } }}>
-        <DialogTitle sx={{ pb: 1 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <AccountBalanceWalletIcon color="success" />
-            <Typography fontWeight="bold">Solicitar Retiro</Typography>
-          </Box>
-        </DialogTitle>
-        <DialogContent>
-          <Alert severity="info" sx={{ mb: 2, borderRadius: 2 }}>
-            Saldo disponible: <strong>${Number(perfil?.saldoDisponible || 0).toFixed(2)} MXN</strong>
-          </Alert>
-          <TextField
-            fullWidth label="Monto a retirar (MXN)" type="number"
-            value={retiroMonto} onChange={e => setRetiroMonto(e.target.value)}
-            inputProps={{ min: 1, max: Number(perfil?.saldoDisponible || 0) }}
-            sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
-          />
-          <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-            Procesaremos tu retiro en 1-3 días hábiles vía transferencia bancaria.
-          </Typography>
-        </DialogContent>
-        <DialogActions sx={{ p: 2.5, pt: 0, gap: 1 }}>
-          <Button onClick={() => setRetiroDialog(false)} variant="outlined" sx={{ borderRadius: 2 }}>Cancelar</Button>
-          <Button onClick={handleSolicitarRetiro} variant="contained" disabled={!retiroMonto || retiroLoading}
-            sx={{ borderRadius: 2, background: 'linear-gradient(90deg,#10b981,#059669)', flex: 1 }}>
-            {retiroLoading ? <CircularProgress size={20} color="inherit" /> : 'Confirmar Retiro'}
           </Button>
         </DialogActions>
       </Dialog>
