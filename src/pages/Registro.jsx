@@ -196,10 +196,18 @@ const Registro = () => {
             InputProps={{
               endAdornment: (
                 <InputAdornment position="end">
-                  <MuiIconButton onClick={() => setShowPass(p => !p)} edge="end"
-                    sx={{ color: isDark ? 'rgba(200,202,212,0.5)' : 'rgba(13,17,39,0.35)' }}>
-                    {showPass ? <VisibilityOffIcon fontSize="small" /> : <VisibilityIcon fontSize="small" />}
-                  </MuiIconButton>
+                  <MuiIconButton
+                      onClick={() => setShowPass(p => !p)}
+                      edge="end"
+                      tabIndex={-1}
+                      sx={{
+                        color: isDark ? 'rgba(232,233,240,0.6)' : 'rgba(13,17,39,0.4)',
+                        mr: -0.5,
+                        '&:hover': { color: PERIW, background: 'transparent' },
+                      }}
+                    >
+                      {showPass ? <VisibilityOffIcon sx={{ fontSize: 20 }} /> : <VisibilityIcon sx={{ fontSize: 20 }} />}
+                    </MuiIconButton>
                 </InputAdornment>
               ),
             }}

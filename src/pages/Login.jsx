@@ -11,6 +11,7 @@ import { useLanguage } from '../LanguageContext';
 /* ── Regex ─────────────────────────────────────────────────── */
 // Username: 3-20 chars, solo letras, números, punto y guión bajo
 const RX_USERNAME = /^[a-zA-Z0-9._]{3,20}$/;
+const RX_EMAIL    = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 // Password: mínimo 8 caracteres, al menos 1 letra y 1 número
 const RX_PASSWORD = /^(?=.*[A-Za-z])(?=.*\d).{8,}$/;
 
@@ -38,11 +39,11 @@ const Login = () => {
     const isEn = lang === 'en';
     let msg = '';
     if (name === 'username') {
-      if (!value) msg = isEn ? 'Username is required' : 'El usuario es requerido';
-      else if (!RX_USERNAME.test(value))
+      if (!value) msg = isEn ? 'Username or email is required' : 'El usuario o correo es requerido';
+      else if (!RX_USERNAME.test(value) && !RX_EMAIL.test(value))
         msg = isEn
-          ? '3-20 chars: letters, numbers, dot or underscore'
-          : '3-20 caracteres: letras, números, punto o guión bajo';
+          ? 'Enter a valid username or email'
+          : 'Ingresa un usuario o correo válido';
     }
     if (name === 'password') {
       if (!value) msg = isEn ? 'Password is required' : 'La contraseña es requerida';
@@ -107,7 +108,6 @@ const Login = () => {
     },
     '& .MuiOutlinedInput-input': {
       color: isDark ? '#E8E9F0' : '#0D1127',
-      textAlign: 'center',
       letterSpacing: '0.04em',
     },
   };
@@ -235,10 +235,25 @@ const Login = () => {
               helperText={fieldErrors.password}
               InputProps={{
                 endAdornment: (
-                  <InputAdornment position="end">
-                    <MuiIconButton onClick={() => setShowPass(p => !p)} edge="end"
-                      sx={{ color: 'rgba(200,202,212,0.5)' }}>
-                      {showPass ? <VisibilityOffIcon fontSize="small" /> : <VisibilityIcon fontSize="small" />}
+                  <InputAdornment position="end" sx={{ mr: 0.5 }}>
+                    <MuiIconButton
+                      onClick={() => setShowPass(p => !p)}
+                      tabIndex={-1}
+                      size="small"
+                      sx={{
+                        width: 30, height: 30,
+                        color: isDark ? 'rgba(232,233,240,0.5)' : 'rgba(13,17,39,0.35)',
+                        borderRadius: '50%',
+                        '&:hover': {
+                          color: PERIW,
+                          bgcolor: isDark ? 'rgba(139,143,200,0.15)' : 'rgba(139,143,200,0.12)',
+                        },
+                        transition: 'all 0.2s',
+                      }}
+                    >
+                      {showPass
+                        ? <VisibilityOffIcon sx={{ fontSize: 17 }} />
+                        : <VisibilityIcon    sx={{ fontSize: 17 }} />}
                     </MuiIconButton>
                   </InputAdornment>
                 ),
@@ -256,8 +271,8 @@ const Login = () => {
                 },
                 '& .MuiOutlinedInput-input': {
                   color: '#E8E9F0',
-                  textAlign: 'center',
-                  letterSpacing: '0.06em',
+                  letterSpacing: '0.12em',
+                  paddingLeft: '16px',
                 },
                 '& .MuiFormHelperText-root': { color: '#F87171' },
               }}
