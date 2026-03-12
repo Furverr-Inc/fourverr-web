@@ -19,6 +19,7 @@ import FlagIcon          from '@mui/icons-material/Flag';
 import ReplyIcon         from '@mui/icons-material/Reply';
 import VisibilityIcon    from '@mui/icons-material/Visibility';
 import RefreshIcon       from '@mui/icons-material/Refresh';
+import PersonIcon        from '@mui/icons-material/Person';
 import api from '../services/api';
 import SoporteAdmin from '../components/SoporteAdmin';
 
@@ -62,7 +63,8 @@ const AdminDashboard = () => {
   const [usuarios,    setUsuarios]    = useState([]);
   const [loading,     setLoading]     = useState(true);
   const [anchorEl,    setAnchorEl]    = useState(null);
-  const [deleteDialog,setDeleteDialog]= useState({ open: false, users: [] });
+  const [deleteDialog,  setDeleteDialog]  = useState({ open: false, users: [] });
+  const [detalleDialog, setDetalleDialog] = useState({ open: false, usuario: null });
   const [success,     setSuccess]     = useState('');
   const [error,       setError]       = useState('');
   const [tabValue,    setTabValue]    = useState(0);
@@ -526,6 +528,63 @@ const AdminDashboard = () => {
           </Box>
         ))}
       </Menu>
+
+      {/* ══ DIALOG DETALLE USUARIO ══════════════════════════════ */}
+      <Dialog open={detalleDialog.open} onClose={() => setDetalleDialog({ open: false, usuario: null })}
+        maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
+        {detalleDialog.usuario && (() => { const u = detalleDialog.usuario; return (
+          <>
+            <Box sx={{ background: 'linear-gradient(135deg, #1dbf73, #19a463)', p: 2.5 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <Avatar src={u.fotoUrl} sx={{ width: 56, height: 56, bgcolor: 'rgba(255,255,255,0.3)', fontSize: '1.5rem' }}>
+                  {!u.fotoUrl && (u.nombreMostrado?.charAt(0) || u.username?.charAt(0))}
+                </Avatar>
+                <Box>
+                  <Typography variant="h6" fontWeight="bold" sx={{ color: 'white' }}>
+                    {u.nombreMostrado || u.username}
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.8)' }}>@{u.username}</Typography>
+                </Box>
+              </Box>
+            </Box>
+            <DialogContent sx={{ pt: 2.5 }}>
+              <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+                {[
+                  { label: 'Email',       val: u.email },
+                  { label: 'Teléfono',    val: u.telefono || '—' },
+                  { label: 'Ciudad',      val: u.ciudad   || '—' },
+                  { label: 'País',        val: u.pais     || '—' },
+                  { label: 'Sitio web',   val: u.sitioWeb || '—' },
+                  { label: 'Saldo',       val: `$${u.saldoDisponible ?? 0}` },
+                ].map(({ label, val }) => (
+                  <Box key={label}>
+                    <Typography variant="caption" color="text.secondary">{label}</Typography>
+                    <Typography variant="body2" fontWeight="bold">{val}</Typography>
+                  </Box>
+                ))}
+              </Box>
+              {u.descripcion && (
+                <Box sx={{ mt: 2 }}>
+                  <Typography variant="caption" color="text.secondary">Descripción</Typography>
+                  <Typography variant="body2">{u.descripcion}</Typography>
+                </Box>
+              )}
+              <Box sx={{ mt: 2, display: 'flex', gap: 1 }}>
+                <Chip label={u.role === 'SELLER' ? 'Vendedor' : 'Usuario'}
+                  color={u.role === 'SELLER' ? 'primary' : 'default'} size="small" />
+                <Chip label={u.habilitado ? 'Habilitado' : 'Deshabilitado'}
+                  color={u.habilitado ? 'success' : 'error'} size="small" />
+                {u.solicitudVendedor && <Chip label="Solicitud pendiente" color="warning" size="small" />}
+              </Box>
+            </DialogContent>
+            <DialogActions sx={{ px: 3, pb: 2.5 }}>
+              <Button onClick={() => setDetalleDialog({ open: false, usuario: null })} variant="outlined" sx={{ borderRadius: 2 }}>
+                Cerrar
+              </Button>
+            </DialogActions>
+          </>
+        ); })()}
+      </Dialog>
 
       {/* ══ DIALOG CONFIRMAR ELIMINAR USUARIO ═══════════════════ */}
       <Dialog open={deleteDialog.open} onClose={() => setDeleteDialog({ open: false, users: [] })}>
