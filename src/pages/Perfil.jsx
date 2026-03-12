@@ -436,7 +436,7 @@ const Perfil = () => {
 
         {/* HISTORIAL DE COMPRAS */}
         {compras.length > 0 && (
-          <Grid item xs={12} sm={favoritos.length > 0 ? 6 : 12} md={favoritos.length > 0 ? 8 : 12}>
+          <Grid item xs={12}>
             <Paper elevation={3} sx={{ p: 2.5, borderRadius: 3 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -445,40 +445,62 @@ const Perfil = () => {
                 </Box>
                 <Typography variant="caption" color="text.secondary">{compras.length} {t.purchasesTotal}</Typography>
               </Box>
-              <Grid container spacing={1.5}>
-                {compras.slice(0, favoritos.length > 0 ? 4 : 8).map(pedido => (
-                  <Grid item xs={12} sm={6} md={favoritos.length > 0 ? 3 : 3} key={pedido.id}>
-                    <Card elevation={0} sx={{ borderRadius: 2, border: '1px solid', borderColor: 'divider', transition: '0.2s', '&:hover': { transform: 'translateY(-2px)', boxShadow: 2 } }}>
-                      <CardMedia component="img" height="90"
-                        image={pedido.producto?.urlPortada || pedido.producto?.urlArchivo || 'https://via.placeholder.com/300?text=?'}
-                        alt={pedido.producto?.titulo} sx={{ objectFit: 'cover' }} />
-                      <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}>
-                        <Typography variant="body2" fontWeight="bold" noWrap>{pedido.producto?.titulo || 'Producto'}</Typography>
-                        <Typography variant="caption" color="text.secondary" noWrap display="block">{pedido.producto?.vendedor?.nombreMostrado}</Typography>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 0.8 }}>
-                          <Typography variant="body2" fontWeight="bold" color="success.main">${pedido.producto?.precio}</Typography>
+              <Grid container spacing={2}>
+                {compras.slice(0, 6).map((pedido, idx) => (
+                  <Grid item xs={12} sm={6} md={4} key={pedido.id}>
+                    <Card elevation={0} sx={{
+                      borderRadius: 3,
+                      border: '1px solid', borderColor: 'divider',
+                      transition: '0.2s',
+                      '&:hover': { transform: 'translateY(-2px)', boxShadow: 4 },
+                    }}>
+                      <CardMedia component="img" height="140"
+                        image={pedido.producto?.urlPortada || pedido.producto?.urlArchivo || 'https://via.placeholder.com/400x140?text=?'}
+                        alt={pedido.producto?.titulo}
+                        sx={{ objectFit: 'cover', borderRadius: '12px 12px 0 0' }} />
+                      <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+                        <Typography variant="body1" fontWeight="bold" noWrap>
+                          {pedido.producto?.titulo || 'Producto'}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary" noWrap display="block" sx={{ mb: 1 }}>
+                          {pedido.producto?.vendedor?.nombreMostrado}
+                        </Typography>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
+                          <Typography variant="subtitle1" fontWeight="bold" color="success.main">
+                            ${pedido.producto?.precio}
+                          </Typography>
                           <Chip
-                            icon={pedido.estado === 'PAGADO' ? <CheckCircleIcon sx={{ fontSize: '12px !important' }} /> : <HourglassEmptyIcon sx={{ fontSize: '12px !important' }} />}
-                            label={pedido.estado} color={estadoColor(pedido.estado)} size="small" sx={{ height: 18, fontSize: '0.6rem' }} />
+                            icon={pedido.estado === 'PAGADO'
+                              ? <CheckCircleIcon sx={{ fontSize: '13px !important' }} />
+                              : <HourglassEmptyIcon sx={{ fontSize: '13px !important' }} />}
+                            label={pedido.estado}
+                            color={estadoColor(pedido.estado)}
+                            size="small"
+                            sx={{ fontWeight: 600 }}
+                          />
                         </Box>
-                        {/* Botón calificar en la card */}
-                        {pedido.estado === 'PAGADO' && !ratingCheck[pedido.id] && (
-                          <Button fullWidth size="small" variant="outlined" startIcon={<RateReviewIcon sx={{ fontSize: '13px !important' }} />}
-                            onClick={() => handleAbrirRating(pedido)}
-                            sx={{ mt: 1, borderRadius: 2, fontSize: '0.68rem', py: 0.3 }}>
-                            {t.rateProduct}
-                          </Button>
-                        )}
-                        {pedido.estado === 'PAGADO' && ratingCheck[pedido.id] && (
-                          <Typography variant="caption" sx={{ display: 'block', mt: 0.8, textAlign: 'center', color: '#f59e0b' }}>⭐ Reseñado</Typography>
-                        )}
-                        {/* Chat con el vendedor */}
-                        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
+                        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                          {pedido.estado === 'PAGADO' && !ratingCheck[pedido.id] ? (
+                            <Button
+                              size="small" variant="outlined"
+                              startIcon={<RateReviewIcon sx={{ fontSize: '14px !important' }} />}
+                              onClick={() => handleAbrirRating(pedido)}
+                              sx={{ flex: 1, borderRadius: 2, fontSize: '0.72rem', py: 0.5, textTransform: 'none' }}
+                            >
+                              {t.rateProduct}
+                            </Button>
+                          ) : pedido.estado === 'PAGADO' && ratingCheck[pedido.id] ? (
+                            <Chip label="⭐ Reseñado" size="small"
+                              sx={{ flex: 1, bgcolor: 'rgba(245,158,11,0.1)', color: '#d97706', fontWeight: 600 }} />
+                          ) : (
+                            <Box sx={{ flex: 1 }} />
+                          )}
                           <ChatCompra
                             pedidoId={pedido.id}
                             vendedorNombre={pedido.producto?.vendedor?.nombreMostrado || pedido.producto?.vendedor?.username}
                             vendedorFoto={pedido.producto?.vendedor?.fotoUrl}
                             vendedorId={pedido.producto?.vendedor?.id}
+                            chatIndex={idx % 3}
                           />
                         </Box>
                       </CardContent>
@@ -486,9 +508,9 @@ const Perfil = () => {
                   </Grid>
                 ))}
               </Grid>
-              {compras.length > 8 && (
-                <Typography variant="caption" color="text.secondary" sx={{ mt: 1.5, display: 'block', textAlign: 'center' }}>
-                  +{compras.length - 8} {t.morePurchases}
+              {compras.length > 6 && (
+                <Typography variant="caption" color="text.secondary" sx={{ mt: 2, display: 'block', textAlign: 'center' }}>
+                  +{compras.length - 6} {t.morePurchases}
                 </Typography>
               )}
             </Paper>
