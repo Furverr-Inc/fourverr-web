@@ -16,8 +16,7 @@ import CheckoutForm from '../components/CheckoutForm';
 import { crearPaymentIntent } from '../services/stripeService';
 import api from '../services/api';
 
-const stripePromise = loadStripe('pk_test_51T74jUFKdsvSDP2eCfedpnfox6VK154SypCZ55s91DyZPRQub1WeqiMdQGdfJtOXzGLFLBMm40irtD64CT0eh8pm001KR62q6k');
-
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
 const DetalleCompra = () => {
   const location  = useLocation();
   const navigate  = useNavigate();
