@@ -1,49 +1,53 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   Container, Paper, Box, Typography, Avatar, Button, IconButton,
   Badge, Menu, MenuItem, Divider, Alert, Chip, Dialog, DialogTitle,
   DialogContent, DialogContentText, DialogActions, Table, TableBody,
   TableCell, TableContainer, TableHead, TableRow, CircularProgress,
-  Tabs, Tab, Checkbox, Toolbar, Grid, Tooltip
+  Tabs, Tab, Checkbox, Toolbar, Stack, TextField, Tooltip
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import NotificationsIcon from '@mui/icons-material/Notifications';
-import LogoutIcon from '@mui/icons-material/Logout';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import CancelIcon from '@mui/icons-material/Cancel';
-import BlockIcon from '@mui/icons-material/Block';
-import DeleteIcon from '@mui/icons-material/Delete';
-import PhotoCamera from '@mui/icons-material/PhotoCamera';
-import CheckBoxIcon from '@mui/icons-material/CheckBox';
-import PersonIcon from '@mui/icons-material/Person';
-import EmailIcon from '@mui/icons-material/Email';
-import PhoneIcon from '@mui/icons-material/Phone';
-import LocationOnIcon from '@mui/icons-material/LocationOn';
-import LanguageIcon from '@mui/icons-material/Language';
-import InstagramIcon from '@mui/icons-material/Instagram';
-import TwitterIcon from '@mui/icons-material/Twitter';
-import LinkedInIcon from '@mui/icons-material/LinkedIn';
-import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
-import StoreIcon from '@mui/icons-material/Store';
-import CloseIcon from '@mui/icons-material/Close';
+import LogoutIcon        from '@mui/icons-material/Logout';
+import CheckCircleIcon   from '@mui/icons-material/CheckCircle';
+import CancelIcon        from '@mui/icons-material/Cancel';
+import BlockIcon         from '@mui/icons-material/Block';
+import DeleteIcon        from '@mui/icons-material/Delete';
+import PhotoCamera       from '@mui/icons-material/PhotoCamera';
+import CheckBoxIcon      from '@mui/icons-material/CheckBox';
+import FlagIcon          from '@mui/icons-material/Flag';
+import ReplyIcon         from '@mui/icons-material/Reply';
+import VisibilityIcon    from '@mui/icons-material/Visibility';
+import RefreshIcon       from '@mui/icons-material/Refresh';
+import PersonIcon        from '@mui/icons-material/Person';
 import api from '../services/api';
 import SoporteAdmin from '../components/SoporteAdmin';
 
-const InfoRow = ({ icon, label, value }) => {
-  if (!value) return null;
-  return (
-    <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5, py: 0.8 }}>
-      <Box sx={{ color: 'text.secondary', flexShrink: 0, mt: 0.1 }}>{icon}</Box>
-      <Box>
-        <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: 0.5, fontSize: '0.65rem' }}>
-          {label}
-        </Typography>
-        <Typography variant="body2">{value}</Typography>
-      </Box>
-    </Box>
-  );
+/* ─────────────────────────────────────────────────────────────────
+   CONSTANTES DE REPORTES
+───────────────────────────────────────────────────────────────── */
+const ESTADO_CONFIG = {
+  PENDIENTE:   { label: 'Pendiente',   color: 'warning' },
+  EN_REVISION: { label: 'En revisión', color: 'info'    },
+  RESUELTO:    { label: 'Resuelto',    color: 'success' },
+  RECHAZADO:   { label: 'Rechazado',  color: 'default' },
 };
+const MOTIVO_LABEL = {
+  FRAUDE:                '🔴 Fraude o estafa',
+  CONTENIDO_INAPROPIADO: '🚫 Contenido inapropiado',
+  SPAM:                  '📢 Spam o publicidad engañosa',
+  PRODUCTO_FALSO:        '📦 Producto falso o inexistente',
+  MAL_COMPORTAMIENTO:    '😠 Mal comportamiento',
+  PRECIO_ENGAÑOSO:       '💸 Precio engañoso',
+  OTRO:                  '❓ Otro motivo',
+};
+const fmtDate = (d) => d
+  ? new Date(d).toLocaleString('es-MX', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' })
+  : '—';
 
+/* ─────────────────────────────────────────────────────────────────
+   COMPONENTE PRINCIPAL
+───────────────────────────────────────────────────────────────── */
 const AdminDashboard = () => {
   const navigate = useNavigate();
 
@@ -53,21 +57,32 @@ const AdminDashboard = () => {
     if (!token || rol !== 'ADMIN') navigate('/', { replace: true });
   }, []);
 
-  const [admin, setAdmin] = useState(null);
+  /* ── estado usuarios ── */
+  const [admin,       setAdmin]       = useState(null);
   const [solicitudes, setSolicitudes] = useState([]);
-  const [usuarios, setUsuarios] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [anchorEl, setAnchorEl] = useState(null);
-  const [deleteDialog, setDeleteDialog] = useState({ open: false, users: [] });
-  const [success, setSuccess] = useState('');
-  const [error, setError] = useState('');
-  const [tabValue, setTabValue] = useState(0);
-  const [subiendoFoto, setSubiendoFoto] = useState(false);
-  const [selected, setSelected] = useState([]);
-  // Dialog de detalle de usuario
+  const [usuarios,    setUsuarios]    = useState([]);
+  const [loading,     setLoading]     = useState(true);
+  const [anchorEl,    setAnchorEl]    = useState(null);
+  const [deleteDialog,  setDeleteDialog]  = useState({ open: false, users: [] });
   const [detalleDialog, setDetalleDialog] = useState({ open: false, usuario: null });
-  const [retiros, setRetiros] = useState([]);
+  const [success,     setSuccess]     = useState('');
+  const [error,       setError]       = useState('');
+  const [tabValue,    setTabValue]    = useState(0);
+  const [subiendoFoto,setSubiendoFoto]= useState(false);
+  const [selected,    setSelected]    = useState([]);
 
+  /* ── estado reportes ── */
+  const [reportes,        setReportes]        = useState([]);
+  const [loadingReportes, setLoadingReportes] = useState(true);
+  const [tabReportes,     setTabReportes]     = useState(0);
+  const [responderDlg,    setResponderDlg]    = useState({ open: false, reporte: null });
+  const [detalleRDlg,     setDetalleRDlg]     = useState({ open: false, reporte: null });
+  const [respuesta,       setRespuesta]       = useState('');
+  const [enviandoR,       setEnviandoR]       = useState(false);
+  const [successR,        setSuccessR]        = useState('');
+  const [errorR,          setErrorR]          = useState('');
+
+  /* ── carga datos usuarios ── */
   useEffect(() => {
     cargarDatos();
     const interval = setInterval(cargarDatos, 30000);
@@ -75,149 +90,122 @@ const AdminDashboard = () => {
   }, []);
 
   const cargarDatos = async () => {
-    const [perfilRes, solicitudesRes, usuariosRes, retirosRes] = await Promise.allSettled([
+    const [perfilRes, solRes, usrRes] = await Promise.allSettled([
       api.get('/users/perfil'),
       api.get('/users/solicitudes-vendedor'),
       api.get('/users/todos'),
-      api.get('/users/retiros'),
     ]);
-
-    if (perfilRes.status === 'fulfilled') {
-      setAdmin(perfilRes.value.data);
-    } else {
-      const status = perfilRes.reason?.response?.status;
-      if (status === 401) { setError('Sesión expirada.'); setLoading(false); return; }
-    }
-
-    if (solicitudesRes.status === 'fulfilled') {
-      setSolicitudes(Array.isArray(solicitudesRes.value.data) ? solicitudesRes.value.data : []);
-    } else { setSolicitudes([]); }
-
-    if (usuariosRes.status === 'fulfilled') {
-      setUsuarios(Array.isArray(usuariosRes.value.data) ? usuariosRes.value.data : []);
-    } else {
-      const status = usuariosRes.reason?.response?.status;
-      const msg    = usuariosRes.reason?.response?.data;
-      if (status === 403) setError(`Backend rechazó la petición (403): "${msg}"`);
-      else if (status === 401) setError('Sesión expirada.');
-      else setError(`Error cargando usuarios (${status}): ${msg}`);
+    if (perfilRes.status === 'fulfilled') setAdmin(perfilRes.value.data);
+    else if (perfilRes.reason?.response?.status === 401) { setError('Sesión expirada.'); setLoading(false); return; }
+    setSolicitudes(solRes.status === 'fulfilled' && Array.isArray(solRes.value.data) ? solRes.value.data : []);
+    if (usrRes.status === 'fulfilled') setUsuarios(Array.isArray(usrRes.value.data) ? usrRes.value.data : []);
+    else {
+      const s = usrRes.reason?.response?.status;
+      const m = usrRes.reason?.response?.data;
+      setError(s === 403 ? `Backend rechazó (403): "${m}"` : `Error usuarios (${s}): ${m}`);
       setUsuarios([]);
     }
-
-    if (retirosRes.status === 'fulfilled') {
-      setRetiros(Array.isArray(retirosRes.value.data) ? retirosRes.value.data : []);
-    } else { setRetiros([]); }
-
     setLoading(false);
+  };
+
+  /* ── carga reportes ── */
+  const cargarReportes = useCallback(async () => {
+    setLoadingReportes(true);
+    try {
+      const res = await api.get('/reportes/admin');
+      setReportes(Array.isArray(res.data) ? res.data : []);
+      setErrorR('');
+    } catch (err) {
+      setErrorR('Error al cargar reportes: ' + (err.response?.data || err.message));
+    } finally {
+      setLoadingReportes(false);
+    }
+  }, []);
+
+  useEffect(() => { cargarReportes(); }, [cargarReportes]);
+
+  /* ── helpers ── */
+  const mostrarR = (msg, tipo = 'success') => {
+    if (tipo === 'error') { setErrorR(msg); setTimeout(() => setErrorR(''), 4000); }
+    else { setSuccessR(msg); setTimeout(() => setSuccessR(''), 3500); }
   };
 
   const handleLogout = () => { localStorage.clear(); navigate('/login'); };
 
   const handleAprobarSolicitud = async (userId) => {
-    try {
-      await api.put(`/users/${userId}/aprobar-vendedor`);
-      setSuccess('✅ Solicitud aprobada.');
-      setAnchorEl(null); cargarDatos();
-      setTimeout(() => setSuccess(''), 4000);
-    } catch { setError('Error al aprobar la solicitud'); setTimeout(() => setError(''), 3000); }
+    try { await api.put(`/users/${userId}/aprobar-vendedor`); setSuccess('✅ Solicitud aprobada.'); setAnchorEl(null); cargarDatos(); setTimeout(() => setSuccess(''), 4000); }
+    catch { setError('Error al aprobar'); setTimeout(() => setError(''), 3000); }
   };
-
   const handleRechazarSolicitud = async (userId) => {
-    try {
-      await api.put(`/users/${userId}/rechazar-vendedor`);
-      setSuccess('Solicitud rechazada');
-      setAnchorEl(null); cargarDatos();
-      setTimeout(() => setSuccess(''), 3000);
-    } catch { setError('Error al rechazar la solicitud'); setTimeout(() => setError(''), 3000); }
+    try { await api.put(`/users/${userId}/rechazar-vendedor`); setSuccess('Solicitud rechazada'); setAnchorEl(null); cargarDatos(); setTimeout(() => setSuccess(''), 3000); }
+    catch { setError('Error al rechazar'); setTimeout(() => setError(''), 3000); }
   };
 
   const handleFotoChange = async (event) => {
     const file = event.target.files[0];
     if (!file || !file.type.startsWith('image/')) { setError('Solo imágenes'); return; }
     setSubiendoFoto(true);
-    const formData = new FormData();
-    formData.append('archivo', file);
-    try {
-      const response = await api.post('/users/perfil/foto', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
-      setAdmin({ ...admin, fotoUrl: response.data.url });
-      setSuccess('Foto actualizada'); setTimeout(() => setSuccess(''), 3000);
-    } catch { setError('Error al subir la foto'); setTimeout(() => setError(''), 3000); }
+    const fd = new FormData(); fd.append('archivo', file);
+    try { const r = await api.post('/users/perfil/foto', fd, { headers: { 'Content-Type': 'multipart/form-data' } }); setAdmin({ ...admin, fotoUrl: r.data.url }); setSuccess('Foto actualizada'); setTimeout(() => setSuccess(''), 3000); }
+    catch { setError('Error al subir foto'); setTimeout(() => setError(''), 3000); }
     finally { setSubiendoFoto(false); }
   };
 
-  const handleSelectAll = (event) => {
-    if (event.target.checked) setSelected(usuariosMostrar.map(u => u.id));
-    else setSelected([]);
-  };
+  const handleSelectAll = (e) => { if (e.target.checked) setSelected(usuariosMostrar.map(u => u.id)); else setSelected([]); };
+  const handleSelectOne = (id) => setSelected(s => s.includes(id) ? s.filter(x => x !== id) : [...s, id]);
 
-  const handleSelectOne = (userId) => {
-    if (selected.includes(userId)) setSelected(selected.filter(id => id !== userId));
-    else setSelected([...selected, userId]);
+  const handleHabilitar = async () => {
+    try { await Promise.all(selected.map(id => api.put(`/users/${id}/habilitar`))); setSuccess(`✅ ${selected.length} habilitado(s)`); setSelected([]); cargarDatos(); setTimeout(() => setSuccess(''), 3000); }
+    catch { setError('Error al habilitar'); setTimeout(() => setError(''), 3000); }
   };
-
-  const handleHabilitarSeleccionados = async () => {
-    try {
-      await Promise.all(selected.map(userId => api.put(`/users/${userId}/habilitar`)));
-      setSuccess(`✅ ${selected.length} usuario(s) habilitado(s)`);
-      setSelected([]); cargarDatos(); setTimeout(() => setSuccess(''), 3000);
-    } catch { setError('Error al habilitar'); setTimeout(() => setError(''), 3000); }
+  const handleDeshabilitar = async () => {
+    try { await Promise.all(selected.map(id => api.put(`/users/${id}/deshabilitar`))); setSuccess(`⚠️ ${selected.length} deshabilitado(s)`); setSelected([]); cargarDatos(); setTimeout(() => setSuccess(''), 3000); }
+    catch { setError('Error al deshabilitar'); setTimeout(() => setError(''), 3000); }
   };
-
-  const handleDeshabilitarSeleccionados = async () => {
-    try {
-      await Promise.all(selected.map(userId => api.put(`/users/${userId}/deshabilitar`)));
-      setSuccess(`⚠️ ${selected.length} usuario(s) deshabilitado(s)`);
-      setSelected([]); cargarDatos(); setTimeout(() => setSuccess(''), 3000);
-    } catch { setError('Error al deshabilitar'); setTimeout(() => setError(''), 3000); }
-  };
-
-  const handleEliminarSeleccionados = () => {
-    const usuariosAEliminar = usuarios.filter(u => selected.includes(u.id));
-    setDeleteDialog({ open: true, users: usuariosAEliminar });
-  };
-
+  const handleEliminarSeleccionados = () => setDeleteDialog({ open: true, users: usuarios.filter(u => selected.includes(u.id)) });
   const handleConfirmDelete = async () => {
+    try { await Promise.all(deleteDialog.users.map(u => api.delete(`/users/${u.id}`))); setSuccess(`🗑️ ${deleteDialog.users.length} eliminado(s)`); setDeleteDialog({ open: false, users: [] }); setSelected([]); cargarDatos(); setTimeout(() => setSuccess(''), 3000); }
+    catch (err) { setError('Error al eliminar: ' + (err.response?.data || err.message)); setTimeout(() => setError(''), 5000); }
+  };
+
+  /* ── reportes: acciones ── */
+  const handleRevisar = async (id) => {
+    try { await api.put(`/reportes/${id}/revisar`); mostrarR('📋 Marcado como "En revisión"'); cargarReportes(); }
+    catch { mostrarR('Error al actualizar', 'error'); }
+  };
+  const handleRechazarR = async (id) => {
+    try { await api.put(`/reportes/${id}/rechazar`); mostrarR('Reporte rechazado'); cargarReportes(); }
+    catch { mostrarR('Error al rechazar', 'error'); }
+  };
+  const handleEliminarR = async (id) => {
+    try { await api.delete(`/reportes/${id}`); mostrarR('🗑️ Reporte eliminado'); cargarReportes(); }
+    catch { mostrarR('Error al eliminar', 'error'); }
+  };
+  const handleResponder = async () => {
+    if (!respuesta.trim()) return;
+    setEnviandoR(true);
     try {
-      await Promise.all(deleteDialog.users.map(user => api.delete(`/users/${user.id}`)));
-      setSuccess(`🗑️ ${deleteDialog.users.length} usuario(s) eliminado(s)`);
-      setDeleteDialog({ open: false, users: [] });
-      setSelected([]); cargarDatos(); setTimeout(() => setSuccess(''), 3000);
-    } catch (err) {
-      setError('Error al eliminar: ' + (err.response?.data || err.message));
-      setTimeout(() => setError(''), 5000);
-    }
+      await api.put(`/reportes/${responderDlg.reporte.id}/responder`, { respuesta });
+      setResponderDlg({ open: false, reporte: null }); setRespuesta('');
+      mostrarR('✅ Respuesta guardada — reporte marcado como Resuelto'); cargarReportes();
+    } catch { mostrarR('Error al responder', 'error'); }
+    finally { setEnviandoR(false); }
+  };
+  const abrirResponder = (reporte) => { setRespuesta(reporte.respuestaAdmin || ''); setResponderDlg({ open: true, reporte }); };
+
+  const countR = (estado) => reportes.filter(r => r.estado === estado).length;
+  const reportesFiltrados = () => {
+    if (tabReportes === 1) return reportes.filter(r => r.estado === 'PENDIENTE');
+    if (tabReportes === 2) return reportes.filter(r => r.estado === 'EN_REVISION');
+    if (tabReportes === 3) return reportes.filter(r => r.estado === 'RESUELTO' || r.estado === 'RECHAZADO');
+    return reportes;
   };
 
-  const handleCompletarRetiro = async (id) => {
-    try {
-      await api.put(`/users/retiros/${id}/completar`);
-      setSuccess('✅ Retiro marcado como completado');
-      cargarDatos(); setTimeout(() => setSuccess(''), 4000);
-    } catch { setError('Error al completar retiro'); setTimeout(() => setError(''), 3000); }
-  };
-
-  const handleRechazarRetiro = async (id) => {
-    try {
-      await api.put(`/users/retiros/${id}/rechazar`);
-      setSuccess('Retiro rechazado y saldo devuelto al vendedor');
-      cargarDatos(); setTimeout(() => setSuccess(''), 4000);
-    } catch { setError('Error al rechazar retiro'); setTimeout(() => setError(''), 3000); }
-  };
-
-  const usuariosPorRol = {
-    todos:     usuarios,
-    usuarios:  usuarios.filter(u => u.role === 'USER'),
-    vendedores:usuarios.filter(u => u.role === 'SELLER'),
-  };
-
-  const retirosPendientes = retiros.filter(r => r.estado === 'PENDIENTE');
-
-  const usuariosMostrar = tabValue === 0 ? usuariosPorRol.todos
-                        : tabValue === 1 ? usuariosPorRol.usuarios
-                        : tabValue === 2 ? usuariosPorRol.vendedores
-                        : [];
-
-  const isSelected = (userId) => selected.includes(userId);
+  /* ── usuarios filtrados ── */
+  const usuariosMostrar = tabValue === 0 ? usuarios
+    : tabValue === 1 ? usuarios.filter(u => u.role === 'USER')
+    : usuarios.filter(u => u.role === 'SELLER');
+  const isSelected = (id) => selected.includes(id);
 
   if (loading) return (
     <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
@@ -226,17 +214,18 @@ const AdminDashboard = () => {
   );
 
   return (
-    <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
-      {/* Header */}
-      <Paper elevation={3} sx={{ p: 3, mb: 3, borderRadius: 3 }}>
+    <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+
+      {/* ══ HEADER ══════════════════════════════════════════════ */}
+      <Paper elevation={3} sx={{ p: 3, mb: 3 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             <Box sx={{ position: 'relative' }}>
               <Avatar src={admin?.fotoUrl} sx={{ width: 80, height: 80, fontSize: '2rem', bgcolor: '#d32f2f' }}>
                 {!admin?.fotoUrl && (admin?.nombreMostrado?.charAt(0) || 'A')}
               </Avatar>
-              <input accept="image/*" style={{ display: 'none' }} id="foto-perfil-admin" type="file" onChange={handleFotoChange} />
-              <label htmlFor="foto-perfil-admin">
+              <input accept="image/*" style={{ display: 'none' }} id="foto-admin" type="file" onChange={handleFotoChange} />
+              <label htmlFor="foto-admin">
                 <IconButton component="span" disabled={subiendoFoto}
                   sx={{ position: 'absolute', bottom: -5, right: -5, bgcolor: '#1dbf73', color: 'white', '&:hover': { bgcolor: '#19a463' }, width: 32, height: 32 }}>
                   <PhotoCamera fontSize="small" />
@@ -245,16 +234,20 @@ const AdminDashboard = () => {
             </Box>
             <Box>
               <Typography variant="h5" fontWeight="bold">{admin?.nombreMostrado || admin?.username}</Typography>
-              <Chip label="Administrador" color="error" size="small" sx={{ mt: 0.5 }} />
+              <Typography variant="body1" color="text.secondary">(Administrador)</Typography>
             </Box>
           </Box>
-          <Box sx={{ display: 'flex', gap: 2 }}>
-            <IconButton onClick={(e) => setAnchorEl(e.currentTarget)}
-              sx={{ color: solicitudes.length > 0 ? '#d32f2f' : '#1dbf73' }}>
-              <Badge badgeContent={solicitudes.length} color="error">
-                <NotificationsIcon fontSize="large" />
-              </Badge>
-            </IconButton>
+
+          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+            {/* Badge de reportes pendientes en la campana */}
+            <Tooltip title={`${countR('PENDIENTE')} reporte(s) pendiente(s)`}>
+              <IconButton onClick={(e) => setAnchorEl(e.currentTarget)}
+                sx={{ color: solicitudes.length > 0 ? '#d32f2f' : '#1dbf73' }}>
+                <Badge badgeContent={solicitudes.length + countR('PENDIENTE')} color="error">
+                  <NotificationsIcon fontSize="large" />
+                </Badge>
+              </IconButton>
+            </Tooltip>
             <Button variant="outlined" color="error" startIcon={<LogoutIcon />} onClick={handleLogout}>
               Cerrar Sesión
             </Button>
@@ -262,104 +255,31 @@ const AdminDashboard = () => {
         </Box>
       </Paper>
 
-      {success && <Alert severity="success" sx={{ mb: 2, borderRadius: 2 }}>{success}</Alert>}
-      {error   && <Alert severity="error"   sx={{ mb: 2, borderRadius: 2 }}>{error}</Alert>}
+      {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
+      {error   && <Alert severity="error"   sx={{ mb: 2 }}>{error}</Alert>}
 
-      {/* Tabla de Usuarios */}
-      <Paper elevation={3} sx={{ p: 3, borderRadius: 3 }}>
+      {/* ══ TABLA DE USUARIOS ═══════════════════════════════════ */}
+      <Paper elevation={3} sx={{ p: 3, mb: 3 }}>
         <Typography variant="h6" fontWeight="bold" gutterBottom>Gestión de Usuarios</Typography>
         <Divider sx={{ mb: 2 }} />
 
         <Tabs value={tabValue} onChange={(e, v) => { setTabValue(v); setSelected([]); }} sx={{ mb: 2 }}>
-          <Tab label={`Todos (${usuariosPorRol.todos.length})`} />
-          <Tab label={`Usuarios (${usuariosPorRol.usuarios.length})`} />
-          <Tab label={`Vendedores (${usuariosPorRol.vendedores.length})`} />
-          <Tab label={`Retiros (${retirosPendientes.length} pendientes)`}
-            sx={{ color: retirosPendientes.length > 0 ? 'error.main' : 'inherit' }} />
+          <Tab label={`Todos (${usuarios.length})`} />
+          <Tab label={`Usuarios (${usuarios.filter(u => u.role === 'USER').length})`} />
+          <Tab label={`Vendedores (${usuarios.filter(u => u.role === 'SELLER').length})`} />
         </Tabs>
 
         {selected.length > 0 && (
           <Toolbar sx={{ bgcolor: 'rgba(29,191,115,0.1)', borderRadius: 1, mb: 2, border: '2px solid #1dbf73' }}>
-            <Typography sx={{ flex: '1 1 100%' }} variant="subtitle1" fontWeight="bold">
-              {selected.length} seleccionado(s)
-            </Typography>
-            <Button variant="contained" startIcon={<CheckBoxIcon />} onClick={handleHabilitarSeleccionados}
+            <Typography sx={{ flex: '1 1 100%' }} variant="subtitle1" fontWeight="bold">{selected.length} seleccionado(s)</Typography>
+            <Button variant="contained" startIcon={<CheckBoxIcon />} onClick={handleHabilitar}
               sx={{ mr: 1, bgcolor: '#1dbf73', '&:hover': { bgcolor: '#19a463' } }}>Habilitar</Button>
-            <Button variant="contained" startIcon={<BlockIcon />} onClick={handleDeshabilitarSeleccionados}
-              color="warning" sx={{ mr: 1 }}>Deshabilitar</Button>
-            <Button variant="contained" startIcon={<DeleteIcon />} onClick={handleEliminarSeleccionados} color="error">
-              Eliminar
-            </Button>
+            <Button variant="contained" startIcon={<BlockIcon />} onClick={handleDeshabilitar} color="warning" sx={{ mr: 1 }}>Deshabilitar</Button>
+            <Button variant="contained" startIcon={<DeleteIcon />} onClick={handleEliminarSeleccionados} color="error">Eliminar de BD</Button>
           </Toolbar>
         )}
 
-        {tabValue === 3 ? (
-          /* ── TAB RETIROS ── */
-          retiros.length === 0 ? (
-            <Alert severity="info">No hay solicitudes de retiro</Alert>
-          ) : (
-            <TableContainer>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell><strong>Vendedor</strong></TableCell>
-                    <TableCell><strong>Monto</strong></TableCell>
-                    <TableCell><strong>Fecha</strong></TableCell>
-                    <TableCell><strong>Estado</strong></TableCell>
-                    <TableCell><strong>Acciones</strong></TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {retiros.map(r => (
-                    <TableRow key={r.id} hover>
-                      <TableCell>
-                        <Typography variant="body2" fontWeight="bold">
-                          {r.vendedor?.nombreMostrado || r.vendedor?.username}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          @{r.vendedor?.username}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="body2" fontWeight="bold" color="success.main">
-                          ${Number(r.monto).toFixed(2)} MXN
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="body2">
-                          {new Date(r.fechaSolicitud).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Chip
-                          label={r.estado}
-                          color={r.estado === 'COMPLETADO' ? 'success' : r.estado === 'RECHAZADO' ? 'error' : 'warning'}
-                          size="small"
-                        />
-                      </TableCell>
-                      <TableCell>
-                        {r.estado === 'PENDIENTE' && (
-                          <Box sx={{ display: 'flex', gap: 1 }}>
-                            <Button size="small" variant="contained" color="success"
-                              startIcon={<CheckCircleIcon />}
-                              onClick={() => handleCompletarRetiro(r.id)}>
-                              Completar
-                            </Button>
-                            <Button size="small" variant="outlined" color="error"
-                              startIcon={<CancelIcon />}
-                              onClick={() => handleRechazarRetiro(r.id)}>
-                              Rechazar
-                            </Button>
-                          </Box>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          )
-        ) : usuariosMostrar.length === 0 ? (
+        {usuariosMostrar.length === 0 ? (
           <Alert severity="info">No hay usuarios en esta categoría</Alert>
         ) : (
           <TableContainer>
@@ -370,8 +290,7 @@ const AdminDashboard = () => {
                     <Checkbox
                       indeterminate={selected.length > 0 && selected.length < usuariosMostrar.length}
                       checked={usuariosMostrar.length > 0 && selected.length === usuariosMostrar.length}
-                      onChange={handleSelectAll}
-                    />
+                      onChange={handleSelectAll} />
                   </TableCell>
                   <TableCell><strong>Foto</strong></TableCell>
                   <TableCell><strong>Nombre / Usuario</strong></TableCell>
@@ -383,36 +302,19 @@ const AdminDashboard = () => {
               </TableHead>
               <TableBody>
                 {usuariosMostrar.map((usuario) => {
-                  const isItemSelected = isSelected(usuario.id);
+                  const sel = isSelected(usuario.id);
                   return (
-                    <TableRow key={usuario.id} hover
-                      onClick={() => handleSelectOne(usuario.id)}
-                      selected={isItemSelected} sx={{ cursor: 'pointer' }}>
-                      <TableCell padding="checkbox">
-                        <Checkbox checked={isItemSelected} />
-                      </TableCell>
+                    <TableRow key={usuario.id} hover onClick={() => handleSelectOne(usuario.id)}
+                      role="checkbox" selected={sel} sx={{ cursor: 'pointer' }}>
+                      <TableCell padding="checkbox"><Checkbox checked={sel} /></TableCell>
                       <TableCell>
-                        <Tooltip title="Ver perfil completo">
-                          <Avatar src={usuario.fotoUrl}
-                            onClick={(e) => { e.stopPropagation(); setDetalleDialog({ open: true, usuario }); }}
-                            sx={{ width: 40, height: 40, bgcolor: '#1dbf73', cursor: 'pointer',
-                              '&:hover': { outline: '2px solid #1dbf73', outlineOffset: 2 } }}>
-                            {!usuario.fotoUrl && (usuario.nombreMostrado?.charAt(0) || usuario.username?.charAt(0))}
-                          </Avatar>
-                        </Tooltip>
+                        <Avatar src={usuario.fotoUrl} sx={{ width: 40, height: 40, bgcolor: '#1dbf73' }}>
+                          {!usuario.fotoUrl && (usuario.nombreMostrado?.charAt(0) || usuario.username?.charAt(0))}
+                        </Avatar>
                       </TableCell>
-                      <TableCell>
-                        <Typography variant="body2" fontWeight="bold">
-                          {usuario.nombreMostrado || usuario.username}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">@{usuario.username}</Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="body2">{usuario.email}</Typography>
-                        {usuario.telefono && (
-                          <Typography variant="caption" color="text.secondary">{usuario.telefono}</Typography>
-                        )}
-                      </TableCell>
+                      <TableCell>{usuario.nombreMostrado || usuario.username}</TableCell>
+                      <TableCell>@{usuario.username}</TableCell>
+                      <TableCell>{usuario.email}</TableCell>
                       <TableCell>
                         <Chip label={usuario.role === 'SELLER' ? 'Vendedor' : 'Usuario'}
                           color={usuario.role === 'SELLER' ? 'primary' : 'default'} size="small" />
@@ -430,26 +332,20 @@ const AdminDashboard = () => {
                             </IconButton>
                           </Tooltip>
                           {usuario.habilitado ? (
-                            <Tooltip title="Deshabilitar">
-                              <IconButton size="small" color="warning"
-                                onClick={async () => { await api.put(`/users/${usuario.id}/deshabilitar`); cargarDatos(); setSuccess('Usuario deshabilitado'); setTimeout(() => setSuccess(''), 3000); }}>
-                                <BlockIcon fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
-                          ) : (
-                            <Tooltip title="Habilitar">
-                              <IconButton size="small" color="success"
-                                onClick={async () => { await api.put(`/users/${usuario.id}/habilitar`); cargarDatos(); setSuccess('Usuario habilitado'); setTimeout(() => setSuccess(''), 3000); }}>
-                                <CheckBoxIcon fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
-                          )}
-                          <Tooltip title="Eliminar usuario">
-                            <IconButton size="small" color="error"
-                              onClick={() => setDeleteDialog({ open: true, users: [usuario] })}>
-                              <DeleteIcon fontSize="small" />
+                            <IconButton size="small" color="warning" title="Deshabilitar"
+                              onClick={async () => { await api.put(`/users/${usuario.id}/deshabilitar`); cargarDatos(); setSuccess('Deshabilitado'); setTimeout(() => setSuccess(''), 3000); }}>
+                              <BlockIcon fontSize="small" />
                             </IconButton>
-                          </Tooltip>
+                          ) : (
+                            <IconButton size="small" color="success" title="Habilitar"
+                              onClick={async () => { await api.put(`/users/${usuario.id}/habilitar`); cargarDatos(); setSuccess('Habilitado'); setTimeout(() => setSuccess(''), 3000); }}>
+                              <CheckBoxIcon fontSize="small" />
+                            </IconButton>
+                          )}
+                          <IconButton size="small" color="error" title="Eliminar"
+                            onClick={() => setDeleteDialog({ open: true, users: [usuario] })}>
+                            <DeleteIcon fontSize="small" />
+                          </IconButton>
                         </Box>
                       </TableCell>
                     </TableRow>
@@ -461,10 +357,156 @@ const AdminDashboard = () => {
         )}
       </Paper>
 
-      {/* Panel de Soporte */}
+      {/* ══ PANEL DE SOPORTE ═══════════════════════════════════ */}
       <SoporteAdmin />
 
-      {/* ── MENU NOTIFICACIONES ── */}
+      {/* ══ PANEL DE REPORTES ══════════════════════════════════ */}
+      <Paper elevation={3} sx={{ p: 3, mt: 3 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            <Badge badgeContent={countR('PENDIENTE')} color="error">
+              <FlagIcon color="error" fontSize="large" />
+            </Badge>
+            <Box>
+              <Typography variant="h6" fontWeight="bold">Panel de Reportes de Vendedores</Typography>
+              <Typography variant="caption" color="text.secondary">{reportes.length} reporte(s) en total</Typography>
+            </Box>
+          </Box>
+          <Tooltip title="Actualizar reportes">
+            <IconButton onClick={cargarReportes} disabled={loadingReportes}><RefreshIcon /></IconButton>
+          </Tooltip>
+        </Box>
+        <Divider sx={{ mb: 2 }} />
+
+        {successR && <Alert severity="success" sx={{ mb: 2 }}>{successR}</Alert>}
+        {errorR   && <Alert severity="error"   sx={{ mb: 2 }}>{errorR}</Alert>}
+
+        <Tabs value={tabReportes} onChange={(e, v) => setTabReportes(v)} sx={{ mb: 2 }} variant="scrollable">
+          <Tab label={`Todos (${reportes.length})`} />
+          <Tab label={
+            <Badge badgeContent={countR('PENDIENTE')} color="error" sx={{ pr: 1.5 }}>Pendientes</Badge>
+          } />
+          <Tab label={`En revisión (${countR('EN_REVISION')})`} />
+          <Tab label={`Cerrados (${countR('RESUELTO') + countR('RECHAZADO')})`} />
+        </Tabs>
+
+        {loadingReportes ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 5 }}><CircularProgress /></Box>
+        ) : reportesFiltrados().length === 0 ? (
+          <Box sx={{ textAlign: 'center', py: 5 }}>
+            <FlagIcon sx={{ fontSize: 48, color: 'text.disabled', mb: 1 }} />
+            <Typography color="text.secondary">No hay reportes en esta categoría</Typography>
+          </Box>
+        ) : (
+          <Stack spacing={2}>
+            {reportesFiltrados().map(r => (
+              <Paper key={r.id} variant="outlined" sx={{
+                p: 2.5, borderRadius: 2,
+                borderLeft: '4px solid',
+                borderLeftColor:
+                  r.estado === 'PENDIENTE'   ? '#f59e0b' :
+                  r.estado === 'EN_REVISION' ? '#3b82f6' :
+                  r.estado === 'RESUELTO'    ? '#10b981' : '#9ca3af',
+                '&:hover': { boxShadow: 3 },
+              }}>
+                {/* Fila: motivo + estado + fecha */}
+                <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', mb: 1.5, flexWrap: 'wrap', gap: 1 }}>
+                  <Typography variant="subtitle1" fontWeight="bold">
+                    {MOTIVO_LABEL[r.motivo] || r.motivo}
+                  </Typography>
+                  <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                    <Chip label={ESTADO_CONFIG[r.estado]?.label || r.estado}
+                      color={ESTADO_CONFIG[r.estado]?.color || 'default'} size="small" />
+                    <Typography variant="caption" color="text.disabled">{fmtDate(r.fechaReporte)}</Typography>
+                  </Box>
+                </Box>
+
+                {/* Usuarios involucrados */}
+                <Box sx={{ display: 'flex', gap: 3, mb: 1.5, flexWrap: 'wrap', alignItems: 'center' }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Avatar src={r.reportante?.fotoUrl} sx={{ width: 28, height: 28, bgcolor: '#6366f1', fontSize: '0.75rem' }}>
+                      {r.reportante?.nombreMostrado?.charAt(0)}
+                    </Avatar>
+                    <Box>
+                      <Typography variant="caption" color="text.disabled" sx={{ display: 'block', lineHeight: 1 }}>Reportó</Typography>
+                      <Typography variant="body2" fontWeight="bold">{r.reportante?.nombreMostrado || '—'}</Typography>
+                    </Box>
+                  </Box>
+                  <Typography color="text.disabled">→</Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Avatar src={r.vendedor?.fotoUrl} sx={{ width: 28, height: 28, bgcolor: '#dc2626', fontSize: '0.75rem' }}>
+                      {r.vendedor?.nombreMostrado?.charAt(0)}
+                    </Avatar>
+                    <Box>
+                      <Typography variant="caption" color="text.disabled" sx={{ display: 'block', lineHeight: 1 }}>Reportado</Typography>
+                      <Typography variant="body2" fontWeight="bold">{r.vendedor?.nombreMostrado || '—'}</Typography>
+                    </Box>
+                  </Box>
+                </Box>
+
+                {/* Publicación */}
+                {r.producto && (
+                  <Box sx={{ mb: 1.5, px: 1.5, py: 0.8, bgcolor: 'grey.50', borderRadius: 1.5 }}>
+                    <Typography variant="caption" color="text.secondary">Publicación: </Typography>
+                    <Typography variant="caption" fontWeight="bold">{r.producto.titulo}</Typography>
+                  </Box>
+                )}
+
+                {/* Descripción */}
+                {r.descripcion && (
+                  <Box sx={{ mb: 1.5, p: 1.5, bgcolor: 'rgba(239,68,68,0.05)', borderRadius: 1.5, border: '1px solid rgba(239,68,68,0.15)' }}>
+                    <Typography variant="caption" color="error.main" fontWeight="bold">Descripción del usuario:</Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 0.3 }}>{r.descripcion}</Typography>
+                  </Box>
+                )}
+
+                {/* Respuesta del admin */}
+                {r.respuestaAdmin && (
+                  <Box sx={{ mb: 1.5, p: 1.5, bgcolor: 'rgba(16,185,129,0.05)', borderRadius: 1.5, border: '1px solid rgba(16,185,129,0.2)' }}>
+                    <Typography variant="caption" color="success.main" fontWeight="bold">
+                      ✅ Respuesta del administrador ({fmtDate(r.fechaRespuesta)}):
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 0.3 }}>{r.respuestaAdmin}</Typography>
+                  </Box>
+                )}
+
+                {/* Acciones */}
+                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mt: 1 }}>
+                  <Button size="small" variant="outlined" startIcon={<VisibilityIcon />}
+                    onClick={() => setDetalleRDlg({ open: true, reporte: r })}
+                    sx={{ borderRadius: 2, textTransform: 'none' }}>Detalle</Button>
+
+                  {r.estado === 'PENDIENTE' && (
+                    <Button size="small" variant="outlined" color="info"
+                      onClick={() => handleRevisar(r.id)}
+                      sx={{ borderRadius: 2, textTransform: 'none' }}>Tomar caso</Button>
+                  )}
+
+                  {(r.estado === 'PENDIENTE' || r.estado === 'EN_REVISION') && (
+                    <>
+                      <Button size="small" variant="contained" color="success" startIcon={<ReplyIcon />}
+                        onClick={() => abrirResponder(r)}
+                        sx={{ borderRadius: 2, textTransform: 'none' }}>
+                        {r.respuestaAdmin ? 'Editar respuesta' : 'Responder'}
+                      </Button>
+                      <Button size="small" variant="outlined" color="warning" startIcon={<CancelIcon />}
+                        onClick={() => handleRechazarR(r.id)}
+                        sx={{ borderRadius: 2, textTransform: 'none' }}>Rechazar</Button>
+                    </>
+                  )}
+
+                  <IconButton size="small" color="error" onClick={() => handleEliminarR(r.id)}
+                    sx={{ ml: 'auto', '&:hover': { bgcolor: 'rgba(239,68,68,0.08)' } }}>
+                    <DeleteIcon fontSize="small" />
+                  </IconButton>
+                </Box>
+              </Paper>
+            ))}
+          </Stack>
+        )}
+      </Paper>
+
+      {/* ══ MENÚ DE NOTIFICACIONES ══════════════════════════════ */}
       <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={() => setAnchorEl(null)}
         PaperProps={{ sx: { width: 400, maxHeight: 500 } }}>
         <MenuItem disabled>
@@ -472,13 +514,11 @@ const AdminDashboard = () => {
         </MenuItem>
         <Divider />
         {solicitudes.length === 0 ? (
-          <MenuItem disabled>
-            <Typography variant="body2" color="text.secondary">No hay solicitudes pendientes</Typography>
-          </MenuItem>
+          <MenuItem disabled><Typography variant="body2" color="text.secondary">No hay solicitudes pendientes</Typography></MenuItem>
         ) : solicitudes.map(s => (
           <Box key={s.id} sx={{ p: 2, borderBottom: '1px solid #eee' }}>
             <Typography variant="body1" fontWeight="bold">{s.nombreMostrado || s.username}</Typography>
-            <Typography variant="body2" color="text.secondary" gutterBottom>@{s.username} — {s.email}</Typography>
+            <Typography variant="body2" color="text.secondary" gutterBottom>@{s.username} - {s.email}</Typography>
             <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
               <Button size="small" variant="contained" color="success" startIcon={<CheckCircleIcon />}
                 onClick={() => handleAprobarSolicitud(s.id)} sx={{ flex: 1 }}>Aprobar</Button>
@@ -489,189 +529,74 @@ const AdminDashboard = () => {
         ))}
       </Menu>
 
-      {/* ── DIALOG DETALLE USUARIO ── */}
+      {/* ══ DIALOG DETALLE USUARIO ══════════════════════════════ */}
       <Dialog open={detalleDialog.open} onClose={() => setDetalleDialog({ open: false, usuario: null })}
-        maxWidth="md" fullWidth
-        PaperProps={{ sx: { borderRadius: 3, overflow: 'hidden' } }}>
-        {detalleDialog.usuario && (() => {
-          const u = detalleDialog.usuario;
-          return (
-            <>
-              {/* Header con gradiente */}
-              <Box sx={{
-                background: u.role === 'SELLER'
-                  ? 'linear-gradient(135deg, #6366f1, #8b5cf6)'
-                  : 'linear-gradient(135deg, #0284c7, #0ea5e9)',
-                p: 3, pb: 2,
-              }}>
-                <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                    <Avatar src={u.fotoUrl}
-                      sx={{ width: 72, height: 72, fontSize: '1.8rem', border: '3px solid rgba(255,255,255,0.5)', bgcolor: 'rgba(255,255,255,0.2)' }}>
-                      {!u.fotoUrl && (u.nombreMostrado?.charAt(0) || u.username?.charAt(0))}
-                    </Avatar>
-                    <Box>
-                      <Typography variant="h5" fontWeight="bold" sx={{ color: 'white' }}>
-                        {u.nombreMostrado || u.username}
-                      </Typography>
-                      <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.8)' }}>
-                        @{u.username}
-                      </Typography>
-                      <Box sx={{ display: 'flex', gap: 1, mt: 0.8, flexWrap: 'wrap' }}>
-                        <Chip label={u.role === 'SELLER' ? 'Vendedor' : 'Usuario'} size="small"
-                          sx={{ bgcolor: 'rgba(255,255,255,0.2)', color: 'white', fontWeight: 'bold' }} />
-                        <Chip label={u.habilitado ? '✓ Habilitado' : '✗ Deshabilitado'} size="small"
-                          sx={{ bgcolor: u.habilitado ? 'rgba(16,185,129,0.3)' : 'rgba(239,68,68,0.3)', color: 'white' }} />
-                        {u.solicitudVendedor && (
-                          <Chip label="⏳ Solicitud pendiente" size="small"
-                            sx={{ bgcolor: 'rgba(245,158,11,0.3)', color: 'white' }} />
-                        )}
-                      </Box>
-                    </Box>
-                  </Box>
-                  <IconButton onClick={() => setDetalleDialog({ open: false, usuario: null })} sx={{ color: 'white' }}>
-                    <CloseIcon />
-                  </IconButton>
+        maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
+        {detalleDialog.usuario && (() => { const u = detalleDialog.usuario; return (
+          <>
+            <Box sx={{ background: 'linear-gradient(135deg, #1dbf73, #19a463)', p: 2.5 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <Avatar src={u.fotoUrl} sx={{ width: 56, height: 56, bgcolor: 'rgba(255,255,255,0.3)', fontSize: '1.5rem' }}>
+                  {!u.fotoUrl && (u.nombreMostrado?.charAt(0) || u.username?.charAt(0))}
+                </Avatar>
+                <Box>
+                  <Typography variant="h6" fontWeight="bold" sx={{ color: 'white' }}>
+                    {u.nombreMostrado || u.username}
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.8)' }}>@{u.username}</Typography>
                 </Box>
               </Box>
-
-              <DialogContent sx={{ p: 0 }}>
-                <Grid container>
-                  {/* Columna izquierda */}
-                  <Grid item xs={12} md={6} sx={{ p: 3, borderRight: { md: '1px solid' }, borderColor: 'divider' }}>
-                    <Typography variant="subtitle2" color="text.secondary" fontWeight="bold"
-                      sx={{ textTransform: 'uppercase', letterSpacing: 0.5, mb: 1.5 }}>
-                      Información de Contacto
-                    </Typography>
-                    <InfoRow icon={<EmailIcon fontSize="small" />} label="Email" value={u.email} />
-                    <InfoRow icon={<PhoneIcon fontSize="small" />} label="Teléfono" value={u.telefono} />
-                    <InfoRow icon={<LocationOnIcon fontSize="small" />} label="Ubicación"
-                      value={[u.ciudad, u.pais].filter(Boolean).join(', ') || null} />
-                    <InfoRow icon={<LanguageIcon fontSize="small" />} label="Sitio web" value={u.sitioWeb} />
-
-                    <Divider sx={{ my: 2 }} />
-
-                    <Typography variant="subtitle2" color="text.secondary" fontWeight="bold"
-                      sx={{ textTransform: 'uppercase', letterSpacing: 0.5, mb: 1.5 }}>
-                      Redes Sociales
-                    </Typography>
-                    {u.instagram && (
-                      <InfoRow icon={<InstagramIcon fontSize="small" sx={{ color: '#E1306C' }} />}
-                        label="Instagram" value={`@${u.instagram}`} />
-                    )}
-                    {u.twitter && (
-                      <InfoRow icon={<TwitterIcon fontSize="small" sx={{ color: '#1DA1F2' }} />}
-                        label="Twitter / X" value={`@${u.twitter}`} />
-                    )}
-                    {u.linkedin && (
-                      <InfoRow icon={<LinkedInIcon fontSize="small" sx={{ color: '#0A66C2' }} />}
-                        label="LinkedIn" value={u.linkedin} />
-                    )}
-                    {!u.instagram && !u.twitter && !u.linkedin && (
-                      <Typography variant="body2" color="text.disabled">Sin redes sociales registradas</Typography>
-                    )}
-                  </Grid>
-
-                  {/* Columna derecha */}
-                  <Grid item xs={12} md={6} sx={{ p: 3 }}>
-                    {u.role === 'SELLER' && (
-                      <>
-                        <Typography variant="subtitle2" color="text.secondary" fontWeight="bold"
-                          sx={{ textTransform: 'uppercase', letterSpacing: 0.5, mb: 1.5 }}>
-                          Información de Vendedor
-                        </Typography>
-                        <Paper elevation={0} sx={{
-                          p: 2, borderRadius: 2, mb: 2,
-                          background: 'linear-gradient(135deg, rgba(99,102,241,0.08), rgba(139,92,246,0.08))',
-                          border: '1px solid rgba(99,102,241,0.2)',
-                        }}>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-                            <AttachMoneyIcon sx={{ color: '#10b981', fontSize: 20 }} />
-                            <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                              Saldo disponible
-                            </Typography>
-                          </Box>
-                          <Typography variant="h5" fontWeight="bold" color="success.main">
-                            ${Number(u.saldoDisponible || 0).toFixed(2)}
-                          </Typography>
-                        </Paper>
-                        <InfoRow icon={<StoreIcon fontSize="small" />} label="Estado de solicitud"
-                          value={u.solicitudVendedor ? 'Solicitud de vendedor pendiente' : null} />
-                        <Divider sx={{ my: 2 }} />
-                      </>
-                    )}
-
-                    <Typography variant="subtitle2" color="text.secondary" fontWeight="bold"
-                      sx={{ textTransform: 'uppercase', letterSpacing: 0.5, mb: 1.5 }}>
-                      Descripción / Bio
-                    </Typography>
-                    {u.descripcion ? (
-                      <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.7 }}>
-                        {u.descripcion}
-                      </Typography>
-                    ) : (
-                      <Typography variant="body2" color="text.disabled">Sin descripción</Typography>
-                    )}
-
-                    <Divider sx={{ my: 2 }} />
-
-                    <Typography variant="subtitle2" color="text.secondary" fontWeight="bold"
-                      sx={{ textTransform: 'uppercase', letterSpacing: 0.5, mb: 1.5 }}>
-                      Acciones Rápidas
-                    </Typography>
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                      {u.habilitado ? (
-                        <Button fullWidth variant="outlined" color="warning" startIcon={<BlockIcon />}
-                          onClick={async () => {
-                            await api.put(`/users/${u.id}/deshabilitar`);
-                            cargarDatos();
-                            setDetalleDialog({ open: false, usuario: null });
-                            setSuccess('Usuario deshabilitado'); setTimeout(() => setSuccess(''), 3000);
-                          }}>
-                          Deshabilitar usuario
-                        </Button>
-                      ) : (
-                        <Button fullWidth variant="outlined" color="success" startIcon={<CheckBoxIcon />}
-                          onClick={async () => {
-                            await api.put(`/users/${u.id}/habilitar`);
-                            cargarDatos();
-                            setDetalleDialog({ open: false, usuario: null });
-                            setSuccess('Usuario habilitado'); setTimeout(() => setSuccess(''), 3000);
-                          }}>
-                          Habilitar usuario
-                        </Button>
-                      )}
-                      <Button fullWidth variant="outlined" color="error" startIcon={<DeleteIcon />}
-                        onClick={() => {
-                          setDetalleDialog({ open: false, usuario: null });
-                          setDeleteDialog({ open: true, users: [u] });
-                        }}>
-                        Eliminar usuario
-                      </Button>
-                    </Box>
-                  </Grid>
-                </Grid>
-              </DialogContent>
-            </>
-          );
-        })()}
+            </Box>
+            <DialogContent sx={{ pt: 2.5 }}>
+              <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+                {[
+                  { label: 'Email',       val: u.email },
+                  { label: 'Teléfono',    val: u.telefono || '—' },
+                  { label: 'Ciudad',      val: u.ciudad   || '—' },
+                  { label: 'País',        val: u.pais     || '—' },
+                  { label: 'Sitio web',   val: u.sitioWeb || '—' },
+                  { label: 'Saldo',       val: `$${u.saldoDisponible ?? 0}` },
+                ].map(({ label, val }) => (
+                  <Box key={label}>
+                    <Typography variant="caption" color="text.secondary">{label}</Typography>
+                    <Typography variant="body2" fontWeight="bold">{val}</Typography>
+                  </Box>
+                ))}
+              </Box>
+              {u.descripcion && (
+                <Box sx={{ mt: 2 }}>
+                  <Typography variant="caption" color="text.secondary">Descripción</Typography>
+                  <Typography variant="body2">{u.descripcion}</Typography>
+                </Box>
+              )}
+              <Box sx={{ mt: 2, display: 'flex', gap: 1 }}>
+                <Chip label={u.role === 'SELLER' ? 'Vendedor' : 'Usuario'}
+                  color={u.role === 'SELLER' ? 'primary' : 'default'} size="small" />
+                <Chip label={u.habilitado ? 'Habilitado' : 'Deshabilitado'}
+                  color={u.habilitado ? 'success' : 'error'} size="small" />
+                {u.solicitudVendedor && <Chip label="Solicitud pendiente" color="warning" size="small" />}
+              </Box>
+            </DialogContent>
+            <DialogActions sx={{ px: 3, pb: 2.5 }}>
+              <Button onClick={() => setDetalleDialog({ open: false, usuario: null })} variant="outlined" sx={{ borderRadius: 2 }}>
+                Cerrar
+              </Button>
+            </DialogActions>
+          </>
+        ); })()}
       </Dialog>
 
-      {/* ── DIALOG CONFIRMAR ELIMINAR ── */}
+      {/* ══ DIALOG CONFIRMAR ELIMINAR USUARIO ═══════════════════ */}
       <Dialog open={deleteDialog.open} onClose={() => setDeleteDialog({ open: false, users: [] })}>
-        <DialogTitle> ¿Estás seguro?</DialogTitle>
+        <DialogTitle>⚠️ ¿Estás seguro?</DialogTitle>
         <DialogContent>
           <DialogContentText>
             Esta acción eliminará <strong>permanentemente</strong> {deleteDialog.users.length} usuario(s):
             {deleteDialog.users.map(u => (
-              <Box key={u.id} sx={{ mt: 1, ml: 2 }}>
-                • <strong>@{u.username}</strong> ({u.email})
-              </Box>
+              <Box key={u.id} sx={{ mt: 1, ml: 2 }}>• <strong>@{u.username}</strong> ({u.email})</Box>
             ))}
             <Box sx={{ mt: 2, p: 2, bgcolor: '#ffebee', borderRadius: 1 }}>
-              <Typography variant="body2" color="error" fontWeight="bold">
-                 Se eliminarán también sus publicaciones, pedidos, reseñas y mensajes. Esta acción NO se puede deshacer.
-              </Typography>
+              <Typography variant="body2" color="error" fontWeight="bold">⚠️ Esta acción NO se puede deshacer</Typography>
             </Box>
           </DialogContentText>
         </DialogContent>
@@ -682,6 +607,119 @@ const AdminDashboard = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* ══ DIALOG DETALLE REPORTE ══════════════════════════════ */}
+      <Dialog open={detalleRDlg.open} onClose={() => setDetalleRDlg({ open: false, reporte: null })}
+        maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 3, overflow: 'hidden' } }}>
+        {detalleRDlg.reporte && (() => { const r = detalleRDlg.reporte; return (
+          <>
+            <Box sx={{ background: 'linear-gradient(135deg, #dc2626, #991b1b)', p: 2.5 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                <FlagIcon sx={{ color: 'white', fontSize: 28 }} />
+                <Box>
+                  <Typography variant="h6" fontWeight="bold" sx={{ color: 'white' }}>{MOTIVO_LABEL[r.motivo] || r.motivo}</Typography>
+                  <Chip label={ESTADO_CONFIG[r.estado]?.label} size="small"
+                    sx={{ bgcolor: 'rgba(255,255,255,0.2)', color: 'white', height: 20 }} />
+                </Box>
+              </Box>
+            </Box>
+            <DialogContent sx={{ pt: 2.5 }}>
+              <Box sx={{ display: 'flex', gap: 3, mb: 2, flexWrap: 'wrap' }}>
+                <Box>
+                  <Typography variant="caption" color="text.secondary">Reportó</Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
+                    <Avatar src={r.reportante?.fotoUrl} sx={{ width: 32, height: 32, bgcolor: '#6366f1' }}>{r.reportante?.nombreMostrado?.charAt(0)}</Avatar>
+                    <Box>
+                      <Typography variant="body2" fontWeight="bold">{r.reportante?.nombreMostrado}</Typography>
+                      <Typography variant="caption" color="text.secondary">@{r.reportante?.username}</Typography>
+                    </Box>
+                  </Box>
+                </Box>
+                <Box>
+                  <Typography variant="caption" color="text.secondary">Vendedor reportado</Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
+                    <Avatar src={r.vendedor?.fotoUrl} sx={{ width: 32, height: 32, bgcolor: '#dc2626' }}>{r.vendedor?.nombreMostrado?.charAt(0)}</Avatar>
+                    <Box>
+                      <Typography variant="body2" fontWeight="bold">{r.vendedor?.nombreMostrado}</Typography>
+                      <Typography variant="caption" color="text.secondary">@{r.vendedor?.username}</Typography>
+                    </Box>
+                  </Box>
+                </Box>
+              </Box>
+              <Divider sx={{ my: 1.5 }} />
+              <Typography variant="caption" color="text.secondary">Fecha</Typography>
+              <Typography variant="body2" gutterBottom>{fmtDate(r.fechaReporte)}</Typography>
+              {r.producto && <>
+                <Typography variant="caption" color="text.secondary">Publicación</Typography>
+                <Typography variant="body2" fontWeight="bold" gutterBottom>{r.producto.titulo}</Typography>
+              </>}
+              {r.descripcion && <>
+                <Typography variant="caption" color="text.secondary">Descripción del usuario</Typography>
+                <Paper variant="outlined" sx={{ p: 1.5, borderRadius: 2, mt: 0.5, mb: 1.5 }}>
+                  <Typography variant="body2">{r.descripcion}</Typography>
+                </Paper>
+              </>}
+              {r.respuestaAdmin && <>
+                <Typography variant="caption" color="success.main" fontWeight="bold">
+                  Respuesta del administrador ({fmtDate(r.fechaRespuesta)})
+                </Typography>
+                <Paper variant="outlined" sx={{ p: 1.5, borderRadius: 2, mt: 0.5, border: '1px solid rgba(16,185,129,0.3)', bgcolor: 'rgba(16,185,129,0.03)' }}>
+                  <Typography variant="body2">{r.respuestaAdmin}</Typography>
+                </Paper>
+              </>}
+            </DialogContent>
+            <DialogActions sx={{ px: 3, pb: 2.5 }}>
+              <Button onClick={() => setDetalleRDlg({ open: false, reporte: null })} variant="outlined" sx={{ borderRadius: 2 }}>Cerrar</Button>
+              {(r.estado === 'PENDIENTE' || r.estado === 'EN_REVISION') && (
+                <Button variant="contained" color="success" startIcon={<ReplyIcon />}
+                  onClick={() => { setDetalleRDlg({ open: false, reporte: null }); abrirResponder(r); }}
+                  sx={{ borderRadius: 2 }}>
+                  {r.respuestaAdmin ? 'Editar respuesta' : 'Responder'}
+                </Button>
+              )}
+            </DialogActions>
+          </>
+        ); })()}
+      </Dialog>
+
+      {/* ══ DIALOG RESPONDER REPORTE ════════════════════════════ */}
+      <Dialog open={responderDlg.open} onClose={() => !enviandoR && setResponderDlg({ open: false, reporte: null })}
+        maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
+        <DialogTitle sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 1 }}>
+          <ReplyIcon color="success" /> Responder reporte
+        </DialogTitle>
+        <DialogContent>
+          {responderDlg.reporte && (
+            <Paper variant="outlined" sx={{ p: 1.5, borderRadius: 2, mb: 2, bgcolor: 'grey.50' }}>
+              <Typography variant="caption" color="text.secondary">Motivo: </Typography>
+              <Typography variant="body2" fontWeight="bold">{MOTIVO_LABEL[responderDlg.reporte.motivo]}</Typography>
+              {responderDlg.reporte.descripcion && (
+                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
+                  "{responderDlg.reporte.descripcion}"
+                </Typography>
+              )}
+            </Paper>
+          )}
+          <TextField fullWidth multiline rows={4} autoFocus
+            label="Tu respuesta *"
+            placeholder="Escribe la resolución o resultado de la revisión..."
+            value={respuesta} onChange={e => setRespuesta(e.target.value)}
+            sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }} />
+          <Alert severity="info" sx={{ mt: 1.5, borderRadius: 2, fontSize: '0.8rem' }}>
+            Al guardar, el reporte se marcará automáticamente como <strong>Resuelto</strong>.
+          </Alert>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>
+          <Button onClick={() => setResponderDlg({ open: false, reporte: null })} disabled={enviandoR} variant="outlined" sx={{ borderRadius: 2 }}>Cancelar</Button>
+          <Button variant="contained" color="success" onClick={handleResponder}
+            disabled={enviandoR || !respuesta.trim()}
+            startIcon={enviandoR ? <CircularProgress size={16} color="inherit" /> : <CheckCircleIcon />}
+            sx={{ borderRadius: 2 }}>
+            {enviandoR ? 'Guardando...' : 'Guardar respuesta'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
     </Container>
   );
 };
