@@ -1,25 +1,31 @@
 import React, { useEffect, useState } from 'react';
 import {
   Container, Paper, Box, Typography, TextField, Button,
-  Alert, CircularProgress, Divider, InputAdornment
+  Alert, CircularProgress, Divider, InputAdornment,
+  Dialog, DialogTitle, DialogContent, DialogActions
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import SaveIcon       from '@mui/icons-material/Save';
-import ArrowBackIcon  from '@mui/icons-material/ArrowBack';
-import InstagramIcon  from '@mui/icons-material/Instagram';
-import TwitterIcon    from '@mui/icons-material/Twitter';
-import LinkedInIcon   from '@mui/icons-material/LinkedIn';
-import LanguageIcon   from '@mui/icons-material/Language';
-import PhoneIcon      from '@mui/icons-material/Phone';
-import LocationOnIcon from '@mui/icons-material/LocationOn';
+import SaveIcon        from '@mui/icons-material/Save';
+import ArrowBackIcon   from '@mui/icons-material/ArrowBack';
+import InstagramIcon   from '@mui/icons-material/Instagram';
+import TwitterIcon     from '@mui/icons-material/Twitter';
+import LinkedInIcon    from '@mui/icons-material/LinkedIn';
+import LanguageIcon    from '@mui/icons-material/Language';
+import PhoneIcon       from '@mui/icons-material/Phone';
+import LocationOnIcon  from '@mui/icons-material/LocationOn';
+import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
+import WarningAmberIcon  from '@mui/icons-material/WarningAmber';
 import api from '../services/api';
 
 const EditarPerfil = () => {
   const navigate = useNavigate();
-  const [loading,   setLoading]   = useState(true);
-  const [guardando, setGuardando] = useState(false);
-  const [mensaje,   setMensaje]   = useState('');
-  const [esError,   setEsError]   = useState(false);
+  const [loading,      setLoading]      = useState(true);
+  const [guardando,    setGuardando]    = useState(false);
+  const [mensaje,      setMensaje]      = useState('');
+  const [esError,      setEsError]      = useState(false);
+  const [dialogOpen,   setDialogOpen]   = useState(false);
+  const [eliminando,   setEliminando]   = useState(false);
+  const [confirmText,  setConfirmText]  = useState('');
 
   const [form, setForm] = useState({
     nombreMostrado: '', email: '', descripcion: '',
@@ -47,6 +53,22 @@ const EditarPerfil = () => {
   }, []);
 
   const f = field => e => setForm(prev => ({ ...prev, [field]: e.target.value }));
+
+  const handleEliminarCuenta = async () => {
+    setEliminando(true);
+    try {
+      await api.delete('/users/perfil/eliminar-cuenta');
+      // Limpiar sesión local y redirigir
+      localStorage.clear();
+      navigate('/', { replace: true });
+    } catch {
+      setMensaje('Error al eliminar la cuenta. Intenta nuevamente.');
+      setEsError(true);
+      setDialogOpen(false);
+    } finally {
+      setEliminando(false);
+    }
+  };
 
   const handleGuardar = async () => {
     setGuardando(true); setMensaje('');
@@ -109,10 +131,101 @@ const EditarPerfil = () => {
 
         <Button fullWidth variant="contained" size="large" startIcon={<SaveIcon />}
           onClick={handleGuardar} disabled={guardando}
-          sx={{ mt:3, py:1.5, borderRadius:2, fontWeight:'bold' }}>
+          sx={{ mt: 3, py: 1.5, borderRadius: 2, fontWeight: 'bold' }}>
           {guardando ? 'Guardando...' : 'Guardar cambios'}
         </Button>
+
+        {/* ── Zona de peligro ── */}
+        <Box sx={{
+          mt: 4, p: 2.5, borderRadius: 2,
+          border: '1.5px solid rgba(239,68,68,0.25)',
+          background: 'rgba(239,68,68,0.03)',
+        }}>
+          <Typography variant="subtitle2" fontWeight="bold" color="error" gutterBottom
+            sx={{ display: 'flex', alignItems: 'center', gap: 0.8, mb: 1 }}>
+            <WarningAmberIcon sx={{ fontSize: 18 }} /> Zona de peligro
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2, fontSize: '0.82rem' }}>
+            Eliminar tu cuenta es <strong>permanente e irreversible</strong>. Se borrarán
+            tus publicaciones, compras, reseñas, favoritos y todos tus datos.
+          </Typography>
+          <Button
+            fullWidth variant="outlined" color="error"
+            startIcon={<DeleteForeverIcon />}
+            onClick={() => { setConfirmText(''); setDialogOpen(true); }}
+            sx={{
+              borderRadius: 2, py: 1, fontWeight: 600, textTransform: 'none',
+              fontSize: '0.88rem',
+              borderColor: 'rgba(239,68,68,0.5)',
+              '&:hover': { borderColor: '#ef4444', bgcolor: 'rgba(239,68,68,0.06)' },
+            }}
+          >
+            Eliminar mi cuenta
+          </Button>
+        </Box>
       </Paper>
+
+      {/* ── Diálogo de confirmación ── */}
+      <Dialog open={dialogOpen} onClose={() => !eliminando && setDialogOpen(false)}
+        PaperProps={{ sx: { borderRadius: 3, maxWidth: 420 } }}>
+        <DialogTitle sx={{
+          display: 'flex', alignItems: 'center', gap: 1.5,
+          pb: 1, color: '#ef4444',
+        }}>
+          <Box sx={{
+            width: 40, height: 40, borderRadius: '50%',
+            bgcolor: 'rgba(239,68,68,0.1)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <DeleteForeverIcon sx={{ color: '#ef4444', fontSize: 22 }} />
+          </Box>
+          Eliminar cuenta
+        </DialogTitle>
+
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Esta acción eliminará <strong>permanentemente</strong> tu cuenta y
+            todos tus datos: publicaciones, compras, reseñas y favoritos.
+            <br /><br />
+            Para confirmar, escribe <strong>ELIMINAR</strong> en el campo:
+          </Typography>
+          <TextField
+            fullWidth autoFocus
+            placeholder='Escribe "ELIMINAR"'
+            value={confirmText}
+            onChange={e => setConfirmText(e.target.value.toUpperCase())}
+            disabled={eliminando}
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                borderRadius: 2,
+                '&.Mui-focused fieldset': { borderColor: '#ef4444' },
+              },
+            }}
+          />
+        </DialogContent>
+
+        <DialogActions sx={{ px: 3, pb: 3, gap: 1 }}>
+          <Button
+            fullWidth variant="outlined"
+            onClick={() => setDialogOpen(false)}
+            disabled={eliminando}
+            sx={{ borderRadius: 2, textTransform: 'none' }}
+          >
+            Cancelar
+          </Button>
+          <Button
+            fullWidth variant="contained" color="error"
+            startIcon={eliminando
+              ? <CircularProgress size={16} color="inherit" />
+              : <DeleteForeverIcon />}
+            onClick={handleEliminarCuenta}
+            disabled={confirmText !== 'ELIMINAR' || eliminando}
+            sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 700 }}
+          >
+            {eliminando ? 'Eliminando...' : 'Sí, eliminar cuenta'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Container>
   );
 };
