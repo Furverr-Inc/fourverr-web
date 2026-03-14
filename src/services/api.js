@@ -42,7 +42,7 @@ api.interceptors.response.use(
         localStorage.clear();
         // Pequeño delay para que cualquier estado pendiente se limpie
         setTimeout(() => {
-          window.location.href = '/login';
+          window.location.href = '/fourverr-web/login';
         }, 100);
       }
     }
