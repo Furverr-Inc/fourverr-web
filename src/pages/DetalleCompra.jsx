@@ -112,7 +112,7 @@ const DetalleCompra = () => {
 
       {/* Card producto */}
       <Card sx={{ borderRadius:3, boxShadow:'0 4px 20px rgba(0,0,0,0.1)', mb:3 }}>
-        <CardMedia component="img" height="200"
+        <CardMedia component="img" height={{ xs: 140, sm: 200 }}
           image={producto.urlPortada || producto.urlArchivo || 'https://via.placeholder.com/600x200'}
           alt={producto.titulo} sx={{ objectFit:'cover' }} />
         <Box sx={{ p:2.5 }}>
@@ -139,14 +139,14 @@ const DetalleCompra = () => {
         <Typography variant="subtitle1" fontWeight="bold" gutterBottom>Cantidad</Typography>
         <Box sx={{ display:'flex', alignItems:'center', gap:2 }}>
           <IconButton onClick={() => handleCantidad(-1)} disabled={cantidad <= 1}
-            sx={{ border:'1px solid', borderColor:'divider', borderRadius:2 }}>
+            sx={{ border:'1px solid', borderColor:'divider', borderRadius:2, minWidth: 44, minHeight: 44 }}>
             <RemoveIcon />
           </IconButton>
           <Typography variant="h5" fontWeight="bold" sx={{ minWidth:40, textAlign:'center' }}>
             {cantidad}
           </Typography>
           <IconButton onClick={() => handleCantidad(1)}
-            sx={{ border:'1px solid', borderColor:'divider', borderRadius:2 }}>
+            sx={{ border:'1px solid', borderColor:'divider', borderRadius:2, minWidth: 44, minHeight: 44 }}>
             <AddIcon />
           </IconButton>
           <Typography variant="body2" color="text.secondary" sx={{ ml:1 }}>
@@ -198,7 +198,7 @@ const DetalleCompra = () => {
       {!clientSecret ? (
         <Button variant="contained" fullWidth size="large"
           onClick={handleIniciarPago} disabled={cargando}
-          sx={{ py:1.5, borderRadius:3, fontWeight:'bold', fontSize:'1rem' }}>
+          sx={{ py:1.5, borderRadius:3, fontWeight:'bold', fontSize:'1rem', minHeight: 44 }}>
           {cargando ? <CircularProgress size={24} color="inherit" /> : `Pagar $${precioTotal} MXN`}
         </Button>
       ) : (

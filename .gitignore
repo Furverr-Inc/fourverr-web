@@ -23,3 +23,13 @@ dist-ssr
 *.sln
 *.sw?
 .env.production
+
+#spec_kit stuff
+.specify/
+.claude/
+.kilocode/
+specs/
+
+
+
+

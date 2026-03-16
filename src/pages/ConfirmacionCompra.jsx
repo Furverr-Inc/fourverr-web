@@ -249,7 +249,7 @@ const ConfirmacionCompra = () => {
       p: 2,
     }}>
       <Paper elevation={isDark ? 0 : 4} sx={{
-        maxWidth: 520, width: '100%', borderRadius: 4, overflow: 'hidden',
+        maxWidth: { xs: '100%', sm: 520 }, width: '100%', borderRadius: 4, overflow: 'hidden',
         border: isDark ? '1px solid rgba(255,255,255,0.1)' : 'none',
         background: isDark ? 'rgba(255,255,255,0.05)' : '#fff',
         backdropFilter: 'blur(20px)',
@@ -334,8 +334,8 @@ const ConfirmacionCompra = () => {
               startIcon={<DownloadIcon />}
               onClick={() => descargarTicket(pedido)}
               sx={{
-                mb: 2, borderRadius: 2, py: 1.1,
-                borderColor: '#10b981', color: '#10b981',
+                mb: 2, borderRadius: 2, py: 1.5,
+                borderColor: '#10b981', color: '#10b981', minHeight: 44,
                 fontWeight: 600, textTransform: 'none', fontSize: '0.9rem',
                 '&:hover': { borderColor: '#059669', bgcolor: 'rgba(16,185,129,0.06)' },
               }}
@@ -350,7 +350,7 @@ const ConfirmacionCompra = () => {
               variant="contained" fullWidth startIcon={<HomeIcon />}
               onClick={() => navigate('/home')}
               sx={{
-                borderRadius: 2, py: 1.2, fontWeight: 'bold',
+                borderRadius: 2, py: 1.5, fontWeight: 'bold', minHeight: 44,
                 background: 'linear-gradient(90deg, #6366f1, #8b5cf6)',
                 color: '#fff',
                 '&:hover': { background: 'linear-gradient(90deg, #4f46e5, #7c3aed)' },
@@ -362,7 +362,7 @@ const ConfirmacionCompra = () => {
               variant="outlined" fullWidth startIcon={<PersonIcon />}
               onClick={() => navigate('/perfil')}
               sx={{
-                borderRadius: 2, py: 1.2,
+                borderRadius: 2, py: 1.5, minHeight: 44,
                 borderColor: isDark ? 'rgba(139,143,200,0.5)' : '#8B8FC8',
                 color: isDark ? '#c7c9e8' : '#5a5e9a',
                 '&:hover': { borderColor: '#8B8FC8', bgcolor: 'rgba(139,143,200,0.08)' },
