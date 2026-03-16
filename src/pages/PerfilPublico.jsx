@@ -46,21 +46,21 @@ const PerfilPublico = () => {
   if (!perfil) return null;
 
   return (
-    <Container maxWidth="md" sx={{ mt: 4, mb: 4 }}>
+    <Container maxWidth={false} sx={{ mt: { xs: 2, sm: 4 }, mb: 4, px: { xs: 1, sm: 3 }, maxWidth: { xs: '100%', sm: 'md', md: 'md' } }}>
       {/* Volver */}
       <Box sx={{ display:'flex', alignItems:'center', gap:1, mb:2 }}>
-        <IconButton onClick={() => navigate(-1)}><ArrowBackIcon /></IconButton>
+        <IconButton onClick={() => navigate(-1)} sx={{ minWidth: 44, minHeight: 44 }}><ArrowBackIcon /></IconButton>
         <Typography variant="body2" color="text.secondary">Volver</Typography>
       </Box>
 
       {/* Tarjeta de perfil */}
-      <Paper elevation={3} sx={{ p:4, borderRadius:3, mb:3 }}>
-        <Box sx={{ display:'flex', alignItems:'flex-start', gap:3, flexWrap:'wrap' }}>
+      <Paper elevation={3} sx={{ p: { xs: 2, sm: 4 }, borderRadius:3, mb:3 }}>
+        <Box sx={{ display:'flex', alignItems: { xs: 'center', sm: 'flex-start' }, gap: { xs: 2, sm: 3 }, flexDirection: { xs: 'column', sm: 'row' } }}>
           <Avatar src={perfil.fotoUrl}
-            sx={{ width:100, height:100, fontSize:'2.5rem', bgcolor:'primary.main' }}>
+            sx={{ width: { xs: 80, sm: 100 }, height: { xs: 80, sm: 100 }, fontSize: { xs: '2rem', sm: '2.5rem' }, bgcolor:'primary.main' }}>
             {!perfil.fotoUrl && (perfil.nombreMostrado?.charAt(0) || perfil.username?.charAt(0) || 'U')}
           </Avatar>
-          <Box sx={{ flex:1, minWidth:200 }}>
+          <Box sx={{ flex:1, minWidth: { xs: '100%', sm: 200 }, textAlign: { xs: 'center', sm: 'left' } }}>
             <Typography variant="h4" fontWeight="bold">
               {perfil.nombreMostrado || perfil.username}
             </Typography>
@@ -84,10 +84,10 @@ const PerfilPublico = () => {
             )}
 
             {/* Redes sociales */}
-            <Box sx={{ display:'flex', gap:0.5, flexWrap:'wrap', alignItems:'center' }}>
+            <Box sx={{ display:'flex', gap:0.5, flexWrap:'wrap', alignItems:'center', justifyContent: { xs: 'center', sm: 'flex-start' } }}>
               {perfil.sitioWeb && (
                 <Tooltip title={perfil.sitioWeb}>
-                  <IconButton size="small" component="a" href={perfil.sitioWeb} target="_blank" rel="noopener">
+                  <IconButton size="small" component="a" href={perfil.sitioWeb} target="_blank" rel="noopener" sx={{ minWidth: 44, minHeight: 44 }}>
                     <LanguageIcon fontSize="small" />
                   </IconButton>
                 </Tooltip>
@@ -96,7 +96,7 @@ const PerfilPublico = () => {
                 <Tooltip title={`@${perfil.instagram}`}>
                   <IconButton size="small" component="a"
                     href={`https://instagram.com/${perfil.instagram}`} target="_blank" rel="noopener"
-                    sx={{ color:'#E1306C' }}>
+                    sx={{ color:'#E1306C', minWidth: 44, minHeight: 44 }}>
                     <InstagramIcon fontSize="small" />
                   </IconButton>
                 </Tooltip>
