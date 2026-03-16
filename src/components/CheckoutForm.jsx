@@ -36,7 +36,7 @@ const CheckoutForm = ({ onExito, producto }) => {
   };
 
   return (
-    <Box component="form" onSubmit={handleSubmit}>
+    <Box component="form" onSubmit={handleSubmit} sx={{ pb: { xs: 2, sm: 0 } }}>
       {/* PaymentElement incluye el campo de tarjeta, validación, y soporte para
           múltiples métodos de pago. Stripe lo renderiza y lo controla. */}
       <PaymentElement />
@@ -52,7 +52,17 @@ const CheckoutForm = ({ onExito, producto }) => {
         variant="contained"
         fullWidth
         disabled={!stripe || procesando}
-        sx={{ mt: 3, py: 1.5, borderRadius: 2 }}
+        sx={{ 
+          mt: 3, 
+          py: 1.5, 
+          borderRadius: 2, 
+          minHeight: 44,
+          position: 'sticky',
+          bottom: 8,
+          zIndex: 1,
+          backgroundColor: 'primary.main',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+        }}
         startIcon={procesando ? <CircularProgress size={18} color="inherit" /> : null}
       >
         {procesando ? 'Procesando...' : `Pagar $${producto?.precio} MXN`}

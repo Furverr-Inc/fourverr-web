@@ -55,7 +55,7 @@ const PerfilPublico = () => {
 
       {/* Tarjeta de perfil */}
       <Paper elevation={3} sx={{ p: { xs: 2, sm: 4 }, borderRadius:3, mb:3 }}>
-        <Box sx={{ display:'flex', alignItems: { xs: 'center', sm: 'flex-start' }, gap: { xs: 2, sm: 3 }, flexDirection: { xs: 'column', sm: 'row' } }}>
+        <Box sx={{ display:'flex', alignItems: { xs: 'center', sm: 'flex-start' }, gap: { xs: 2, sm: 3, md: 4 }, flexDirection: { xs: 'column', sm: 'row' } }}>
           <Avatar src={perfil.fotoUrl}
             sx={{ width: { xs: 80, sm: 100 }, height: { xs: 80, sm: 100 }, fontSize: { xs: '2rem', sm: '2.5rem' }, bgcolor:'primary.main' }}>
             {!perfil.fotoUrl && (perfil.nombreMostrado?.charAt(0) || perfil.username?.charAt(0) || 'U')}
