@@ -3,7 +3,8 @@ import {
   Container, Grid, Card, CardMedia, CardContent, Typography,
   CardActions, Button, Chip, Box, CircularProgress, Alert,
   Avatar, TextField, InputAdornment, Stack, Rating,
-  Menu, MenuItem, IconButton, Divider, useMediaQuery, Drawer, List, ListItem, ListItemText
+  Menu, MenuItem, IconButton, Divider, useMediaQuery, Drawer, List, ListItem, ListItemText,
+  Snackbar, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -40,6 +41,10 @@ const Home = () => {
 
   // Ratings por producto (cargados lazy)
   const [ratings, setRatings] = useState({});
+  const [snack, setSnack] = useState({ open: false, msg: '', severity: 'success' });
+  const [confirmDlg, setConfirmDlg] = useState({ open: false, id: null });
+
+  const showSnack = (msg, severity = 'success') => setSnack({ open: true, msg, severity });
 
   const TIPOS = [
     { value: '', label: t.categories.all },
@@ -66,8 +71,8 @@ const Home = () => {
 
       // Aplicar ordenamiento si está activo
       let data = res.data;
-      if (orden === 'newest') data = [...data].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-      if (orden === 'oldest') data = [...data].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+      if (orden === 'newest') data = [...data].sort((a, b) => new Date(b.fechaCreacion) - new Date(a.fechaCreacion));
+      if (orden === 'oldest') data = [...data].sort((a, b) => new Date(a.fechaCreacion) - new Date(b.fechaCreacion));
 
       setProductos(data);
       setError(null);
@@ -114,9 +119,14 @@ const Home = () => {
 
   const handleEliminar = async (e, id) => {
     e.stopPropagation();
-    if (!window.confirm('¿Seguro que quieres eliminar este producto?')) return;
+    setConfirmDlg({ open: true, id });
+  };
+
+  const handleConfirmEliminar = async () => {
+    const id = confirmDlg.id;
+    setConfirmDlg({ open: false, id: null });
     try { await api.delete(`/productos/${id}`); setProductos(p => p.filter(x => x.id !== id)); }
-    catch { alert('Error al eliminar.'); }
+    catch { showSnack('Error al eliminar el producto.', 'error'); }
   };
 
   const productosMostrados = productosOrdenados.slice(0, visibles);
@@ -466,6 +476,26 @@ const Home = () => {
         onClose={() => { setModalOpen(false); setSelected(null); }}
         producto={selected}
       />
+
+      {/* Snackbar de notificaciones */}
+      <Snackbar open={snack.open} autoHideDuration={3500} onClose={() => setSnack(s => ({ ...s, open: false }))}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
+        <Alert severity={snack.severity} onClose={() => setSnack(s => ({ ...s, open: false }))} sx={{ width: '100%' }}>
+          {snack.msg}
+        </Alert>
+      </Snackbar>
+
+      {/* Dialog de confirmación para eliminar */}
+      <Dialog open={confirmDlg.open} onClose={() => setConfirmDlg({ open: false, id: null })}>
+        <DialogTitle>¿Eliminar producto?</DialogTitle>
+        <DialogContent>
+          <DialogContentText>Esta acción no se puede deshacer.</DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setConfirmDlg({ open: false, id: null })}>Cancelar</Button>
+          <Button onClick={handleConfirmEliminar} color="error" variant="contained">Eliminar</Button>
+        </DialogActions>
+      </Dialog>
     </Container>
   );
 };

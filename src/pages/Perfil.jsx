@@ -206,13 +206,13 @@ const Perfil = () => {
   const handleCambiarFoto = async (e) => {
     const archivo = e.target.files[0];
     if (!archivo) return;
-    if (!['image/jpeg','image/png'].includes(archivo.type)) { alert('Solo JPG o PNG'); return; }
+    if (!['image/jpeg','image/png'].includes(archivo.type)) { setError('Solo se permiten imágenes JPG o PNG'); return; }
     const fd = new FormData(); fd.append('archivo', archivo);
     try {
       setSubiendo(true);
       const r = await api.post('/users/perfil/foto', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
       setPerfil(p => ({ ...p, fotoUrl: r.data.url }));
-    } catch { alert('Error al actualizar la foto'); }
+    } catch { setError('Error al actualizar la foto'); }
     finally { setSubiendo(false); }
   };
 
