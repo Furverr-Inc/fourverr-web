@@ -97,17 +97,17 @@ const Login = () => {
     mb: 1.5,
     '& .MuiOutlinedInput-root': {
       borderRadius: '50px',
-      backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(13,17,39,0.06)',
-      '& fieldset': { borderColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(13,17,39,0.15)' },
+      backgroundColor: '#FFFFFF',
+      '& fieldset': { borderColor: 'rgba(209,213,219,0.9)' },
       '&:hover fieldset': { borderColor: PERIW },
       '&.Mui-focused fieldset': { borderColor: PERIW },
     },
     '& .MuiInputLabel-root': {
-      color: isDark ? 'rgba(232,233,240,0.5)' : 'rgba(13,17,39,0.45)',
+      color: '#9CA3AF',
       '&.Mui-focused': { color: PERIW },
     },
     '& .MuiOutlinedInput-input': {
-      color: isDark ? '#E8E9F0' : '#0D1127',
+      color: '#374151',
       letterSpacing: '0.04em',
     },
   };
@@ -209,74 +209,76 @@ const Login = () => {
                 ...inputSx,
                 '& .MuiOutlinedInput-root': {
                   ...inputSx['& .MuiOutlinedInput-root'],
-                  backgroundColor: 'rgba(255,255,255,0.07)',
-                  '& fieldset': { borderColor: 'rgba(255,255,255,0.12)' },
+                  backgroundColor: '#FFFFFF',
+                  '& fieldset': { borderColor: 'rgba(209,213,219,0.9)' },
                 },
                 '& .MuiInputLabel-root': {
-                  color: 'rgba(200,202,212,0.5)',
+                  color: '#9CA3AF',
                   '&.Mui-focused': { color: PERIW },
                 },
                 '& .MuiOutlinedInput-input': {
-                  color: '#E8E9F0',
-                  textAlign: 'center',
+                  color: '#374151',
                   letterSpacing: '0.06em',
                 },
                 '& .MuiFormHelperText-root': { color: '#F87171' },
               }}
             />
-            <TextField
-              fullWidth
-              label={t.password || 'PASSWORD'}
-              type={showPass ? 'text' : 'password'}
-              required
-              value={password}
-              onChange={e => { setPassword(e.target.value); validateField('password', e.target.value); }}
-              error={!!fieldErrors.password}
-              helperText={fieldErrors.password}
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end" sx={{ mr: 0.5 }}>
-                    <MuiIconButton
-                      onClick={() => setShowPass(p => !p)}
-                      tabIndex={-1}
-                      size="small"
-                      sx={{
-                        width: 30, height: 30,
-                        color: isDark ? 'rgba(232,233,240,0.5)' : 'rgba(13,17,39,0.35)',
-                        borderRadius: '50%',
-                        '&:hover': {
-                          color: PERIW,
-                          bgcolor: isDark ? 'rgba(139,143,200,0.15)' : 'rgba(139,143,200,0.12)',
-                        },
-                        transition: 'all 0.2s',
-                      }}
-                    >
-                      {showPass
-                        ? <VisibilityOffIcon sx={{ fontSize: 17 }} />
-                        : <VisibilityIcon    sx={{ fontSize: 17 }} />}
-                    </MuiIconButton>
-                  </InputAdornment>
-                ),
-              }}
-              sx={{
-                ...inputSx,
-                '& .MuiOutlinedInput-root': {
-                  ...inputSx['& .MuiOutlinedInput-root'],
-                  backgroundColor: 'rgba(255,255,255,0.07)',
-                  '& fieldset': { borderColor: 'rgba(255,255,255,0.12)' },
-                },
-                '& .MuiInputLabel-root': {
-                  color: 'rgba(200,202,212,0.5)',
-                  '&.Mui-focused': { color: PERIW },
-                },
-                '& .MuiOutlinedInput-input': {
-                  color: '#E8E9F0',
-                  letterSpacing: '0.12em',
-                  paddingLeft: '16px',
-                },
-                '& .MuiFormHelperText-root': { color: '#F87171' },
-              }}
-            />
+            {/* Campo contraseña + ojo FUERA del pill */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: fieldErrors.password ? 0 : 0 }}>
+              <TextField
+                fullWidth
+                label={t.password || 'PASSWORD'}
+                type={showPass ? 'text' : 'password'}
+                required
+                value={password}
+                onChange={e => { setPassword(e.target.value); validateField('password', e.target.value); }}
+                error={!!fieldErrors.password}
+                helperText={fieldErrors.password}
+                sx={{
+                  ...inputSx,
+                  mb: 0,
+                  '& .MuiOutlinedInput-root': {
+                    ...inputSx['& .MuiOutlinedInput-root'],
+                    backgroundColor: '#FFFFFF',
+                    '& fieldset': { borderColor: 'rgba(209,213,219,0.9)' },
+                  },
+                  '& .MuiInputLabel-root': {
+                    color: '#9CA3AF',
+                    '&.Mui-focused': { color: PERIW },
+                  },
+                  '& .MuiOutlinedInput-input': {
+                    color: '#374151',
+                    letterSpacing: '0.12em',
+                  },
+                  '& .MuiFormHelperText-root': { color: '#F87171' },
+                }}
+              />
+              {/* Ojo flotante FUERA del input */}
+              <MuiIconButton
+                onClick={() => setShowPass(p => !p)}
+                tabIndex={-1}
+                size="small"
+                sx={{
+                  flexShrink: 0,
+                  width: 38, height: 38,
+                  color: '#6B7280',
+                  bgcolor: '#FFFFFF',
+                  border: '1.5px solid rgba(209,213,219,0.9)',
+                  borderRadius: '50%',
+                  '&:hover': {
+                    color: PERIW,
+                    borderColor: PERIW,
+                    bgcolor: 'rgba(139,143,200,0.08)',
+                  },
+                  transition: 'all 0.2s',
+                }}
+              >
+                {showPass
+                  ? <VisibilityOffIcon sx={{ fontSize: 18 }} />
+                  : <VisibilityIcon    sx={{ fontSize: 18 }} />}
+              </MuiIconButton>
+            </Box>
+            <Box sx={{ mb: 1.5 }} />
 
             <Button
               fullWidth variant="contained" size="large" type="submit"
