@@ -66,8 +66,9 @@ const CrearProducto = () => {
 
     try {
       await api.post('/productos', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
-      alert('¡Producto publicado exitosamente!');
-      navigate('/home');
+      setEsError(false);
+      setMensaje('¡Producto publicado exitosamente!');
+      setTimeout(() => navigate('/home'), 1200);
     } catch (err) {
       setEsError(true);
       if (err.response?.status === 403) setMensaje('No tienes permiso. Asegúrate de ser Vendedor.');
