@@ -20,7 +20,7 @@ const CheckoutForm = ({ onExito, producto }) => {
     const { error: stripeError, paymentIntent } = await stripe.confirmPayment({
       elements,
       confirmParams: {
-        return_url: window.location.origin + '/home', // fallback si hay redirección
+        return_url: new URL(`${import.meta.env.BASE_URL}home`.replace(/\/{2,}/g, '/'), window.location.origin).href,
       },
       redirect: 'if_required', // evita redirección innecesaria en pagos simples con tarjeta
     });

@@ -7,7 +7,6 @@ import {
 } from '@mui/material';
 import CloseIcon          from '@mui/icons-material/Close';
 import ShoppingCartIcon   from '@mui/icons-material/ShoppingCart';
-import StarIcon           from '@mui/icons-material/Star';
 import ZoomInIcon         from '@mui/icons-material/ZoomIn';
 import StarBorderIcon     from '@mui/icons-material/StarBorder';
 import SendIcon           from '@mui/icons-material/Send';
@@ -16,19 +15,19 @@ import QuestionAnswerIcon from '@mui/icons-material/QuestionAnswer';
 import PersonIcon         from '@mui/icons-material/Person';
 import FlagIcon           from '@mui/icons-material/Flag';
 import OpenInNewIcon      from '@mui/icons-material/OpenInNew';
-import VerifiedIcon       from '@mui/icons-material/Verified';
+import VerifiedOutlinedIcon from '@mui/icons-material/VerifiedOutlined';
 import { useNavigate }    from 'react-router-dom';
 import api from '../services/api';
 import { useThemeMode } from '../ThemeContext';
 
 const MOTIVOS = [
-  { value: 'FRAUDE',               label: '🔴 Fraude o estafa' },
-  { value: 'CONTENIDO_INAPROPIADO',label: '🚫 Contenido inapropiado' },
-  { value: 'SPAM',                  label: '📢 Spam o publicidad engañosa' },
-  { value: 'PRODUCTO_FALSO',        label: '📦 Producto falso o inexistente' },
-  { value: 'MAL_COMPORTAMIENTO',    label: '😠 Mal comportamiento o acoso' },
-  { value: 'PRECIO_ENGAÑOSO',       label: '💸 Precio engañoso' },
-  { value: 'OTRO',                  label: '❓ Otro motivo' },
+  { value: 'FRAUDE',                label: 'Fraude o estafa' },
+  { value: 'CONTENIDO_INAPROPIADO', label: 'Contenido inapropiado' },
+  { value: 'SPAM',                  label: 'Spam o publicidad engañosa' },
+  { value: 'PRODUCTO_FALSO',        label: 'Producto falso o inexistente' },
+  { value: 'MAL_COMPORTAMIENTO',    label: 'Mal comportamiento o acoso' },
+  { value: 'PRECIO_ENGAÑOSO',       label: 'Precio engañoso' },
+  { value: 'OTRO',                  label: 'Otro motivo' },
 ];
 
 const ProductoModal = ({ open, onClose, producto }) => {
@@ -98,7 +97,7 @@ const ProductoModal = ({ open, onClose, producto }) => {
       } else {
         await api.post(`/favoritos/${producto.id}`);
         setEnWishlist(true);
-        setSnack({ open: true, msg: '⭐ Agregado a tu wishlist', severity: 'success' });
+        setSnack({ open: true, msg: 'Agregado a tu wishlist', severity: 'success' });
       }
     } catch (err) {
       const msg = err.response?.data;
@@ -113,7 +112,7 @@ const ProductoModal = ({ open, onClose, producto }) => {
       await api.post(`/preguntas/producto/${producto.id}`, { texto: nuevaPregunta });
       setNuevaPregunta('');
       await cargarPreguntas();
-      setSnack({ open: true, msg: 'Pregunta enviada ✓', severity: 'success' });
+      setSnack({ open: true, msg: 'Pregunta enviada', severity: 'success' });
     } catch {
       setSnack({ open: true, msg: 'Error al enviar la pregunta', severity: 'error' });
     } finally { setEnviando(false); }
@@ -181,26 +180,54 @@ const ProductoModal = ({ open, onClose, producto }) => {
 
   return (
     <>
-      <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth
-        PaperProps={{ sx: {
-          borderRadius: 4, overflow: 'hidden',
-          boxShadow: isDark ? '0 20px 60px rgba(124,58,237,0.3)' : '0 20px 60px rgba(55,48,163,0.15)',
-        }}}>
-
-        {/* Imagen con lightbox */}
-        <Box sx={{ position: 'relative' }}>
-          <Box
-            component="img"
-            src={producto.urlArchivo || producto.urlPortada || 'https://via.placeholder.com/600x300?text=Sin+Imagen'}
-            alt={producto.titulo}
-            onClick={() => setImagenOpen(true)}
-            sx={{
-              width: '100%', height: 240, objectFit: 'cover', display: 'block',
-              cursor: 'zoom-in',
-              transition: 'filter 0.2s',
-              '&:hover': { filter: 'brightness(0.85)' },
-            }}
-          />
+      <Dialog
+        open={open}
+        onClose={onClose}
+        maxWidth="sm"
+        fullWidth
+        scroll="paper"
+        PaperProps={{
+          sx: {
+            borderRadius: 4,
+            overflow: 'hidden',
+            display: 'flex',
+            flexDirection: 'column',
+            maxHeight: { xs: '100dvh', sm: 'min(90vh, 900px)' },
+            boxShadow: isDark ? '0 20px 60px rgba(124,58,237,0.3)' : '0 20px 60px rgba(55,48,163,0.15)',
+          },
+        }}
+      >
+        <Box
+          sx={{
+            flex: 1,
+            minHeight: 0,
+            overflowY: 'auto',
+            WebkitOverflowScrolling: 'touch',
+            overscrollBehavior: 'contain',
+          }}
+        >
+          {/* Imagen con lightbox */}
+          <Box sx={{ position: 'relative' }}>
+            <Box
+              component="img"
+              src={producto.urlArchivo || producto.urlPortada || 'https://via.placeholder.com/600x300?text=Sin+Imagen'}
+              alt={producto.titulo}
+              onClick={() => setImagenOpen(true)}
+              sx={{
+                width: '100%',
+                height: 240,
+                maxHeight: '40vh',
+                objectFit: 'cover',
+                display: 'block',
+                cursor: 'zoom-in',
+                transition: 'filter 0.2s',
+                '&:hover': { filter: 'brightness(0.85)' },
+                '@media (max-height: 520px)': {
+                  height: 'clamp(88px, 26vh, 160px)',
+                  maxHeight: '32vh',
+                },
+              }}
+            />
           {/* Ícono zoom sobre la imagen */}
           <Box onClick={() => setImagenOpen(true)} sx={{
             position: 'absolute', inset: 0,
@@ -225,14 +252,15 @@ const ProductoModal = ({ open, onClose, producto }) => {
                 transition: 'all 0.2s',
                 '&:hover': { bgcolor: enWishlist ? 'rgba(245,158,11,0.25)' : 'white', transform: 'scale(1.1)' }
               }}>
-              {enWishlist
-                ? <StarIcon sx={{ color: '#f59e0b', fontSize: 22 }} />
-                : <StarBorderIcon sx={{ color: isDark ? '#a78bfa' : '#3730a3', fontSize: 22 }} />}
+              <StarBorderIcon sx={{
+                fontSize: 22,
+                color: enWishlist ? '#f59e0b' : (isDark ? 'rgba(167,139,250,0.9)' : '#3730a3'),
+              }} />
             </IconButton>
           </Tooltip>
         </Box>
 
-        <DialogContent sx={{ p: 3 }}>
+        <Box sx={{ p: 3 }}>
 
           {/* ── SECCIÓN VENDEDOR — click abre Popover ── */}
           <Box
@@ -255,7 +283,7 @@ const ProductoModal = ({ open, onClose, producto }) => {
                   sx={{ textDecoration: 'underline', textDecorationStyle: 'dotted' }}>
                   {producto.vendedor?.nombreMostrado || 'Vendedor'}
                 </Typography>
-                <VerifiedIcon sx={{ fontSize: 14, color: '#1dbf73' }} />
+                <VerifiedOutlinedIcon sx={{ fontSize: 14, color: '#1dbf73' }} />
               </Box>
               <Typography variant="caption" color="text.secondary">
                 Toca para ver opciones del vendedor
@@ -292,7 +320,7 @@ const ProductoModal = ({ open, onClose, producto }) => {
                     <Typography variant="subtitle1" fontWeight="bold" sx={{ color: 'white' }}>
                       {producto.vendedor?.nombreMostrado || 'Vendedor'}
                     </Typography>
-                    <VerifiedIcon sx={{ fontSize: 16, color: '#a5f3c0' }} />
+                    <VerifiedOutlinedIcon sx={{ fontSize: 16, color: '#a5f3c0' }} />
                   </Box>
                   <Chip label="Vendedor verificado" size="small"
                     sx={{ bgcolor: 'rgba(255,255,255,0.2)', color: 'white', height: 20, fontSize: '0.65rem' }} />
@@ -453,9 +481,20 @@ const ProductoModal = ({ open, onClose, producto }) => {
               })}
             </Stack>
           )}
-        </DialogContent>
+        </Box>
+        </Box>
 
-        <DialogActions sx={{ p: 3, pt: 0, gap: 1 }}>
+        <DialogActions
+          sx={{
+            flexShrink: 0,
+            borderTop: 1,
+            borderColor: 'divider',
+            bgcolor: 'background.paper',
+            px: 3,
+            py: 2,
+            gap: 1,
+          }}
+        >
           <Button onClick={onClose} variant="outlined" sx={{ flex: 1 }}>Cerrar</Button>
           <Button variant="contained" startIcon={<ShoppingCartIcon />}
             onClick={() => { onClose(); navigate('/detalle-compra', { state: { producto } }); }}

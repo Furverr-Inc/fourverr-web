@@ -109,7 +109,7 @@ const CrearProducto = () => {
           <Button variant="outlined" component="label" fullWidth
             startIcon={<CloudUploadIcon />}
             sx={{ mt:2, mb:1, height:50, borderStyle:'dashed' }}>
-            {portada ? portada.name : '📷 Subir Imagen de Portada *'}
+            {portada ? portada.name : 'Subir imagen de portada *'}
             <input type="file" hidden accept="image/*" onChange={handlePortadaChange} />
           </Button>
 
