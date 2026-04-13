@@ -11,8 +11,10 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import PersonIcon from '@mui/icons-material/Person';
 import EmailIcon from '@mui/icons-material/Email';
 import PhoneIcon from '@mui/icons-material/Phone';
+import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import { useThemeMode } from '../ThemeContext';
 import api from '../services/api';
+import { BRAND_NAVY, BRAND_NAVY_TOP, BRAND_PERIW, BRAND_BORDER } from '../brandColors';
 
 const SoporteAdmin = () => {
   const { isDark } = useThemeMode();
@@ -102,12 +104,16 @@ const SoporteAdmin = () => {
     <Paper elevation={3} sx={{ borderRadius: 3, overflow: 'hidden', mt: 3 }}>
       {/* Encabezado */}
       <Box sx={{
-        background: 'linear-gradient(90deg, #6366f1, #8b5cf6)',
+        background: `linear-gradient(90deg, ${BRAND_NAVY_TOP} 0%, ${BRAND_NAVY} 100%)`,
         px: 3, py: 2,
+        borderBottom: `1px solid ${BRAND_BORDER}`,
       }}>
-        <Typography variant="h6" fontWeight="bold" sx={{ color: 'white' }}>
-          💬 Soporte Técnico
-        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
+          <ChatBubbleOutlineIcon sx={{ color: BRAND_PERIW, fontSize: 26 }} />
+          <Typography variant="h6" fontWeight="bold" sx={{ color: 'white' }}>
+            Soporte Técnico
+          </Typography>
+        </Box>
       </Box>
 
       <Tabs
