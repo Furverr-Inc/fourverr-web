@@ -94,7 +94,9 @@ const Login = () => {
   const PERIW = '#8B8FC8';
 
   const inputSx = {
-    mb: 1.5,
+    mb: 3,
+    /* La etiqueta outlined usa translateY negativo al hacer shrink; el overflow:hidden por defecto de MUI recorta el texto. */
+    overflow: 'visible',
     '& .MuiOutlinedInput-root': {
       borderRadius: '50px',
       backgroundColor: '#FFFFFF',
@@ -104,6 +106,17 @@ const Login = () => {
     },
     '& .MuiInputLabel-root': {
       color: '#9CA3AF',
+      overflow: 'visible',
+      textOverflow: 'clip',
+      zIndex: 1,
+      /*
+       * Con -2px el texto quedaba demasiado abajo (el borde cortaba las letras).
+       * Valor MUI outlined medium: translate(14px, -9px). En píldora elevamos más el shrink
+       * para que el label quede claramente sobre el borde y no pise el campo de arriba.
+       */
+      '&.MuiInputLabel-shrink': {
+        transform: 'translate(14px, -20px) scale(0.75)',
+      },
       '&.Mui-focused': { color: PERIW },
     },
     '& .MuiOutlinedInput-input': {
@@ -186,7 +199,8 @@ const Login = () => {
         {/* Zona inferior: formulario */}
         <Box sx={{
           background: isDark ? CARD_DARK_BOTTOM : '#0D1127',
-          px: 4, py: 4,
+          px: 4, pt: 5, pb: 4,
+          overflow: 'visible',
         }}>
           {mensajeExito && (
             <Alert severity="success" sx={{ mb: 2, borderRadius: 3 }}>{mensajeExito}</Alert>
@@ -207,24 +221,15 @@ const Login = () => {
               autoFocus
               sx={{
                 ...inputSx,
-                '& .MuiOutlinedInput-root': {
-                  ...inputSx['& .MuiOutlinedInput-root'],
-                  backgroundColor: '#FFFFFF',
-                  '& fieldset': { borderColor: 'rgba(209,213,219,0.9)' },
-                },
-                '& .MuiInputLabel-root': {
-                  color: '#9CA3AF',
-                  '&.Mui-focused': { color: PERIW },
-                },
                 '& .MuiOutlinedInput-input': {
-                  color: '#374151',
+                  ...inputSx['& .MuiOutlinedInput-input'],
                   letterSpacing: '0.06em',
                 },
                 '& .MuiFormHelperText-root': { color: '#F87171' },
               }}
             />
             {/* Campo contraseña + ojo FUERA del pill */}
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: fieldErrors.password ? 0 : 0 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5, mb: 1 }}>
               <TextField
                 fullWidth
                 label={t.password || 'PASSWORD'}
@@ -237,17 +242,8 @@ const Login = () => {
                 sx={{
                   ...inputSx,
                   mb: 0,
-                  '& .MuiOutlinedInput-root': {
-                    ...inputSx['& .MuiOutlinedInput-root'],
-                    backgroundColor: '#FFFFFF',
-                    '& fieldset': { borderColor: 'rgba(209,213,219,0.9)' },
-                  },
-                  '& .MuiInputLabel-root': {
-                    color: '#9CA3AF',
-                    '&.Mui-focused': { color: PERIW },
-                  },
                   '& .MuiOutlinedInput-input': {
-                    color: '#374151',
+                    ...inputSx['& .MuiOutlinedInput-input'],
                     letterSpacing: '0.12em',
                   },
                   '& .MuiFormHelperText-root': { color: '#F87171' },

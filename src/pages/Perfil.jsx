@@ -3,9 +3,9 @@ import {
   Container, Paper, Box, Typography, Avatar, Button,
   CircularProgress, Alert, Chip, Divider, IconButton, Grid,
   Card, CardMedia, CardContent, Dialog, DialogTitle, DialogContent,
-  DialogActions, TextField, Rating, Tooltip
+  DialogActions, TextField, Rating, Tooltip, Stack,
 } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import EditIcon from '@mui/icons-material/Edit';
 import StorefrontIcon from '@mui/icons-material/Storefront';
 import PhotoCamera from '@mui/icons-material/PhotoCamera';
@@ -17,11 +17,17 @@ import ChatCompra from '../components/ChatCompra';
 import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
-import FavoriteIcon from '@mui/icons-material/Favorite';
-import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
-import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium';
+import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
+import EmojiEventsOutlinedIcon from '@mui/icons-material/EmojiEventsOutlined';
+import WorkspacePremiumOutlinedIcon from '@mui/icons-material/WorkspacePremiumOutlined';
+import MilitaryTechOutlinedIcon from '@mui/icons-material/MilitaryTechOutlined';
+import BoltOutlinedIcon from '@mui/icons-material/BoltOutlined';
+import FiberNewOutlinedIcon from '@mui/icons-material/FiberNewOutlined';
+import StarBorderIcon from '@mui/icons-material/StarBorder';
 import RateReviewIcon from '@mui/icons-material/RateReview';
 import DownloadIcon   from '@mui/icons-material/Download';
+import PostAddIcon from '@mui/icons-material/PostAdd';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import api from '../services/api';
 import { useThemeMode } from '../ThemeContext';
 import { useLanguage } from '../LanguageContext';
@@ -158,9 +164,9 @@ const Perfil = () => {
   const [ratingCheck, setRatingCheck]     = useState({}); // { [pedidoId]: boolean }
 
   const getBadge = (n) => {
-    if (n >= 10) return { label: t.levelVip,    color: '#f59e0b', icon: '👑', bg: 'rgba(245,158,11,0.12)' };
-    if (n >= 3)  return { label: t.levelActive, color: '#6366f1', icon: '⚡', bg: 'rgba(99,102,241,0.12)' };
-    return           { label: t.levelNew,      color: '#10b981', icon: '🌱', bg: 'rgba(16,185,129,0.12)' };
+    if (n >= 10) return { label: t.levelVip,    color: '#f59e0b', Icon: MilitaryTechOutlinedIcon, bg: 'rgba(245,158,11,0.12)' };
+    if (n >= 3)  return { label: t.levelActive, color: '#6366f1', Icon: BoltOutlinedIcon,           bg: 'rgba(99,102,241,0.12)' };
+    return           { label: t.levelNew,      color: '#10b981', Icon: FiberNewOutlinedIcon,       bg: 'rgba(16,185,129,0.12)' };
   };
 
   const cargarPerfil = async () => {
@@ -248,14 +254,17 @@ const Perfil = () => {
   const esSeller = perfil?.role === 'SELLER' || perfil?.role === 'ADMIN';
   const comprasPagadas = compras.filter(c => c.estado === 'PAGADO');
   const badge = getBadge(comprasPagadas.length);
+  const BadgeLevelIcon = badge.Icon;
 
   const ventasPagadas    = ventas.filter(v => v.estado === 'PAGADO');
   const totalGanancias   = ventasPagadas.reduce((a, v) => a + (v.montoVendedor || 0), 0);
   const ventasPendientes = ventas.filter(v => v.estado === 'PENDIENTE').length;
   const promedioVenta    = ventasPagadas.length > 0 ? totalGanancias / ventasPagadas.length : 0;
 
+  const maxW = esSeller ? 'lg' : 'xl';
+
   return (
-    <Container maxWidth="xl" sx={{ mt: 3, mb: 4 }}>
+    <Container maxWidth={maxW} sx={{ mt: 3, mb: 4 }}>
       {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
       {error   && <Alert severity="error"   sx={{ mb: 2 }}>{error}</Alert>}
 
@@ -266,7 +275,7 @@ const Perfil = () => {
         ══════════════════════════════════════════ */}
 
         {/* Info de perfil */}
-        <Grid item xs={12} md={esSeller ? 4 : 5}>
+        <Grid item xs={12} sm={esSeller ? 5 : 12} md={esSeller ? 4 : 5}>
           <Paper elevation={3} sx={{ p: 3, borderRadius: 3, height: '100%' }}>
             {/* Avatar + datos */}
             <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2, mb: 2 }}>
@@ -287,8 +296,8 @@ const Perfil = () => {
                 <Typography variant="body2" color="text.secondary">@{perfil?.username}</Typography>
                 <Box sx={{ display: 'flex', gap: 0.8, mt: 0.5, flexWrap: 'wrap' }}>
                   <Chip label={perfil?.role} color={perfil?.role === 'SELLER' ? 'success' : perfil?.role === 'ADMIN' ? 'error' : 'default'} size="small" />
-                  <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.4, px: 1, py: 0.2, borderRadius: 10, bgcolor: badge.bg, border: `1px solid ${badge.color}33` }}>
-                    <Typography sx={{ fontSize: '0.65rem' }}>{badge.icon}</Typography>
+                  <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5, px: 1, py: 0.2, borderRadius: 10, bgcolor: badge.bg, border: `1px solid ${badge.color}33` }}>
+                    <BadgeLevelIcon sx={{ fontSize: 16, color: badge.color }} />
                     <Typography variant="caption" sx={{ color: badge.color, fontWeight: 'bold', fontSize: '0.7rem' }}>{badge.label}</Typography>
                   </Box>
                 </Box>
@@ -318,7 +327,14 @@ const Perfil = () => {
 
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
               {esSeller && (
-                <Button variant="contained" fullWidth startIcon={<StorefrontIcon />} onClick={() => navigate('/mis-publicaciones')} sx={{ borderRadius: 2 }}>
+                <Button
+                  variant="outlined"
+                  color="primary"
+                  fullWidth
+                  startIcon={<StorefrontIcon />}
+                  onClick={() => navigate('/mis-publicaciones')}
+                  sx={{ borderRadius: 2 }}
+                >
                   {t.myPublications}
                 </Button>
               )}
@@ -340,14 +356,14 @@ const Perfil = () => {
           <Grid item xs={12} md={7}>
             <Paper elevation={3} sx={{ p: 3, borderRadius: 3, height: '100%' }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2.5 }}>
-                <EmojiEventsIcon sx={{ color: '#f59e0b' }} />
+                <EmojiEventsOutlinedIcon sx={{ color: '#f59e0b' }} />
                 <Typography variant="h6" fontWeight="bold">{t.myActivity}</Typography>
               </Box>
               <Grid container spacing={2}>
                 {[
                   { icon: <ShoppingBagIcon />,     label: t.purchases,  value: compras.length,   color: '#6366f1' },
-                  { icon: <FavoriteIcon />,         label: t.favorites,  value: favoritos.length, color: '#ef4444' },
-                  { icon: <WorkspacePremiumIcon />, label: t.level,      value: badge.label,       color: badge.color },
+                  { icon: <FavoriteBorderIcon />,         label: t.favorites,  value: favoritos.length, color: '#ef4444' },
+                  { icon: <WorkspacePremiumOutlinedIcon />, label: t.level,      value: badge.label,       color: badge.color },
                 ].map(s => (
                   <Grid item xs={12} sm={4} key={s.label}>
                     <StatCard {...s} isDark={isDark} />
@@ -389,7 +405,7 @@ const Perfil = () => {
                           </Button>
                         )}
                         {p.estado === 'PAGADO' && ratingCheck[p.id] && (
-                          <Chip label="⭐ Reseñado" size="small" sx={{ bgcolor: 'rgba(245,158,11,0.1)', color: '#f59e0b', fontSize: '0.65rem', height: 20 }} />
+                          <Chip icon={<StarBorderIcon sx={{ fontSize: '0.95rem !important' }} />} label="Reseñado" size="small" sx={{ bgcolor: 'rgba(245,158,11,0.1)', color: '#f59e0b', fontSize: '0.65rem', height: 20, '& .MuiChip-icon': { color: '#f59e0b' } }} />
                         )}
                       </Box>
                     ))}
@@ -399,15 +415,16 @@ const Perfil = () => {
             </Paper>
           </Grid>
         ) : (
-          /* Panel de Ganancias — SELLER */
-          <Grid item xs={12} md={8}>
+          <>
+          {/* Panel de Ganancias — SELLER */}
+          <Grid item xs={12} sm={7} md={8}>
             <Paper elevation={3} sx={{ p: 3, borderRadius: 3, height: '100%' }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2.5 }}>
                 <TrendingUpIcon sx={{ color: 'success.main', fontSize: 26 }} />
                 <Typography variant="h6" fontWeight="bold">{t.earningsPanel}</Typography>
               </Box>
 
-              <Grid container spacing={2} sx={{ mb: 2.5 }}>
+              <Grid container spacing={2} sx={{ mb: 1 }}>
                 {[
                   { icon: <AccountBalanceWalletIcon />, label: t.availableBalance, value: `$${Number(perfil?.saldoDisponible || 0).toFixed(2)}`, color: '#10b981' },
                   { icon: <AttachMoneyIcon />,          label: t.totalEarned,       value: `$${totalGanancias.toFixed(2)}`,                        color: '#6366f1' },
@@ -419,6 +436,9 @@ const Perfil = () => {
                   </Grid>
                 ))}
               </Grid>
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2.5, lineHeight: 1.5 }}>
+                {t.balanceHint}
+              </Typography>
 
               {ventasPagadas.length > 0 && (
                 <Box sx={{ p: 2, borderRadius: 2, background: isDark ? 'rgba(99,102,241,0.1)' : 'rgba(99,102,241,0.05)', border: '1px solid', borderColor: isDark ? 'rgba(99,102,241,0.3)' : 'rgba(99,102,241,0.15)', mb: 2.5 }}>
@@ -433,7 +453,16 @@ const Perfil = () => {
               {ventas.length === 0 ? (
                 <Box sx={{ textAlign: 'center', py: 3 }}>
                   <ReceiptLongIcon sx={{ fontSize: 40, color: 'text.disabled', mb: 0.5 }} />
-                  <Typography color="text.secondary" variant="body2">{t.noSalesYet}</Typography>
+                  <Typography color="text.secondary" variant="body2" sx={{ mb: 2 }}>{t.noSalesYet}</Typography>
+                  <Button
+                    variant="contained"
+                    component={RouterLink}
+                    to="/nuevo"
+                    startIcon={<PostAddIcon />}
+                    sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 700 }}
+                  >
+                    {t.publishFirstCta}
+                  </Button>
                 </Box>
               ) : (
                 <Box sx={{ maxHeight: 240, overflowY: 'auto', mt: 1.5 }}>
@@ -471,6 +500,55 @@ const Perfil = () => {
               )}
             </Paper>
           </Grid>
+
+          <Grid item xs={12}>
+            <Paper
+              elevation={0}
+              sx={{
+                p: 2.5,
+                borderRadius: 3,
+                border: '1px solid',
+                borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'divider',
+                bgcolor: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.015)',
+              }}
+            >
+              <Typography variant="subtitle2" fontWeight="bold" color="text.secondary" sx={{ mb: 2, textTransform: 'uppercase', letterSpacing: 0.6, fontSize: '0.7rem' }}>
+                {t.sellerQuickLinks}
+              </Typography>
+              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} flexWrap="wrap" useFlexGap>
+                <Button
+                  variant="contained"
+                  component={RouterLink}
+                  to="/nuevo"
+                  startIcon={<PostAddIcon />}
+                  sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 700 }}
+                >
+                  {t.publishGig}
+                </Button>
+                <Button
+                  variant="outlined"
+                  component={RouterLink}
+                  to={`/perfil/${encodeURIComponent(perfil?.username || '')}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  startIcon={<OpenInNewIcon />}
+                  sx={{ borderRadius: 2, textTransform: 'none' }}
+                >
+                  {t.viewPublicStore}
+                </Button>
+                <Button
+                  variant="outlined"
+                  component={RouterLink}
+                  to="/mis-publicaciones"
+                  startIcon={<StorefrontIcon />}
+                  sx={{ borderRadius: 2, textTransform: 'none' }}
+                >
+                  {t.myPublications}
+                </Button>
+              </Stack>
+            </Paper>
+          </Grid>
+          </>
         )}
 
         {/* ══════════════════════════════════════════
@@ -483,7 +561,7 @@ const Perfil = () => {
             <Paper elevation={3} sx={{ p: 2.5, borderRadius: 3, height: '100%' }}>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <FavoriteIcon sx={{ color: '#ef4444', fontSize: 20 }} />
+                  <FavoriteBorderIcon sx={{ color: '#ef4444', fontSize: 20 }} />
                   <Typography variant="subtitle1" fontWeight="bold">{t.saved}</Typography>
                 </Box>
                 <Typography variant="caption" color="text.secondary">{favoritos.length}</Typography>
@@ -570,8 +648,8 @@ const Perfil = () => {
                               {t.rateProduct}
                             </Button>
                           ) : pedido.estado === 'PAGADO' && ratingCheck[pedido.id] ? (
-                            <Chip label="⭐ Reseñado" size="small"
-                              sx={{ flex: 1, bgcolor: 'rgba(245,158,11,0.1)', color: '#d97706', fontWeight: 600 }} />
+                            <Chip icon={<StarBorderIcon sx={{ fontSize: '0.95rem !important' }} />} label="Reseñado" size="small"
+                              sx={{ flex: 1, bgcolor: 'rgba(245,158,11,0.1)', color: '#d97706', fontWeight: 600, '& .MuiChip-icon': { color: '#d97706' } }} />
                           ) : (
                             <Box sx={{ flex: 1 }} />
                           )}
@@ -650,7 +728,7 @@ const Perfil = () => {
               sx={{ fontSize: '2.5rem' }}
             />
             <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5 }}>
-              {ratingVal === 1 ? '😞 Muy malo' : ratingVal === 2 ? '😐 Malo' : ratingVal === 3 ? '🙂 Regular' : ratingVal === 4 ? '😊 Bueno' : ratingVal === 5 ? '🤩 Excelente' : 'Selecciona una calificación'}
+              {ratingVal === 1 ? 'Muy malo' : ratingVal === 2 ? 'Malo' : ratingVal === 3 ? 'Regular' : ratingVal === 4 ? 'Bueno' : ratingVal === 5 ? 'Excelente' : 'Selecciona una calificación'}
             </Typography>
           </Box>
           <TextField
