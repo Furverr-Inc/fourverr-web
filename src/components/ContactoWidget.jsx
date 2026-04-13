@@ -4,11 +4,14 @@ import {
   Fab, CircularProgress, Alert, Divider
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
-import SupportAgentIcon from '@mui/icons-material/SupportAgent';
+import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import SendIcon from '@mui/icons-material/Send';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import { useThemeMode } from '../ThemeContext';
 import api from '../services/api';
+import {
+  BRAND_NAVY, BRAND_NAVY_TOP, BRAND_PERIW, BRAND_PERIW_HOVER, BRAND_BORDER, BRAND_SHADOW,
+} from '../brandColors';
 
 const ContactoWidget = () => {
   const { isDark } = useThemeMode();
@@ -47,28 +50,30 @@ const ContactoWidget = () => {
         onClick={() => setAbierto(o => !o)}
         sx={{
           position: 'fixed', bottom: 24, right: 24, zIndex: 1300,
-          background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-          color: 'white',
-          boxShadow: '0 8px 24px rgba(99,102,241,0.5)',
-          '&:hover': { background: 'linear-gradient(135deg, #4f46e5, #7c3aed)' },
+          background: `linear-gradient(145deg, ${BRAND_NAVY_TOP} 0%, ${BRAND_NAVY} 100%)`,
+          color: BRAND_PERIW,
+          boxShadow: `0 8px 28px ${BRAND_SHADOW}`,
+          border: `1px solid ${BRAND_BORDER}`,
+          '&:hover': { background: BRAND_NAVY, color: '#fff' },
         }}
       >
-        <SupportAgentIcon />
+        <ChatBubbleOutlineIcon sx={{ fontSize: 26 }} />
       </Fab>
 
       {abierto && (
         <Paper elevation={8} sx={{
           position: 'fixed', bottom: 88, right: 24, zIndex: 1300,
           width: 340, borderRadius: 3, overflow: 'hidden',
-          border: isDark ? '1px solid rgba(99,102,241,0.3)' : '1px solid rgba(99,102,241,0.15)',
-          boxShadow: '0 20px 60px rgba(99,102,241,0.25)',
+          border: `1px solid ${BRAND_BORDER}`,
+          boxShadow: `0 20px 60px ${BRAND_SHADOW}`,
         }}>
 
           {/* Header */}
           <Box sx={{
-            background: 'linear-gradient(90deg, #6366f1, #8b5cf6)',
+            background: `linear-gradient(90deg, ${BRAND_NAVY_TOP} 0%, ${BRAND_NAVY} 100%)`,
             px: 2, py: 1.5,
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            borderBottom: `1px solid ${BRAND_BORDER}`,
           }}>
             <Box>
               <Typography variant="body2" fontWeight="bold" sx={{ color: 'white' }}>
@@ -86,7 +91,7 @@ const ContactoWidget = () => {
           <Box sx={{ p: 2 }}>
             {enviado ? (
               <Box sx={{ textAlign: 'center', py: 3 }}>
-                <CheckCircleIcon sx={{ fontSize: 52, color: 'success.main', mb: 1 }} />
+                <CheckCircleOutlineIcon sx={{ fontSize: 52, color: 'success.main', mb: 1 }} />
                 <Typography variant="subtitle1" fontWeight="bold">¡Mensaje enviado!</Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
                   Te contactaremos pronto al correo proporcionado.
@@ -124,9 +129,9 @@ const ContactoWidget = () => {
                   disabled={enviando}
                   onClick={handleEnviar}
                   sx={{
-                    borderRadius: 2, py: 1,
-                    background: 'linear-gradient(90deg, #6366f1, #8b5cf6)',
-                    '&:hover': { background: 'linear-gradient(90deg, #4f46e5, #7c3aed)' },
+                    borderRadius: '50px', py: 1,
+                    bgcolor: BRAND_PERIW,
+                    '&:hover': { bgcolor: BRAND_PERIW_HOVER },
                   }}
                 >
                   {enviando ? 'Enviando...' : 'Enviar mensaje'}
