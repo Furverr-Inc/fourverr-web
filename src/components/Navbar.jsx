@@ -7,19 +7,22 @@ import {
 import { useTheme } from '@mui/material/styles';
 import { useNavigate, Link } from 'react-router-dom';
 import StorefrontIcon from '@mui/icons-material/Storefront';
-import StarIcon from '@mui/icons-material/Star';
+import StarBorderIcon from '@mui/icons-material/StarBorder';
 import DarkModeIcon from '@mui/icons-material/DarkMode';
 import LightModeIcon from '@mui/icons-material/LightMode';
-import NotificationsIcon from '@mui/icons-material/Notifications';
 import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import PersonIcon from '@mui/icons-material/Person';
 import LogoutIcon from '@mui/icons-material/Logout';
+import NotificationsNoneOutlinedIcon from '@mui/icons-material/NotificationsNoneOutlined';
 import api from '../services/api';
 import { useThemeMode } from '../ThemeContext';
 import { useLanguage } from '../LanguageContext';
 import WishlistDrawer from './WishlistDrawer';
 import LanguageSwitcher from './LanguageSwitcher';
+import {
+  BRAND_NAVY, BRAND_NAVY_TOP, BRAND_PERIW, BRAND_PERIW_HOVER, BRAND_TEXT, BRAND_BORDER, BRAND_SHADOW,
+} from '../brandColors';
 
 const estadoColor = (e) => e === 'PAGADO' ? 'success' : e === 'PENDIENTE' ? 'warning' : 'error';
 
@@ -91,14 +94,27 @@ const Navbar = () => {
   }, []);
 
   const handleLogout = () => { localStorage.clear(); navigate('/'); };
-  const iconSx = { color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.5)' };
+  const iconSx = {
+    color: isDark ? 'rgba(232,233,240,0.65)' : `${BRAND_NAVY}99`,
+    '&:hover': { color: BRAND_PERIW },
+  };
 
   // ─── Avatar con iniciales o foto ───
   const AvatarUser = ({ size = 36 }) => (
     fotoUrl ? (
-      <Avatar src={fotoUrl} alt={usuarioNombre} sx={{ width: size, height: size }} />
+      <Avatar
+        src={fotoUrl}
+        alt={usuarioNombre}
+        sx={{ width: size, height: size, border: `2px solid ${BRAND_BORDER}` }}
+      />
     ) : (
-      <Avatar sx={{ width: size, height: size, background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
+      <Avatar sx={{
+        width: size, height: size,
+        background: `linear-gradient(145deg, ${BRAND_NAVY_TOP} 0%, ${BRAND_NAVY} 100%)`,
+        color: BRAND_PERIW,
+        fontWeight: 700,
+        border: `1px solid ${BRAND_BORDER}`,
+      }}>
         {usuarioNombre.charAt(0).toUpperCase()}
       </Avatar>
     )
@@ -108,11 +124,11 @@ const Navbar = () => {
     <>
       <AppBar position="sticky" elevation={0} sx={{
         background: isDark
-          ? 'linear-gradient(90deg, rgba(10,10,20,0.97) 0%, rgba(20,10,40,0.97) 100%)'
+          ? `linear-gradient(90deg, ${BRAND_NAVY}f5 0%, ${BRAND_NAVY_TOP}ee 100%)`
           : 'rgba(255,255,255,0.96)',
         backdropFilter: 'blur(16px)',
-        borderBottom: isDark ? '1px solid rgba(99,102,241,0.2)' : '1px solid rgba(99,102,241,0.12)',
-        boxShadow: isDark ? '0 2px 20px rgba(99,102,241,0.15)' : '0 2px 20px rgba(99,102,241,0.08)',
+        borderBottom: `1px solid ${BRAND_BORDER}`,
+        boxShadow: `0 2px 20px ${BRAND_SHADOW}`,
       }}>
         <Toolbar sx={{ minHeight: { xs: 56, sm: 64 }, px: { xs: 1.5, sm: 2 } }}>
 
@@ -124,11 +140,12 @@ const Navbar = () => {
             <Box sx={{
               width: { xs: 30, sm: 34 }, height: { xs: 30, sm: 34 },
               borderRadius: '10px',
-              background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+              background: `linear-gradient(145deg, ${BRAND_NAVY_TOP} 0%, ${BRAND_NAVY} 100%)`,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              boxShadow: '0 4px 14px rgba(99,102,241,0.5)', flexShrink: 0
+              boxShadow: `0 4px 16px ${BRAND_SHADOW}`, flexShrink: 0,
+              border: `1px solid ${BRAND_BORDER}`,
             }}>
-              <Typography sx={{ color: '#fff', fontWeight: 900, fontSize: { xs: '0.85rem', sm: '1rem' }, lineHeight: 1 }}>
+              <Typography sx={{ color: BRAND_PERIW, fontWeight: 900, fontSize: { xs: '0.85rem', sm: '1rem' }, lineHeight: 1 }}>
                 Z
               </Typography>
             </Box>
@@ -136,10 +153,8 @@ const Navbar = () => {
             {!isMobile && (
               <Typography sx={{
                 fontWeight: 800, fontSize: '1.75rem', letterSpacing: '-0.5px',
-                background: isDark
-                  ? 'linear-gradient(90deg, #a5b4fc, #c4b5fd)'
-                  : 'linear-gradient(90deg, #4f46e5, #7c3aed)',
-                WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', lineHeight: 1
+                color: isDark ? BRAND_TEXT : BRAND_NAVY,
+                lineHeight: 1,
               }}>
                 Zento
               </Typography>
@@ -161,15 +176,15 @@ const Navbar = () => {
               {(usuarioRol === 'SELLER' || usuarioRol === 'ADMIN') && (
                 <IconButton onClick={e => setNotifAnchor(e.currentTarget)} sx={{ ...iconSx, p: 0.75 }}>
                   <Badge badgeContent={ventasPendientes} color="error" max={9}>
-                    <NotificationsIcon fontSize="small" />
+                    <NotificationsNoneOutlinedIcon fontSize="small" />
                   </Badge>
                 </IconButton>
               )}
 
               {/* Wishlist */}
               <IconButton onClick={() => setWishlistOpen(true)} sx={{ ...iconSx, p: 0.75 }}>
-                <Badge badgeContent={wishlistCount} color="primary" max={99}>
-                  <StarIcon fontSize="small" />
+                <Badge badgeContent={wishlistCount} sx={{ '& .MuiBadge-badge': { bgcolor: BRAND_PERIW, color: '#fff' } }} max={99}>
+                  <StarBorderIcon fontSize="small" />
                 </Badge>
               </IconButton>
 
@@ -242,7 +257,7 @@ const Navbar = () => {
                     sx={{ py: 1.2, gap: 1.5 }}
                   >
                     <StorefrontIcon fontSize="small" color="action" />
-                    <Typography variant="body2">conviértete en vendedor</Typography>
+                    <Typography variant="body2">{t.beSeller}</Typography>
                   </MenuItem>
                 )}
 
@@ -275,7 +290,7 @@ const Navbar = () => {
                   <Tooltip title={ventasPendientes > 0 ? `${ventasPendientes} ${t.pending}` : t.noNotifications}>
                     <IconButton onClick={e => setNotifAnchor(e.currentTarget)} sx={iconSx}>
                       <Badge badgeContent={ventasPendientes} color="error" max={9}>
-                        <NotificationsIcon />
+                        <NotificationsNoneOutlinedIcon />
                       </Badge>
                     </IconButton>
                   </Tooltip>
@@ -285,13 +300,13 @@ const Navbar = () => {
               {/* Wishlist */}
               <Tooltip title={t.wishlist}>
                 <IconButton onClick={() => setWishlistOpen(true)} sx={iconSx}>
-                  <Badge badgeContent={wishlistCount} color="primary" max={99}>
-                    <StarIcon />
-                  </Badge>
+                <Badge badgeContent={wishlistCount} sx={{ '& .MuiBadge-badge': { bgcolor: BRAND_PERIW, color: '#fff' } }} max={99}>
+                  <StarBorderIcon />
+                </Badge>
                 </IconButton>
               </Tooltip>
 
-              <Typography variant="body2" sx={{ color: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)', mx: 0.5 }}>
+              <Typography variant="body2" sx={{ color: isDark ? 'rgba(232,233,240,0.55)' : `${BRAND_NAVY}aa`, mx: 0.5 }}>
                 {t.hello}, {usuarioNombre}
               </Typography>
 
@@ -301,12 +316,41 @@ const Navbar = () => {
 
               {usuarioRol === 'SELLER' || usuarioRol === 'ADMIN' ? (
                 <Button variant="contained" component={Link} to="/nuevo" startIcon={<StorefrontIcon />}
-                  sx={{ fontWeight: 'bold', background: 'linear-gradient(90deg, #6366f1, #8b5cf6)', boxShadow: '0 4px 14px rgba(99,102,241,0.4)', '&:hover': { background: 'linear-gradient(90deg, #4f46e5, #7c3aed)' }, borderRadius: 2, px: 2 }}>
+                  sx={{
+                    fontWeight: 'bold', borderRadius: '50px', px: 2,
+                    bgcolor: BRAND_PERIW, color: '#fff',
+                    boxShadow: `0 4px 14px ${BRAND_SHADOW}`,
+                    '&:hover': { bgcolor: BRAND_PERIW_HOVER },
+                  }}>
                   {t.publishGig}
                 </Button>
               ) : (
-                <Button variant="outlined" onClick={handleSolicitar}
-                  sx={{ borderRadius: 2, borderColor: '#6366f1', color: '#6366f1', '&:hover': { borderColor: '#4f46e5', bgcolor: 'rgba(99,102,241,0.05)' } }}>
+                <Button
+                  variant="outlined"
+                  onClick={handleSolicitar}
+                  sx={{
+                    fontWeight: 'bold',
+                    borderRadius: '50px',
+                    px: 2,
+                    borderColor: BRAND_PERIW,
+                    ...(isDark
+                      ? {
+                          color: BRAND_TEXT,
+                          '&:hover': {
+                            borderColor: BRAND_PERIW_HOVER,
+                            bgcolor: 'rgba(139,143,200,0.14)',
+                            color: '#fff',
+                          },
+                        }
+                      : {
+                          color: BRAND_NAVY,
+                          '&:hover': {
+                            borderColor: BRAND_PERIW_HOVER,
+                            bgcolor: 'rgba(139,143,200,0.08)',
+                          },
+                        }),
+                  }}
+                >
                   {t.beSeller}
                 </Button>
               )}
@@ -335,10 +379,18 @@ const Navbar = () => {
             }
           }}
         >
-          <Box sx={{ px: 2.5, py: 1.5, background: 'linear-gradient(90deg, #6366f1, #8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <Typography variant="subtitle2" fontWeight="bold" sx={{ color: 'white' }}>
-              🔔 {t.notifications}
-            </Typography>
+          <Box sx={{
+            px: 2.5, py: 1.5,
+            background: `linear-gradient(90deg, ${BRAND_NAVY_TOP} 0%, ${BRAND_NAVY} 100%)`,
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            borderBottom: `1px solid ${BRAND_BORDER}`,
+          }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <NotificationsNoneOutlinedIcon sx={{ fontSize: 20, color: 'white' }} />
+              <Typography variant="subtitle2" fontWeight="bold" sx={{ color: 'white' }}>
+                {t.notifications}
+              </Typography>
+            </Box>
             {ventasPendientes > 0 && (
               <Chip label={`${ventasPendientes} ${t.pending}`} size="small"
                 sx={{ bgcolor: 'rgba(255,255,255,0.2)', color: 'white', fontWeight: 'bold', fontSize: '0.7rem' }} />
@@ -380,7 +432,7 @@ const Navbar = () => {
           <Box sx={{ p: 1.5 }}>
             <Button fullWidth size="small" variant="text"
               onClick={() => { setNotifAnchor(null); navigate('/perfil'); }}
-              sx={{ borderRadius: 2, color: 'primary.main', fontWeight: 'bold' }}>
+              sx={{ borderRadius: 2, color: BRAND_PERIW, fontWeight: 'bold', '&:hover': { bgcolor: 'rgba(139,143,200,0.08)' } }}>
               {t.fullPanel}
             </Button>
           </Box>

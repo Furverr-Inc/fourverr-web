@@ -23,13 +23,13 @@ const ESTADO_CONFIG = {
 };
 
 const MOTIVO_LABEL = {
-  FRAUDE:                '🔴 Fraude o estafa',
-  CONTENIDO_INAPROPIADO: '🚫 Contenido inapropiado',
-  SPAM:                  '📢 Spam o publicidad engañosa',
-  PRODUCTO_FALSO:        '📦 Producto falso o inexistente',
-  MAL_COMPORTAMIENTO:    '😠 Mal comportamiento',
-  PRECIO_ENGAÑOSO:       '💸 Precio engañoso',
-  OTRO:                  '❓ Otro motivo',
+  FRAUDE:                'Fraude o estafa',
+  CONTENIDO_INAPROPIADO: 'Contenido inapropiado',
+  SPAM:                  'Spam o publicidad engañosa',
+  PRODUCTO_FALSO:        'Producto falso o inexistente',
+  MAL_COMPORTAMIENTO:    'Mal comportamiento',
+  PRECIO_ENGAÑOSO:       'Precio engañoso',
+  OTRO:                  'Otro motivo',
 };
 
 const formatDate = (dateStr) => {
@@ -77,7 +77,7 @@ const ReportesAdmin = () => {
   const handleRevisar = async (id) => {
     try {
       await api.put(`/reportes/${id}/revisar`);
-      mostrar('📋 Reporte marcado como "En revisión"');
+      mostrar('Reporte marcado como "En revisión"');
       cargarReportes();
     } catch { mostrar('Error al actualizar estado', 'error'); }
   };
@@ -93,7 +93,7 @@ const ReportesAdmin = () => {
   const handleEliminar = async (id) => {
     try {
       await api.delete(`/reportes/${id}`);
-      mostrar('🗑️ Reporte eliminado');
+      mostrar('Reporte eliminado');
       cargarReportes();
     } catch { mostrar('Error al eliminar', 'error'); }
   };

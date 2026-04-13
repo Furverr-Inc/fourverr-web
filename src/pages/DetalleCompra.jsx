@@ -9,6 +9,7 @@ import ArrowBackIcon   from '@mui/icons-material/ArrowBack';
 import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
 import AddIcon    from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
+import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements } from '@stripe/react-stripe-js';
@@ -203,9 +204,12 @@ const DetalleCompra = () => {
         </Button>
       ) : (
         <Paper sx={{ p:3, borderRadius:3 }}>
-          <Typography variant="subtitle2" color="text.secondary" sx={{ mb:2 }}>
-            🔒 Pago seguro procesado por Stripe
-          </Typography>
+          <Stack direction="row" alignItems="center" gap={1} sx={{ mb: 2 }}>
+            <LockOutlinedIcon sx={{ fontSize: 20, color: 'text.secondary' }} />
+            <Typography variant="subtitle2" color="text.secondary">
+              Pago seguro procesado por Stripe
+            </Typography>
+          </Stack>
           <Elements stripe={stripePromise} options={{ clientSecret }}>
             <CheckoutForm onExito={handlePagoExitoso} producto={producto} />
           </Elements>

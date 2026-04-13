@@ -109,6 +109,7 @@ const Registro = () => {
 
   const inputBase = {
     mb: 0.5,
+    overflow: 'visible',
     '& .MuiOutlinedInput-root': {
       borderRadius: 3,
       backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(13,17,39,0.04)',
@@ -118,6 +119,8 @@ const Registro = () => {
     },
     '& .MuiInputLabel-root': {
       color: isDark ? 'rgba(232,233,240,0.5)' : 'rgba(13,17,39,0.45)',
+      overflow: 'visible',
+      textOverflow: 'clip',
       '&.Mui-focused': { color: PERIW },
     },
     '& .MuiOutlinedInput-input': { color: isDark ? '#E8E9F0' : '#0D1127' },

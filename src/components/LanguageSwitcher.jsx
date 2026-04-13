@@ -3,6 +3,7 @@ import { Box, Tooltip, Collapse, Paper, Typography } from '@mui/material';
 import LanguageIcon from '@mui/icons-material/Language';
 import { useLanguage } from '../LanguageContext';
 import { useThemeMode } from '../ThemeContext';
+import { BRAND_NAVY, BRAND_NAVY_TOP, BRAND_PERIW, BRAND_BORDER, BRAND_SHADOW } from '../brandColors';
 
 const LANGUAGES = [
   { code: 'es', label: 'Español', flag: '🇲🇽' },
@@ -50,24 +51,24 @@ const LanguageSwitcher = () => {
                 borderBottom: index < LANGUAGES.length - 1 ? '1px solid' : 'none',
                 borderColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)',
                 background: lang === language.code
-                  ? (isDark ? 'rgba(99,102,241,0.2)' : 'rgba(99,102,241,0.08)')
+                  ? 'rgba(139,143,200,0.18)'
                   : 'transparent',
                 transition: 'background 0.15s',
                 '&:hover': {
-                  background: isDark ? 'rgba(99,102,241,0.15)' : 'rgba(99,102,241,0.06)',
+                  background: 'rgba(139,143,200,0.1)',
                 },
               }}
             >
               <Typography sx={{ fontSize: '1.2rem', lineHeight: 1 }}>{language.flag}</Typography>
               <Typography variant="body2" fontWeight={lang === language.code ? 700 : 400}
-                sx={{ color: lang === language.code ? 'primary.main' : 'text.primary' }}>
+                sx={{ color: lang === language.code ? BRAND_NAVY : 'text.primary' }}>
                 {language.label}
               </Typography>
               {/* Punto verde en el idioma activo */}
               {lang === language.code && (
                 <Box sx={{
                   ml: 'auto', width: 7, height: 7, borderRadius: '50%',
-                  bgcolor: '#6366f1', flexShrink: 0,
+                  bgcolor: BRAND_PERIW, flexShrink: 0,
                 }} />
               )}
             </Box>
@@ -84,12 +85,12 @@ const LanguageSwitcher = () => {
             height: 46,
             borderRadius: '50%',
             background: open
-              ? 'linear-gradient(135deg, #6366f1, #8b5cf6)'
+              ? `linear-gradient(145deg, ${BRAND_NAVY_TOP} 0%, ${BRAND_NAVY} 100%)`
               : (isDark ? 'rgba(30,30,50,0.95)' : 'rgba(255,255,255,0.95)'),
             border: '1px solid',
-            borderColor: open ? 'transparent' : (isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)'),
+            borderColor: open ? BRAND_BORDER : (isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)'),
             boxShadow: open
-              ? '0 4px 20px rgba(99,102,241,0.5)'
+              ? `0 4px 22px ${BRAND_SHADOW}`
               : '0 2px 12px rgba(0,0,0,0.15)',
             display: 'flex',
             alignItems: 'center',
@@ -97,14 +98,14 @@ const LanguageSwitcher = () => {
             cursor: 'pointer',
             transition: 'all 0.2s ease',
             '&:hover': {
-              boxShadow: '0 4px 20px rgba(99,102,241,0.4)',
+              boxShadow: `0 4px 20px ${BRAND_SHADOW}`,
               transform: 'scale(1.08)',
             },
           }}
         >
           <LanguageIcon sx={{
             fontSize: 22,
-            color: open ? '#fff' : (isDark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.6)'),
+            color: open ? BRAND_PERIW : (isDark ? 'rgba(255,255,255,0.7)' : `${BRAND_NAVY}99`),
             transition: 'color 0.2s',
           }} />
         </Box>

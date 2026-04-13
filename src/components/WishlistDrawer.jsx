@@ -4,7 +4,7 @@ import {
   Avatar, Divider, Button, CircularProgress, Tooltip, Chip
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
-import StarIcon from '@mui/icons-material/Star';
+import StarBorderIcon from '@mui/icons-material/StarBorder';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import { useNavigate } from 'react-router-dom';
@@ -70,7 +70,7 @@ const WishlistDrawer = ({ open, onClose }) => {
         borderBottom: '1px solid', borderColor: 'divider',
       }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <StarIcon sx={{ color: '#f59e0b', fontSize: 22 }} />
+          <StarBorderIcon sx={{ color: 'primary.main', fontSize: 22 }} />
           <Typography variant="h6" fontWeight="bold">Mi Wishlist</Typography>
           {wishlist.length > 0 && (
             <Chip label={wishlist.length} size="small" color="primary" sx={{ height: 20, fontSize: 11 }} />
@@ -89,12 +89,12 @@ const WishlistDrawer = ({ open, onClose }) => {
           </Box>
         ) : wishlist.length === 0 ? (
           <Box sx={{ textAlign: 'center', mt: 8, px: 3 }}>
-            <StarIcon sx={{ fontSize: 56, color: 'text.disabled', mb: 2 }} />
+            <StarBorderIcon sx={{ fontSize: 56, color: 'text.disabled', mb: 2 }} />
             <Typography variant="body1" fontWeight="bold" color="text.secondary">
               Tu wishlist está vacía
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-              Marca con ⭐ los servicios que más te interesen
+              Usa el icono de estrella en cada servicio para guardarlo aquí
             </Typography>
           </Box>
         ) : (

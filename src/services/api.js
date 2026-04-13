@@ -33,16 +33,19 @@ api.interceptors.response.use(
     // 401 = token expirado o inválido
     // 403 = cuenta deshabilitada (ese lo manejamos en Login, no aquí)
     if (status === 401) {
-      // Evitar loop infinito: si ya estamos en login/registro/landing, no redirigir
       const rutaActual = window.location.pathname;
-      const esRutaPublica = ['/', '/login', '/registro'].includes(rutaActual);
+      const basePrefix = import.meta.env.BASE_URL.replace(/\/$/, '');
+      const rutaRelativa =
+        basePrefix && rutaActual.startsWith(basePrefix)
+          ? rutaActual.slice(basePrefix.length) || '/'
+          : rutaActual;
+      const esRutaPublica = ['/', '/login', '/registro'].includes(rutaRelativa);
 
       if (!esRutaPublica) {
-        // Limpiar todo y mandar al login
         localStorage.clear();
-        // Pequeño delay para que cualquier estado pendiente se limpie
         setTimeout(() => {
-          window.location.href = '/fourverr-web/login';
+          const loginPath = `${import.meta.env.BASE_URL}login`.replace(/\/{2,}/g, '/');
+          window.location.href = new URL(loginPath, window.location.origin).href;
         }, 100);
       }
     }

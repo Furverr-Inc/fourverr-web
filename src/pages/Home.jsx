@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import {
-  Container, Grid, Card, CardMedia, CardContent, Typography,
+  Container, Card, CardMedia, CardContent, Typography,
   CardActions, Button, Chip, Box, CircularProgress, Alert,
   Avatar, TextField, InputAdornment, Stack, Rating,
   Menu, MenuItem, IconButton, Divider, useMediaQuery, Drawer, List, ListItem, ListItemText,
@@ -12,13 +12,105 @@ import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import SearchIcon from '@mui/icons-material/Search';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import FilterListIcon from '@mui/icons-material/FilterList';
-import MoreVertIcon from '@mui/icons-material/MoreVert';
 import api from '../services/api';
 import ProductoModal from '../components/ProductoModal';
 import { useThemeMode } from '../ThemeContext';
 import { useLanguage } from '../LanguageContext';
+import {
+  BRAND_NAVY, BRAND_NAVY_TOP, BRAND_PERIW, BRAND_PERIW_HOVER, BRAND_BORDER, BRAND_TEXT,
+} from '../brandColors';
 
 const PAGE_SIZE = 12;
+
+/* Radios: tarjetas moderadas (~20px); entradas y chips en píldora para coherencia visual */
+const R_CARD = '20px';
+const R_PILL = '9999px';
+
+/** Scroll horizontal discreto (categorías): fino, sin flechas en WebKit, refuerzo al hover */
+const sxCategoryScrollRow = (isDark) => ({
+  overflowX: 'auto',
+  overflowY: 'hidden',
+  WebkitOverflowScrolling: 'touch',
+  pb: 0.75,
+  mb: 4,
+  scrollbarWidth: 'thin',
+  scrollbarColor: `${isDark ? 'rgba(232,233,240,0.22)' : 'rgba(13,17,39,0.18)'} transparent`,
+  '&::-webkit-scrollbar': { height: 5 },
+  '&::-webkit-scrollbar-track': { background: 'transparent' },
+  '&::-webkit-scrollbar-button': { display: 'none', width: 0, height: 0 },
+  '&::-webkit-scrollbar-thumb': {
+    backgroundColor: isDark ? 'rgba(232,233,240,0.18)' : 'rgba(13,17,39,0.16)',
+    borderRadius: 10,
+    border: '2px solid transparent',
+    backgroundClip: 'padding-box',
+  },
+  '&:hover::-webkit-scrollbar-thumb': {
+    backgroundColor: isDark ? 'rgba(232,233,240,0.32)' : 'rgba(139,143,200,0.45)',
+  },
+});
+
+/** Categoría seleccionada: claro = píldora navy (como antes); oscuro = píldora clara sobre fondo navy (inverso legible). */
+const sxCategoryChipSelected = (isDark) =>
+  isDark
+    ? {
+        bgcolor: BRAND_TEXT,
+        color: BRAND_NAVY,
+        borderColor: 'rgba(232,233,240,0.95)',
+        fontWeight: 600,
+        WebkitTapHighlightColor: 'transparent',
+        '&:hover': { bgcolor: '#D8DAE8', borderColor: '#C8CBD8' },
+        '&:active': {
+          bgcolor: '#D0D3E0',
+          color: BRAND_NAVY,
+          borderColor: 'rgba(232,233,240,0.95)',
+        },
+      }
+    : {
+        bgcolor: BRAND_NAVY,
+        color: '#fff',
+        borderColor: BRAND_NAVY,
+        fontWeight: 600,
+        WebkitTapHighlightColor: 'transparent',
+        '&:hover': { bgcolor: BRAND_NAVY_TOP, borderColor: BRAND_NAVY_TOP },
+        '&:active': {
+          bgcolor: BRAND_NAVY_TOP,
+          color: '#fff',
+          borderColor: BRAND_NAVY_TOP,
+        },
+      };
+
+const sxDrawerItemSelected = (isDark) =>
+  isDark
+    ? {
+        bgcolor: BRAND_TEXT,
+        color: BRAND_NAVY,
+        '& .MuiListItemText-primary': { color: BRAND_NAVY },
+        '&:hover': { bgcolor: '#D8DAE8' },
+        '&:active': { bgcolor: '#D0D3E0' },
+      }
+    : {
+        bgcolor: BRAND_NAVY,
+        color: 'white',
+        '& .MuiListItemText-primary': { color: '#fff' },
+        '&:hover': { bgcolor: BRAND_NAVY_TOP },
+        '&:active': { bgcolor: BRAND_NAVY_TOP },
+      };
+
+/** Fila drawer sin selección: feedback táctil sin flash gris del tema */
+const sxDrawerRowUnselected = (isDark) => ({
+  WebkitTapHighlightColor: 'transparent',
+  '&:active': {
+    bgcolor: isDark ? 'rgba(139,143,200,0.14)' : 'rgba(139,143,200,0.12)',
+  },
+});
+
+/** Misma columna centrada que el grid de tarjetas (categorías + listado alineados) */
+const sxListingColumn = {
+  width: '100%',
+  maxWidth: { xs: '100%', md: 1040, lg: 1100, xl: 1160 },
+  mx: { xs: 0, md: 'auto' },
+  px: { xs: 0, sm: 0, md: 2, lg: 3, xl: 4 },
+};
 
 const Home = () => {
   const [productos, setProductos]   = useState([]);
@@ -33,7 +125,7 @@ const Home = () => {
   const [orden, setOrden]           = useState('');   // Para ordenamiento
 
   const { isDark } = useThemeMode();
-  const { t } = useLanguage();
+  const { lang, t } = useLanguage();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
@@ -133,11 +225,19 @@ const Home = () => {
   const hayMas = visibles < productosOrdenados.length;
 
   // Label del filtro activo para mostrar en móvil
-  const tipoLabel = TIPOS.find(t => t.value === tipoFiltro)?.label || '';
-  const ordenLabel = orden === 'top' ? 'Top rated ⭐' : orden === 'low' ? 'Low rated ⭐' : orden === 'newest' ? 'Newest' : orden === 'oldest' ? 'Oldest' : '';
+  const tipoLabel = TIPOS.find(tp => tp.value === tipoFiltro)?.label || '';
+  const sortChipLabel =
+    orden === 'top' ? t.sortTopRated
+    : orden === 'low' ? t.sortLowRated
+    : orden === 'newest' ? t.sortNewest
+    : orden === 'oldest' ? t.sortOldest
+    : '';
 
   return (
-    <Container maxWidth={false} sx={{ mt: { xs: 2, sm: 4 }, mb: 4, px: { xs: 1, sm: 3 }, maxWidth: { xs: '100%', sm: 'lg', md: 'lg', lg: 'lg' } }}>
+    <Container
+      maxWidth="xl"
+      sx={{ mt: { xs: 2, sm: 4 }, mb: 4, px: { xs: 1.5, sm: 3, md: 4 } }}
+    >
 
       {/* Título — más pequeño en móvil */}
       <Typography
@@ -162,59 +262,94 @@ const Home = () => {
               <SearchIcon color="action" fontSize={isMobile ? 'small' : 'medium'} />
             </InputAdornment>
           ),
-          sx: { borderRadius: 3 }
         }}
-        sx={{ mb: 2 }}
+        sx={{
+          mb: 2,
+          '& .MuiOutlinedInput-root': {
+            borderRadius: R_PILL,
+            bgcolor: 'background.paper',
+            '& fieldset': { borderColor: 'rgba(13,17,39,0.12)' },
+            '&:hover fieldset': { borderColor: BRAND_PERIW },
+            '&.Mui-focused fieldset': { borderColor: BRAND_PERIW, borderWidth: 1 },
+          },
+        }}
       />
 
       {/* ─── FILTROS ─── */}
       {isMobile ? (
-        /* Móvil: botón "filters" + ícono de tres puntos */
         <>
           <Box sx={{
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
             mb: 2,
-            px: 0.5
+            px: 0.5,
+            gap: 1,
+            minWidth: 0,
           }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <FilterListIcon fontSize="small" color="action" />
-              <Typography variant="body2" color="text.secondary" fontWeight={500}>
-                filters
-              </Typography>
-              {/* Chips de filtro activo */}
-              {tipoLabel && (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', minWidth: 0, flex: 1 }}>
+              <Chip
+                label={tipoLabel || t.categories.all}
+                size="small"
+                onDelete={tipoFiltro ? () => setTipoFiltro('') : undefined}
+                disableRipple
+                sx={{
+                  height: 22, fontSize: '0.7rem',
+                  borderRadius: R_PILL,
+                  bgcolor: BRAND_NAVY, color: '#fff',
+                  maxWidth: '100%',
+                  WebkitTapHighlightColor: 'transparent',
+                  '&:active': { bgcolor: BRAND_NAVY_TOP },
+                  '& .MuiChip-label': { overflow: 'hidden', textOverflow: 'ellipsis' },
+                  '& .MuiChip-deleteIcon': { color: 'rgba(255,255,255,0.85)', '&:hover': { color: '#fff' } },
+                }}
+              />
+              {orden && (
                 <Chip
-                  label={tipoLabel}
+                  label={sortChipLabel}
                   size="small"
-                  color="primary"
-                  onDelete={() => setTipoFiltro('')}
-                  sx={{ height: 22, fontSize: '0.7rem' }}
-                />
-              )}
-              {ordenLabel && (
-                <Chip
-                  label={ordenLabel}
-                  size="small"
-                  color="secondary"
                   onDelete={() => setOrden('')}
-                  sx={{ height: 22, fontSize: '0.7rem' }}
+                  disableRipple
+                  sx={{
+                    height: 22, fontSize: '0.7rem',
+                    borderRadius: R_PILL,
+                    bgcolor: BRAND_NAVY, color: '#fff',
+                    WebkitTapHighlightColor: 'transparent',
+                    '&:active': { bgcolor: BRAND_NAVY_TOP },
+                    '& .MuiChip-deleteIcon': { color: 'rgba(255,255,255,0.85)', '&:hover': { color: '#fff' } },
+                  }}
                 />
               )}
             </Box>
-            <IconButton
-              size="small"
-              onClick={e => setAnchorEl(e.currentTarget)}
-              sx={{
-                bgcolor: anchorEl ? 'primary.main' : 'action.hover',
-                color: anchorEl ? 'white' : 'text.primary',
-                borderRadius: 2,
-                '&:hover': { bgcolor: 'primary.main', color: 'white' }
-              }}
-            >
-              <MoreVertIcon fontSize="small" />
-            </IconButton>
+            <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 0.5, flexShrink: 0 }}>
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                fontWeight={500}
+                sx={{ textTransform: lang === 'en' ? 'lowercase' : 'none' }}
+              >
+                {t.filtersNoun}
+              </Typography>
+              <IconButton
+                size="small"
+                onClick={e => setAnchorEl(e.currentTarget)}
+                aria-label={t.filtersDrawerTitle}
+                disableRipple
+                sx={{
+                  WebkitTapHighlightColor: 'transparent',
+                  bgcolor: anchorEl ? BRAND_NAVY : 'action.hover',
+                  color: anchorEl ? 'white' : 'text.primary',
+                  borderRadius: R_PILL,
+                  '&:hover': { bgcolor: BRAND_NAVY_TOP, color: 'white' },
+                  '&:active': {
+                    bgcolor: anchorEl ? BRAND_NAVY_TOP : 'rgba(139,143,200,0.22)',
+                    color: anchorEl ? 'white' : 'text.primary',
+                  },
+                }}
+              >
+                <FilterListIcon fontSize="small" />
+              </IconButton>
+            </Box>
           </Box>
 
           {/* Mobile: Bottom Sheet for filters */}
@@ -224,21 +359,21 @@ const Home = () => {
             onClose={() => setAnchorEl(null)}
             PaperProps={{
               sx: {
-                borderTopLeftRadius: 16,
-                borderTopRightRadius: 16,
+                borderTopLeftRadius: R_CARD,
+                borderTopRightRadius: R_CARD,
                 maxHeight: '70vh',
-                pb: 2
-              }
+                pb: 2,
+              },
             }}
           >
             <Box sx={{ p: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
-              <Typography variant="h6" fontWeight="bold">Filters</Typography>
+              <Typography variant="h6" fontWeight="bold">{t.filtersDrawerTitle}</Typography>
             </Box>
             <List sx={{ py: 0 }}>
               {/* Sección categorías */}
               <ListItem disabled sx={{ opacity: 1, py: 0 }}>
                 <Typography variant="caption" fontWeight="bold" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: 1, px: 2 }}>
-                  categories
+                  {t.categoriesSection}
                 </Typography>
               </ListItem>
               {TIPOS.map(tp => (
@@ -247,11 +382,14 @@ const Home = () => {
                   button
                   selected={tipoFiltro === tp.value}
                   onClick={() => { setTipoFiltro(tp.value); setAnchorEl(null); }}
+                  disableRipple
                   sx={{
-                    borderRadius: 1,
+                    borderRadius: R_CARD,
                     mx: 1,
                     minHeight: 44,
-                    '&.Mui-selected': { bgcolor: 'primary.main', color: 'white', '&:hover': { bgcolor: 'primary.dark' } }
+                    WebkitTapHighlightColor: 'transparent',
+                    '&.Mui-selected': sxDrawerItemSelected(isDark),
+                    ...(tipoFiltro !== tp.value ? sxDrawerRowUnselected(isDark) : {}),
                   }}
                 >
                   <ListItemText primary={tp.label} />
@@ -260,25 +398,28 @@ const Home = () => {
 
               <ListItem disabled sx={{ opacity: 1, py: 0, mt: 1 }}>
                 <Typography variant="caption" fontWeight="bold" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: 1, px: 2 }}>
-                  sort by
+                  {t.sortSection}
                 </Typography>
               </ListItem>
               {[
-                { value: 'top', label: 'Top rated 🌟' },
-                { value: 'low', label: 'Low rated ⭐' },
-                { value: 'newest', label: 'Newest' },
-                { value: 'oldest', label: 'Oldest' },
+                { value: 'top', label: t.sortTopRated },
+                { value: 'low', label: t.sortLowRated },
+                { value: 'newest', label: t.sortNewest },
+                { value: 'oldest', label: t.sortOldest },
               ].map(op => (
                 <ListItem
                   key={op.value}
                   button
                   selected={orden === op.value}
                   onClick={() => { setOrden(op.value); setAnchorEl(null); }}
+                  disableRipple
                   sx={{
-                    borderRadius: 1,
+                    borderRadius: R_CARD,
                     mx: 1,
                     minHeight: 44,
-                    '&.Mui-selected': { bgcolor: 'secondary.main', color: 'white', '&:hover': { bgcolor: 'secondary.dark' } }
+                    WebkitTapHighlightColor: 'transparent',
+                    '&.Mui-selected': sxDrawerItemSelected(isDark),
+                    ...(orden !== op.value ? sxDrawerRowUnselected(isDark) : {}),
                   }}
                 >
                   <ListItemText primary={op.label} />
@@ -288,19 +429,44 @@ const Home = () => {
           </Drawer>
         </>
       ) : (
-        /* Desktop: chips horizontales como estaban */
-        <Stack direction="row" spacing={1} sx={{ mb: 4, overflowX: 'auto', pb: 1 }}>
-          {TIPOS.map(tp => (
-            <Chip
-              key={tp.value}
-              label={tp.label}
-              onClick={() => setTipoFiltro(tp.value)}
-              color={tipoFiltro === tp.value ? 'primary' : 'default'}
-              variant={tipoFiltro === tp.value ? 'filled' : 'outlined'}
-              sx={{ cursor: 'pointer', flexShrink: 0 }}
-            />
-          ))}
-        </Stack>
+        /* Desktop: categorías en la misma columna centrada que el grid de gigs */
+        <Box sx={sxListingColumn}>
+          <Box sx={sxCategoryScrollRow(isDark)}>
+            <Stack direction="row" spacing={1} sx={{ flexWrap: 'nowrap', width: 'max-content', py: 0.25 }}>
+              {TIPOS.map(tp => (
+                <Chip
+                  key={tp.value}
+                  label={tp.label}
+                  onClick={() => setTipoFiltro(tp.value)}
+                  variant="outlined"
+                  disableRipple
+                  sx={{
+                    cursor: 'pointer',
+                    flexShrink: 0,
+                    borderRadius: R_PILL,
+                    py: 2.25,
+                    px: 0.5,
+                    fontWeight: tipoFiltro === tp.value ? 600 : 500,
+                    ...(tipoFiltro === tp.value
+                      ? sxCategoryChipSelected(isDark)
+                      : {
+                          borderColor: BRAND_BORDER,
+                          WebkitTapHighlightColor: 'transparent',
+                          '&:hover': {
+                            borderColor: BRAND_PERIW,
+                            bgcolor: 'rgba(139,143,200,0.1)',
+                          },
+                          '&:active': {
+                            borderColor: BRAND_PERIW,
+                            bgcolor: 'rgba(139,143,200,0.16)',
+                          },
+                        }),
+                  }}
+                />
+              ))}
+            </Stack>
+          </Box>
+        </Box>
       )}
 
       {/* Error */}
@@ -309,38 +475,62 @@ const Home = () => {
       {/* Contenido */}
       {loading ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-          <CircularProgress />
+          <CircularProgress sx={{ color: BRAND_PERIW }} />
         </Box>
       ) : productos.length === 0 ? (
         <Alert severity="info">{t.noResults} — {t.noResultsHint}</Alert>
       ) : (
         <>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            {t.showing} {productosMostrados.length} {t.of} {productosOrdenados.length} {t.products}
-          </Typography>
+          <Box sx={sxListingColumn}>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              {t.showing} {productosMostrados.length} {t.of} {productosOrdenados.length} {t.products}
+            </Typography>
 
-          <Grid container spacing={{ xs: 1.5, sm: 3 }}>
+            <Box
+              sx={{
+                display: 'grid',
+                width: '100%',
+                gap: { xs: 1.5, sm: 2.25, md: 2.5 },
+                gridTemplateColumns: {
+                  xs: 'minmax(0, 1fr)',
+                  sm: 'repeat(2, minmax(0, 1fr))',
+                  md: 'repeat(3, minmax(0, 1fr))',
+                  lg: 'repeat(3, minmax(0, 1fr))',
+                  xl: 'repeat(3, minmax(0, 1fr))',
+                },
+                alignItems: 'stretch',
+              }}
+            >
             {productosMostrados.map(prod => {
               const rating = ratings[prod.id];
               return (
-                <Grid item key={prod.id} xs={12} sm={6} md={4} lg={3}>
-                  <Card
-                    sx={{
-                      height: '100%',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      borderRadius: 3,
-                      cursor: 'pointer',
-                      transition: 'transform 0.2s, box-shadow 0.2s',
-                      '&:hover': {
-                        transform: 'translateY(-4px)',
-                        boxShadow: isDark
-                          ? '0 8px 30px rgba(99,102,241,0.25)'
-                          : '0 8px 30px rgba(99,102,241,0.15)',
-                      }
-                    }}
-                    onClick={() => { setSelected(prod); setModalOpen(true); }}
-                  >
+                <Card
+                  key={prod.id}
+                  sx={{
+                    height: '100%',
+                    minWidth: 0,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    borderRadius: R_CARD,
+                    overflow: 'hidden',
+                    cursor: 'pointer',
+                    WebkitTapHighlightColor: 'transparent',
+                    transition: 'transform 0.2s, box-shadow 0.2s',
+                    '&:hover': {
+                      transform: 'translateY(-4px)',
+                      boxShadow: isDark
+                        ? '0 12px 32px rgba(13,17,39,0.35)'
+                        : '0 12px 32px rgba(13,17,39,0.12)',
+                    },
+                    '&:active': {
+                      transform: 'translateY(-2px)',
+                      boxShadow: isDark
+                        ? '0 8px 24px rgba(13,17,39,0.28)'
+                        : '0 8px 20px rgba(13,17,39,0.1)',
+                    },
+                  }}
+                  onClick={() => { setSelected(prod); setModalOpen(true); }}
+                >
                     {/* Imagen */}
                     <CardMedia
                       component="img"
@@ -348,7 +538,7 @@ const Home = () => {
                       image={prod.urlPortada || prod.urlArchivo || 'https://via.placeholder.com/300?text=Sin+Imagen'}
                       alt={prod.titulo}
                       loading="lazy"
-                      sx={{ objectFit: 'cover' }}
+                      sx={{ width: '100%', objectFit: 'cover' }}
                     />
 
                     {/* Contenido */}
@@ -356,7 +546,14 @@ const Home = () => {
                       {/* Vendedor */}
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
                         <Avatar
-                          sx={{ width: { xs: 16, sm: 22 }, height: { xs: 16, sm: 22 }, fontSize: '0.65rem', bgcolor: 'primary.main' }}
+                          sx={{
+                            width: { xs: 16, sm: 22 },
+                            height: { xs: 16, sm: 22 },
+                            fontSize: '0.65rem',
+                            bgcolor: BRAND_PERIW,
+                            color: '#fff',
+                            fontWeight: 700,
+                          }}
                           src={prod.vendedor?.fotoUrl}
                         >
                           {prod.vendedor?.nombreMostrado?.charAt(0) || '?'}
@@ -388,7 +585,11 @@ const Home = () => {
                             precision={0.1}
                             size="small"
                             readOnly
-                            sx={{ fontSize: { xs: '0.7rem', sm: '0.9rem' } }}
+                            sx={{
+                              fontSize: { xs: '0.7rem', sm: '0.9rem' },
+                              '& .MuiRating-iconFilled': { color: '#e8b006' },
+                              '& .MuiRating-iconEmpty': { color: `${BRAND_PERIW}55` },
+                            }}
                           />
                           <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.6rem', sm: '0.75rem' } }}>
                             {rating.promedio.toFixed(1)} ({rating.total})
@@ -401,9 +602,25 @@ const Home = () => {
                         <Chip
                           label={prod.tipo?.replace(/_/g, ' ')}
                           size="small"
-                          color="primary"
                           variant="outlined"
-                          sx={{ fontSize: { xs: '0.55rem', sm: '0.75rem' }, height: { xs: 18, sm: 24 } }}
+                          sx={{
+                            fontSize: { xs: '0.55rem', sm: '0.75rem' },
+                            height: { xs: 20, sm: 26 },
+                            borderRadius: R_PILL,
+                            '& .MuiChip-label': { px: { xs: 1, sm: 1.25 } },
+                            ...(isDark
+                              ? {
+                                  borderColor: BRAND_BORDER,
+                                  color: 'rgba(200,202,212,0.92)',
+                                  bgcolor: 'rgba(255,255,255,0.06)',
+                                  '&:hover': { bgcolor: 'rgba(139,143,200,0.12)' },
+                                }
+                              : {
+                                  borderColor: BRAND_PERIW,
+                                  color: BRAND_NAVY,
+                                  bgcolor: 'rgba(139,143,200,0.08)',
+                                }),
+                          }}
                         />
                         <Typography
                           variant="h6"
@@ -424,10 +641,12 @@ const Home = () => {
                         fullWidth
                         size={isMobile ? 'small' : 'medium'}
                         sx={{
-                          borderRadius: 2,
+                          borderRadius: R_PILL,
                           fontSize: { xs: '0.65rem', sm: '0.875rem' },
                           py: { xs: 0.5, sm: 1 },
-                          minHeight: { xs: 44, sm: 'auto' }
+                          minHeight: { xs: 44, sm: 'auto' },
+                          bgcolor: BRAND_NAVY,
+                          '&:hover': { bgcolor: BRAND_NAVY_TOP },
                         }}
                         onClick={e => { e.stopPropagation(); setSelected(prod); setModalOpen(true); }}
                       >
@@ -439,17 +658,17 @@ const Home = () => {
                           size="small"
                           color="error"
                           onClick={e => handleEliminar(e, prod.id)}
-                          sx={{ minWidth: { xs: 30, sm: 42 }, borderRadius: 2, p: { xs: 0.5, sm: 1 } }}
+                          sx={{ minWidth: { xs: 30, sm: 42 }, borderRadius: R_PILL, p: { xs: 0.5, sm: 1 } }}
                         >
                           <DeleteIcon fontSize="small" />
                         </Button>
                       )}
                     </CardActions>
                   </Card>
-                </Grid>
               );
             })}
-          </Grid>
+            </Box>
+          </Box>
 
           {/* Cargar más */}
           {hayMas && (
@@ -462,7 +681,16 @@ const Home = () => {
                 size="large"
                 endIcon={<ExpandMoreIcon />}
                 onClick={handleVerMas}
-                sx={{ borderRadius: 3, px: 4 }}
+                sx={{
+                  borderRadius: R_PILL,
+                  px: 4,
+                  borderColor: BRAND_PERIW,
+                  color: BRAND_NAVY,
+                  '&:hover': {
+                    borderColor: BRAND_PERIW_HOVER,
+                    bgcolor: 'rgba(139,143,200,0.1)',
+                  },
+                }}
               >
                 {t.loadMore}
               </Button>

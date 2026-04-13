@@ -5,9 +5,10 @@ import {
 } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
 import CloseIcon from '@mui/icons-material/Close';
-import SupportAgentIcon from '@mui/icons-material/SupportAgent';
+import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import { useThemeMode } from '../ThemeContext';
 import api from '../services/api';
+import { BRAND_NAVY, BRAND_NAVY_TOP, BRAND_PERIW, BRAND_BORDER, BRAND_SHADOW } from '../brandColors';
 
 const ChatSoporte = () => {
   const { isDark } = useThemeMode();
@@ -77,14 +78,18 @@ const ChatSoporte = () => {
         onClick={() => setAbierto(o => !o)}
         sx={{
           position: 'fixed', bottom: 24, right: 24, zIndex: 1300,
-          background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-          color: 'white',
-          boxShadow: '0 8px 24px rgba(99,102,241,0.5)',
-          '&:hover': { background: 'linear-gradient(135deg, #4f46e5, #7c3aed)' },
+          background: `linear-gradient(145deg, ${BRAND_NAVY_TOP} 0%, ${BRAND_NAVY} 100%)`,
+          color: BRAND_PERIW,
+          boxShadow: `0 8px 28px ${BRAND_SHADOW}`,
+          border: `1px solid ${BRAND_BORDER}`,
+          '&:hover': {
+            background: BRAND_NAVY,
+            color: '#fff',
+          },
         }}
       >
         <Badge badgeContent={noLeidos} color="error" max={9}>
-          <SupportAgentIcon />
+          <ChatBubbleOutlineIcon sx={{ fontSize: 26 }} />
         </Badge>
       </Fab>
 
@@ -95,19 +100,20 @@ const ChatSoporte = () => {
           width: 340, height: 460,
           borderRadius: 3, overflow: 'hidden',
           display: 'flex', flexDirection: 'column',
-          border: isDark ? '1px solid rgba(99,102,241,0.3)' : '1px solid rgba(99,102,241,0.15)',
-          boxShadow: '0 20px 60px rgba(99,102,241,0.25)',
+          border: `1px solid ${BRAND_BORDER}`,
+          boxShadow: `0 20px 60px ${BRAND_SHADOW}`,
         }}>
 
           {/* Header */}
           <Box sx={{
-            background: 'linear-gradient(90deg, #6366f1, #8b5cf6)',
+            background: `linear-gradient(90deg, ${BRAND_NAVY_TOP} 0%, ${BRAND_NAVY} 100%)`,
             px: 2, py: 1.5,
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            borderBottom: `1px solid ${BRAND_BORDER}`,
           }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Avatar sx={{ width: 32, height: 32, bgcolor: 'rgba(255,255,255,0.2)' }}>
-                <SupportAgentIcon sx={{ fontSize: 18 }} />
+              <Avatar sx={{ width: 32, height: 32, bgcolor: 'rgba(139,143,200,0.25)' }}>
+                <ChatBubbleOutlineIcon sx={{ fontSize: 18, color: BRAND_PERIW }} />
               </Avatar>
               <Box>
                 <Typography variant="body2" fontWeight="bold" sx={{ color: 'white', lineHeight: 1.2 }}>

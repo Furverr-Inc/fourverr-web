@@ -57,7 +57,17 @@ export const lightTheme = createTheme({
   components: {
     MuiCssBaseline: {
       styleOverrides: {
+        html: {
+          WebkitTapHighlightColor: 'transparent',
+        },
         body: { backgroundColor: OFF_WHITE },
+      },
+    },
+    MuiButtonBase: {
+      styleOverrides: {
+        root: {
+          WebkitTapHighlightColor: 'transparent',
+        },
       },
     },
     MuiCard: {
@@ -100,13 +110,18 @@ export const lightTheme = createTheme({
     },
     MuiChip: {
       styleOverrides: {
-        root: { borderColor: NAVY, color: NAVY },
+        root: {
+          WebkitTapHighlightColor: 'transparent',
+        },
       },
     },
   },
 });
 
 // ────────────────────────────────────────────────────────────
+/* Dark = misma marca que light: fondo navy, superficies NAVY_MID, acento periwinkle.
+   Primary en oscuro es PERIW (como botón login en claro); texto claro sobre oscuro.
+   Success más suave que el mint puro (#34D399) para no competir con el acento morado. */
 export const darkTheme = createTheme({
   palette: {
     mode: 'dark',
@@ -122,7 +137,7 @@ export const darkTheme = createTheme({
       dark:         '#9A9CAC',
       contrastText: NAVY,
     },
-    success:  { main: '#34D399' },
+    success:  { main: '#7DD3A0' },
     warning:  { main: '#FBBF24' },
     error:    { main: '#F87171' },
     background: {
@@ -131,9 +146,9 @@ export const darkTheme = createTheme({
     },
     text: {
       primary:   '#E8E9F0',
-      secondary: '#9094A8',
+      secondary: '#9EA3B8',
     },
-    divider: 'rgba(200,202,212,0.10)',
+    divider: 'rgba(200,202,212,0.12)',
   },
   typography: {
     fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
@@ -146,7 +161,17 @@ export const darkTheme = createTheme({
   components: {
     MuiCssBaseline: {
       styleOverrides: {
+        html: {
+          WebkitTapHighlightColor: 'transparent',
+        },
         body: { backgroundColor: NAVY },
+      },
+    },
+    MuiButtonBase: {
+      styleOverrides: {
+        root: {
+          WebkitTapHighlightColor: 'transparent',
+        },
       },
     },
     MuiCard: {
@@ -154,7 +179,7 @@ export const darkTheme = createTheme({
         root: {
           backgroundImage: 'none',
           backgroundColor: NAVY_MID,
-          border: '1px solid rgba(200,202,212,0.10)',
+          border: '1px solid rgba(200,202,212,0.12)',
           boxShadow: '0 4px 24px rgba(0,0,0,0.35)',
         },
       },
@@ -186,11 +211,6 @@ export const darkTheme = createTheme({
         },
       },
     },
-    MuiChip: {
-      styleOverrides: {
-        root: { borderColor: PERIW, color: PERIW },
-      },
-    },
     MuiDialog: {
       styleOverrides: {
         paper: {
@@ -211,6 +231,13 @@ export const darkTheme = createTheme({
           '& fieldset': { borderColor: 'rgba(200,202,212,0.18)' },
           '&:hover fieldset': { borderColor: PERIW },
           '&.Mui-focused fieldset': { borderColor: PERIW },
+        },
+      },
+    },
+    MuiChip: {
+      styleOverrides: {
+        root: {
+          WebkitTapHighlightColor: 'transparent',
         },
       },
     },
