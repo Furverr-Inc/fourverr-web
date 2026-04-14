@@ -6,6 +6,7 @@ import {
 import SendIcon from '@mui/icons-material/Send';
 import CloseIcon from '@mui/icons-material/Close';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
+import SupportAgentIcon from '@mui/icons-material/SupportAgent';
 import { useThemeMode } from '../ThemeContext';
 import api from '../services/api';
 import { BRAND_NAVY, BRAND_NAVY_TOP, BRAND_PERIW, BRAND_BORDER, BRAND_SHADOW } from '../brandColors';

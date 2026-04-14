@@ -32,6 +32,7 @@ import api from '../services/api';
 import { useThemeMode } from '../ThemeContext';
 import { useLanguage } from '../LanguageContext';
 import ProductoModal from '../components/ProductoModal';
+import MisReportesSection from '../components/MisReportesSection';
 
 // ── StatCard ──
 const StatCard = ({ icon, label, value, color, isDark }) => (
@@ -206,6 +207,14 @@ const Perfil = () => {
     if (!perfil) return;
     cargarDatosExtra();
     if (perfil.role === 'SELLER' || perfil.role === 'ADMIN') cargarVentas();
+  }, [perfil]);
+
+  useEffect(() => {
+    if (!perfil || window.location.hash !== '#mis-reportes') return;
+    const t = setTimeout(() => {
+      document.getElementById('panel-mis-reportes')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 300);
+    return () => clearTimeout(t);
   }, [perfil]);
 
   const handleFotoClick = () => document.getElementById('input-foto').click();
@@ -549,6 +558,12 @@ const Perfil = () => {
             </Paper>
           </Grid>
           </>
+        )}
+
+        {perfil?.role !== 'ADMIN' && (
+          <Grid item xs={12}>
+            <MisReportesSection onLoaded={() => window.dispatchEvent(new Event('zento-reportes-actualizado'))} />
+          </Grid>
         )}
 
         {/* ══════════════════════════════════════════

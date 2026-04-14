@@ -15,7 +15,10 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import PersonIcon from '@mui/icons-material/Person';
 import LogoutIcon from '@mui/icons-material/Logout';
 import NotificationsNoneOutlinedIcon from '@mui/icons-material/NotificationsNoneOutlined';
+import FlagOutlinedIcon from '@mui/icons-material/FlagOutlined';
 import api from '../services/api';
+import { clearAuthLocalStorage } from '../utils/authLocalStorage';
+import { countUnreadMisReportes } from '../utils/misReportesNotif';
 import { useThemeMode } from '../ThemeContext';
 import { useLanguage } from '../LanguageContext';
 import WishlistDrawer from './WishlistDrawer';
@@ -41,12 +44,26 @@ const Navbar = () => {
   const [wishlistCount, setWishlistCount] = useState(0);
   const [ventas, setVentas]               = useState([]);
   const [notifAnchor, setNotifAnchor]     = useState(null);
+  const [reportesUnread, setReportesUnread] = useState(0);
 
   // Menú de avatar en móvil
   const [avatarMenuAnchor, setAvatarMenuAnchor] = useState(null);
   const avatarMenuOpen = Boolean(avatarMenuAnchor);
 
   const ventasPendientes = ventas.filter(v => v.estado === 'PENDIENTE').length;
+
+  const refreshWishlistCount = useCallback(async () => {
+    if (!localStorage.getItem('token')) {
+      setWishlistCount(0);
+      return;
+    }
+    try {
+      const res = await api.get('/favoritos');
+      setWishlistCount(Array.isArray(res.data) ? res.data.length : 0);
+    } catch {
+      setWishlistCount(0);
+    }
+  }, []);
 
   const handleSolicitar = async () => {
     if (!window.confirm('¿Deseas enviar tu solicitud para ser vendedor?')) return;
@@ -75,17 +92,36 @@ const Navbar = () => {
       if (nuevaFoto !== fotoUrl) { setFotoUrl(nuevaFoto); localStorage.setItem('usuarioFoto', nuevaFoto); }
       localStorage.setItem('usuarioNombre', nuevoNombre);
     } catch {}
-    try {
-      const res = await api.get('/favoritos');
-      setWishlistCount(res.data.length);
-    } catch {}
+    await refreshWishlistCount();
     if (usuarioRol === 'SELLER' || usuarioRol === 'ADMIN') {
       try {
         const res = await api.get('/pedidos/mis-ventas');
         setVentas(res.data || []);
       } catch {}
     }
-  }, [usuarioRol, fotoUrl, usuarioNombre]);
+    if (usuarioRol === 'USER' || usuarioRol === 'SELLER') {
+      try {
+        const res = await api.get('/reportes/mis-reportes');
+        setReportesUnread(countUnreadMisReportes(Array.isArray(res.data) ? res.data : []));
+      } catch {
+        setReportesUnread(0);
+      }
+    } else {
+      setReportesUnread(0);
+    }
+  }, [usuarioRol, fotoUrl, usuarioNombre, refreshWishlistCount]);
+
+  useEffect(() => {
+    const onRep = () => checkStatus();
+    window.addEventListener('zento-reportes-actualizado', onRep);
+    return () => window.removeEventListener('zento-reportes-actualizado', onRep);
+  }, [checkStatus]);
+
+  useEffect(() => {
+    const onFav = () => refreshWishlistCount();
+    window.addEventListener('zento-favoritos-cambiados', onFav);
+    return () => window.removeEventListener('zento-favoritos-cambiados', onFav);
+  }, [refreshWishlistCount]);
 
   useEffect(() => {
     checkStatus();
@@ -93,7 +129,7 @@ const Navbar = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const handleLogout = () => { localStorage.clear(); navigate('/'); };
+  const handleLogout = () => { clearAuthLocalStorage(); navigate('/'); };
   const iconSx = {
     color: isDark ? 'rgba(232,233,240,0.65)' : `${BRAND_NAVY}99`,
     '&:hover': { color: BRAND_PERIW },
@@ -188,6 +224,16 @@ const Navbar = () => {
                 </Badge>
               </IconButton>
 
+              {(usuarioRol === 'USER' || usuarioRol === 'SELLER') && (
+                <Tooltip title={t.myReportsTooltip}>
+                  <IconButton component={Link} to="/perfil#mis-reportes" sx={{ ...iconSx, p: 0.75 }}>
+                    <Badge badgeContent={reportesUnread} color="error" max={9} invisible={reportesUnread === 0}>
+                      <FlagOutlinedIcon fontSize="small" />
+                    </Badge>
+                  </IconButton>
+                </Tooltip>
+              )}
+
               {/* Avatar → abre menú desplegable */}
               <IconButton
                 onClick={e => setAvatarMenuAnchor(e.currentTarget)}
@@ -241,6 +287,18 @@ const Navbar = () => {
                   <PersonIcon fontSize="small" color="action" />
                   <Typography variant="body2">mi perfil</Typography>
                 </MenuItem>
+
+                {(usuarioRol === 'USER' || usuarioRol === 'SELLER') && (
+                  <MenuItem
+                    onClick={() => { navigate('/perfil#mis-reportes'); setAvatarMenuAnchor(null); }}
+                    sx={{ py: 1.2, gap: 1.5 }}
+                  >
+                    <Badge badgeContent={reportesUnread} color="error" max={9} invisible={reportesUnread === 0}>
+                      <FlagOutlinedIcon fontSize="small" color="action" />
+                    </Badge>
+                    <Typography variant="body2">{t.myReportsNav}</Typography>
+                  </MenuItem>
+                )}
 
                 {/* Conviértete en vendedor / Publicar gig */}
                 {(usuarioRol === 'SELLER' || usuarioRol === 'ADMIN') ? (
@@ -305,6 +363,16 @@ const Navbar = () => {
                 </Badge>
                 </IconButton>
               </Tooltip>
+
+              {(usuarioRol === 'USER' || usuarioRol === 'SELLER') && (
+                <Tooltip title={t.myReportsTooltip}>
+                  <IconButton component={Link} to="/perfil#mis-reportes" sx={iconSx}>
+                    <Badge badgeContent={reportesUnread} color="error" max={9} invisible={reportesUnread === 0}>
+                      <FlagOutlinedIcon />
+                    </Badge>
+                  </IconButton>
+                </Tooltip>
+              )}
 
               <Typography variant="body2" sx={{ color: isDark ? 'rgba(232,233,240,0.55)' : `${BRAND_NAVY}aa`, mx: 0.5 }}>
                 {t.hello}, {usuarioNombre}

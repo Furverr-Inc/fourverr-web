@@ -15,6 +15,7 @@ import PeopleOutlineIcon from '@mui/icons-material/PeopleOutline';
 import SupportAgentIcon from '@mui/icons-material/SupportAgent';
 import FlagIcon from '@mui/icons-material/Flag';
 import api from '../../services/api';
+import { clearAuthLocalStorage } from '../../utils/authLocalStorage';
 import { useThemeMode } from '../../ThemeContext';
 import { useLanguage } from '../../LanguageContext';
 import { BRAND_NAVY, BRAND_PERIW } from '../../brandColors';
@@ -73,7 +74,7 @@ const AdminLayout = () => {
   }, [cargarCabecera]);
 
   const handleLogout = () => {
-    localStorage.clear();
+    clearAuthLocalStorage();
     navigate('/login');
   };
 

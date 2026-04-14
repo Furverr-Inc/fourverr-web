@@ -14,6 +14,7 @@ import LocationOnIcon  from '@mui/icons-material/LocationOn';
 import api from '../services/api';
 import { useThemeMode } from '../ThemeContext';
 import ProductoModal from '../components/ProductoModal';
+import SoporteFloating from '../components/SoporteFloating';
 
 const PerfilPublico = () => {
   const { username } = useParams();
@@ -46,6 +47,7 @@ const PerfilPublico = () => {
   if (!perfil) return null;
 
   return (
+    <>
     <Container maxWidth={false} sx={{ mt: { xs: 2, sm: 4 }, mb: 4, px: { xs: 1, sm: 3 }, maxWidth: { xs: '100%', sm: 'md', md: 'md' } }}>
       {/* Volver */}
       <Box sx={{ display:'flex', alignItems:'center', gap:1, mb:2 }}>
@@ -166,6 +168,8 @@ const PerfilPublico = () => {
         producto={selected}
       />
     </Container>
+    <SoporteFloating />
+    </>
   );
 };
 
