@@ -5,8 +5,10 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import api from '../services/api';
+import { clearAuthLocalStorage } from '../utils/authLocalStorage';
 import { useThemeMode } from '../ThemeContext';
 import { useLanguage } from '../LanguageContext';
+import SoporteFloating from '../components/SoporteFloating';
 
 /* ── Regex ─────────────────────────────────────────────────── */
 // Username: 3-20 chars, solo letras, números, punto y guión bajo
@@ -31,10 +33,10 @@ const Login = () => {
 
   useEffect(() => {
     if (location.state?.mensaje) setMensajeExito(location.state.mensaje);
-    localStorage.clear();
+    clearAuthLocalStorage();
   }, []);
 
-  /* ── Validación en tiempo real ── */
+  /* ── Validación al enviar el formulario (vacío + formato) ── */
   const validateField = (name, value) => {
     const isEn = lang === 'en';
     let msg = '';
@@ -69,18 +71,30 @@ const Login = () => {
       const { token, username: userAlias, role, id, nombreMostrado, fotoUrl } = response.data;
       localStorage.setItem('token',        token);
       localStorage.setItem('usuarioNombre', nombreMostrado || userAlias);
+      localStorage.setItem('usuarioUsername', userAlias);
       localStorage.setItem('usuarioRol',   role);
       localStorage.setItem('usuarioId',    id);
       localStorage.setItem('usuarioFoto',  fotoUrl || '');
       if (role === 'ADMIN') { navigate('/admin'); } else { navigate('/home'); }
     } catch (err) {
       const isEn = lang === 'en';
-      if (err.response?.status === 403)
-        setError(err.response.data || (isEn ? 'Your account has been disabled.' : 'Tu cuenta ha sido deshabilitada.'));
-      else if (err.response?.status === 401)
+      const status = err.response?.status;
+      const raw = err.response?.data;
+      const bodyStr = typeof raw === 'string' ? raw : (raw?.message != null ? String(raw.message) : '');
+
+      // Solo 403 con mensaje explícito de deshabilitación (API); otros 403/401 = credenciales u acceso denegado genérico
+      const cuentaDeshabilitada =
+        status === 403 &&
+        bodyStr &&
+        /deshabilitad|disabled|habilitad/i.test(bodyStr);
+
+      if (cuentaDeshabilitada) {
+        setError(bodyStr);
+      } else if (status === 401 || status === 403) {
         setError(isEn ? 'Incorrect username or password.' : 'Usuario o contraseña incorrectos.');
-      else
+      } else {
         setError(isEn ? 'Could not connect to server.' : 'No se pudo conectar con el servidor.');
+      }
     } finally {
       setCargando(false);
     }
@@ -126,6 +140,7 @@ const Login = () => {
   };
 
   return (
+    <>
     <Box sx={{
       minHeight: '100vh',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -159,8 +174,14 @@ const Login = () => {
           background: isDark
             ? `linear-gradient(180deg, ${CARD_DARK_TOP} 0%, ${CARD_DARK_BOTTOM} 100%)`
             : '#FFFFFF',
-          py: 5, px: 4, textAlign: 'center',
+          pt: 3, pb: 2, px: 4, textAlign: 'center',
         }}>
+          {mensajeExito && (
+            <Alert severity="success" sx={{ mb: 2, borderRadius: 3, textAlign: 'left' }}>{mensajeExito}</Alert>
+          )}
+          {error && (
+            <Alert severity="error" sx={{ mb: 2, borderRadius: 3, textAlign: 'left' }}>{error}</Alert>
+          )}
           {/* Logo SVG inline — símbolo Futark adaptado */}
           <Box sx={{ mb: 2, display: 'flex', justifyContent: 'center' }}>
             <svg width="72" height="72" viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -199,23 +220,20 @@ const Login = () => {
         {/* Zona inferior: formulario */}
         <Box sx={{
           background: isDark ? CARD_DARK_BOTTOM : '#0D1127',
-          px: 4, pt: 5, pb: 4,
+          px: 4, pt: 4, pb: 4,
           overflow: 'visible',
         }}>
-          {mensajeExito && (
-            <Alert severity="success" sx={{ mb: 2, borderRadius: 3 }}>{mensajeExito}</Alert>
-          )}
-          {error && (
-            <Alert severity="error" sx={{ mb: 2, borderRadius: 3 }}>{error}</Alert>
-          )}
-
-          <Box component="form" onSubmit={handleLogin}>
+          <Box component="form" noValidate onSubmit={handleLogin}>
             <TextField
               fullWidth
               label={t.userOrEmail || 'USERNAME'}
               required
               value={username}
-              onChange={e => { setUsername(e.target.value); validateField('username', e.target.value); }}
+              onChange={(e) => {
+                setUsername(e.target.value);
+                setFieldErrors((prev) => ({ ...prev, username: '' }));
+              }}
+              onFocus={() => setFieldErrors({ username: '', password: '' })}
               error={!!fieldErrors.username}
               helperText={fieldErrors.username}
               autoFocus
@@ -236,7 +254,11 @@ const Login = () => {
                 type={showPass ? 'text' : 'password'}
                 required
                 value={password}
-                onChange={e => { setPassword(e.target.value); validateField('password', e.target.value); }}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  setFieldErrors((prev) => ({ ...prev, password: '' }));
+                }}
+                onFocus={() => setFieldErrors({ username: '', password: '' })}
                 error={!!fieldErrors.password}
                 helperText={fieldErrors.password}
                 sx={{
@@ -311,6 +333,8 @@ const Login = () => {
         </Box>
       </Box>
     </Box>
+    <SoporteFloating />
+    </>
   );
 };
 

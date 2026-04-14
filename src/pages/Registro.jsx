@@ -10,6 +10,7 @@ import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import api from '../services/api';
 import { useThemeMode } from '../ThemeContext';
 import { useLanguage }  from '../LanguageContext';
+import SoporteFloating from '../components/SoporteFloating';
 
 /* ── Regex ─────────────────────────────────────────────────── */
 const RX_NOMBRE   = /^.{2,50}$/;
@@ -127,6 +128,7 @@ const Registro = () => {
   };
 
   return (
+    <>
     <Box sx={{
       minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
       background: isDark ? BG_DARK : BG_LIGHT,
@@ -268,6 +270,8 @@ const Registro = () => {
         </Box>
       </Box>
     </Box>
+    <SoporteFloating />
+    </>
   );
 };
 

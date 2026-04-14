@@ -12,6 +12,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import CancelIcon from '@mui/icons-material/Cancel';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import api from '../../services/api';
+import { useLanguage } from '../../LanguageContext';
 
 const ESTADO_CONFIG = {
   PENDIENTE: { label: 'Pendiente', color: 'warning' },
@@ -42,6 +43,7 @@ const fmtDate = (d) =>
     : '—';
 
 const AdminReportes = () => {
+  const { t } = useLanguage();
   const [reportes, setReportes] = useState([]);
   const [loadingReportes, setLoadingReportes] = useState(true);
   const [tabReportes, setTabReportes] = useState(0);
@@ -51,6 +53,9 @@ const AdminReportes = () => {
   const [enviandoR, setEnviandoR] = useState(false);
   const [successR, setSuccessR] = useState('');
   const [errorR, setErrorR] = useState('');
+  const [rechazarDlg, setRechazarDlg] = useState({ open: false, id: null });
+  const [mensajeRechazo, setMensajeRechazo] = useState('');
+  const [enviandoRechazo, setEnviandoRechazo] = useState(false);
 
   const cargarReportes = useCallback(async () => {
     setLoadingReportes(true);
@@ -88,13 +93,25 @@ const AdminReportes = () => {
       mostrarR('Error al actualizar', 'error');
     }
   };
-  const handleRechazarR = async (id) => {
+  const handleRechazarR = (id) => {
+    setRechazarDlg({ open: true, id });
+    setMensajeRechazo('');
+  };
+
+  const confirmarRechazo = async () => {
+    if (!rechazarDlg.id) return;
+    setEnviandoRechazo(true);
     try {
-      await api.put(`/reportes/${id}/rechazar`);
+      const body = mensajeRechazo.trim() ? { mensaje: mensajeRechazo.trim() } : {};
+      await api.put(`/reportes/${rechazarDlg.id}/rechazar`, body);
+      setRechazarDlg({ open: false, id: null });
+      setMensajeRechazo('');
       mostrarR('Reporte rechazado');
       cargarReportes();
     } catch {
       mostrarR('Error al rechazar', 'error');
+    } finally {
+      setEnviandoRechazo(false);
     }
   };
   const handleEliminarR = async (id) => {
@@ -433,6 +450,33 @@ const AdminReportes = () => {
             sx={{ borderRadius: 2 }}
           >
             {enviandoR ? 'Guardando...' : 'Guardar respuesta'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={rechazarDlg.open} onClose={() => !enviandoRechazo && setRechazarDlg({ open: false, id: null })} maxWidth="xs" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
+        <DialogTitle sx={{ fontWeight: 'bold' }}>{t.rejectReportTitle}</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            {t.rejectReportHint}
+          </Typography>
+          <TextField
+            fullWidth
+            multiline
+            minRows={3}
+            label={t.rejectReportPlaceholder}
+            placeholder={t.rejectReportPlaceholder}
+            value={mensajeRechazo}
+            onChange={(e) => setMensajeRechazo(e.target.value)}
+            sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+          />
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2, gap: 1 }}>
+          <Button variant="outlined" disabled={enviandoRechazo} onClick={() => setRechazarDlg({ open: false, id: null })} sx={{ borderRadius: 2 }}>
+            Cancelar
+          </Button>
+          <Button variant="contained" color="warning" disabled={enviandoRechazo} onClick={confirmarRechazo} sx={{ borderRadius: 2 }}>
+            {enviandoRechazo ? '…' : 'Rechazar'}
           </Button>
         </DialogActions>
       </Dialog>

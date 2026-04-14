@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Dialog, DialogContent, DialogActions, Button, Typography, Box,
   Avatar, Chip, Divider, IconButton, Stack, Tooltip,
@@ -17,8 +17,11 @@ import FlagIcon           from '@mui/icons-material/Flag';
 import OpenInNewIcon      from '@mui/icons-material/OpenInNew';
 import VerifiedOutlinedIcon from '@mui/icons-material/VerifiedOutlined';
 import { useNavigate }    from 'react-router-dom';
+import { alpha } from '@mui/material/styles';
 import api from '../services/api';
 import { useThemeMode } from '../ThemeContext';
+import { useLanguage } from '../LanguageContext';
+import { BRAND_PERIW, BRAND_PERIW_HOVER } from '../brandColors';
 
 const MOTIVOS = [
   { value: 'FRAUDE',                label: 'Fraude o estafa' },
@@ -33,6 +36,8 @@ const MOTIVOS = [
 const ProductoModal = ({ open, onClose, producto }) => {
   const navigate = useNavigate();
   const { isDark } = useThemeMode();
+  const { t } = useLanguage();
+  const preguntasRef = useRef(null);
 
   const [enWishlist,   setEnWishlist]   = useState(false);
   const [loadingWish,  setLoadingWish]  = useState(false);
@@ -59,11 +64,9 @@ const ProductoModal = ({ open, onClose, producto }) => {
   const [descripcionR,  setDescripcionR]  = useState('');
   const [enviandoR,     setEnviandoR]     = useState(false);
 
-  const usernameLocal = localStorage.getItem('usuarioUsername') || localStorage.getItem('usuarioNombre');
-  const usuarioId     = localStorage.getItem('usuarioId');
-  const esVendedor    = producto?.vendedor?.username === usernameLocal ||
-                        producto?.vendedor?.nombreMostrado === usernameLocal;
-  const estaLogueado  = !!localStorage.getItem('token');
+  const usuarioId = localStorage.getItem('usuarioId');
+  const esVendedor = producto?.vendedor?.id != null && String(producto.vendedor.id) === String(usuarioId);
+  const estaLogueado = !!localStorage.getItem('token');
 
   useEffect(() => {
     if (!producto || !open) return;
@@ -94,10 +97,12 @@ const ProductoModal = ({ open, onClose, producto }) => {
         await api.delete(`/favoritos/${producto.id}`);
         setEnWishlist(false);
         setSnack({ open: true, msg: 'Quitado de tu wishlist', severity: 'info' });
+        window.dispatchEvent(new Event('zento-favoritos-cambiados'));
       } else {
         await api.post(`/favoritos/${producto.id}`);
         setEnWishlist(true);
         setSnack({ open: true, msg: 'Agregado a tu wishlist', severity: 'success' });
+        window.dispatchEvent(new Event('zento-favoritos-cambiados'));
       }
     } catch (err) {
       const msg = err.response?.data;
@@ -170,6 +175,7 @@ const ProductoModal = ({ open, onClose, producto }) => {
       });
       setReporteOpen(false);
       setSnack({ open: true, msg: '✅ Reporte enviado. El equipo lo revisará pronto.', severity: 'success' });
+      window.dispatchEvent(new Event('zento-reportes-actualizado'));
     } catch (err) {
       const msg = err.response?.data;
       setSnack({ open: true, msg: typeof msg === 'string' ? msg : 'Error al enviar el reporte', severity: 'error' });
@@ -286,7 +292,7 @@ const ProductoModal = ({ open, onClose, producto }) => {
                 <VerifiedOutlinedIcon sx={{ fontSize: 14, color: '#1dbf73' }} />
               </Box>
               <Typography variant="caption" color="text.secondary">
-                Toca para ver opciones del vendedor
+                {t.vendorPanelHint}
               </Typography>
             </Box>
             <Typography variant="caption" color="text.disabled" sx={{ fontSize: '0.65rem' }}>▼</Typography>
@@ -348,6 +354,30 @@ const ProductoModal = ({ open, onClose, producto }) => {
               {!esVendedor && (
                 <Button
                   fullWidth
+                  startIcon={<QuestionAnswerIcon />}
+                  onClick={() => {
+                    setVendorAnchor(null);
+                    setTimeout(() => {
+                      preguntasRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }, 100);
+                  }}
+                  variant="outlined"
+                  sx={{
+                    justifyContent: 'flex-start',
+                    borderRadius: 2, py: 1.2,
+                    textTransform: 'none', fontWeight: 600,
+                    borderColor: 'rgba(99,102,241,0.5)',
+                    color: '#6366f1',
+                    '&:hover': { borderColor: '#6366f1', bgcolor: 'rgba(99,102,241,0.06)' },
+                  }}
+                >
+                  {t.contactSellerBtn}
+                </Button>
+              )}
+
+              {!esVendedor && (
+                <Button
+                  fullWidth
                   startIcon={<FlagIcon />}
                   onClick={handleAbrirReporte}
                   variant="outlined"
@@ -386,16 +416,34 @@ const ProductoModal = ({ open, onClose, producto }) => {
 
           {/* ── PREGUNTAS Y RESPUESTAS ── */}
           <Divider sx={{ my: 3 }} />
+          <Box ref={preguntasRef} sx={{ scrollMarginTop: 16 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
             <QuestionAnswerIcon color="primary" fontSize="small" />
             <Typography variant="subtitle1" fontWeight="bold">Preguntas y Respuestas</Typography>
             {preguntas.length > 0 && <Chip label={preguntas.length} size="small" color="primary" />}
           </Box>
 
+          {!estaLogueado && (
+            <Box sx={{
+              mb: 2, p: 1.5, borderRadius: 2,
+              bgcolor: isDark ? 'rgba(139,143,200,0.1)' : 'rgba(99,102,241,0.06)',
+              border: '1px solid',
+              borderColor: isDark ? 'rgba(139,143,200,0.25)' : 'rgba(99,102,241,0.2)',
+            }}>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                {t.loginToAskBanner}
+              </Typography>
+              <Button size="small" variant="contained" onClick={() => { onClose(); navigate('/login'); }}
+                sx={{ borderRadius: 2, textTransform: 'none', bgcolor: BRAND_PERIW, '&:hover': { bgcolor: BRAND_PERIW_HOVER } }}>
+                {t.login}
+              </Button>
+            </Box>
+          )}
+
           {estaLogueado && (
             <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
               <TextField fullWidth size="small"
-                placeholder="Pregúntale al vendedor..."
+                placeholder={t.askSeller}
                 value={nuevaPregunta}
                 onChange={e => setNuevaPregunta(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleEnviarPregunta(); } }}
@@ -415,7 +463,7 @@ const ProductoModal = ({ open, onClose, producto }) => {
             </Box>
           ) : preguntas.length === 0 ? (
             <Typography variant="body2" color="text.disabled" sx={{ textAlign: 'center', py: 1.5 }}>
-              Aún no hay preguntas. ¡Sé el primero en preguntar!
+              {t.noQuestions}
             </Typography>
           ) : (
             <Stack spacing={1.5}>
@@ -502,6 +550,7 @@ const ProductoModal = ({ open, onClose, producto }) => {
             Comprar ahora
           </Button>
         </DialogActions>
+        </Box>
       </Dialog>
 
       {/* ── DIALOG REPORTAR VENDEDOR ── */}
@@ -550,10 +599,29 @@ const ProductoModal = ({ open, onClose, producto }) => {
             sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
           />
 
-          {/* Info del producto reportado */}
-          <Paper variant="outlined" sx={{ mt: 2, p: 1.5, borderRadius: 2, bgcolor: 'grey.50' }}>
-            <Typography variant="caption" color="text.secondary">Publicación involucrada:</Typography>
-            <Typography variant="body2" fontWeight="bold" noWrap>{producto.titulo}</Typography>
+          {/* Info del producto reportado — mismo lenguaje visual que Select/TextField outlined */}
+          <Paper
+            variant="outlined"
+            sx={(theme) => ({
+              mt: 2,
+              p: 1.5,
+              borderRadius: 2,
+              bgcolor:
+                theme.palette.mode === 'dark'
+                  ? alpha(theme.palette.common.white, 0.05)
+                  : theme.palette.grey[50],
+              borderColor:
+                theme.palette.mode === 'dark'
+                  ? alpha(theme.palette.common.white, 0.23)
+                  : alpha(theme.palette.common.black, 0.23),
+            })}
+          >
+            <Typography variant="caption" color="text.secondary" display="block">
+              Publicación involucrada:
+            </Typography>
+            <Typography variant="body2" fontWeight="bold" color="text.primary" noWrap>
+              {producto.titulo}
+            </Typography>
           </Paper>
         </DialogContent>
 

@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { clearAuthLocalStorage } from '../utils/authLocalStorage';
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8080/api',
@@ -42,7 +43,7 @@ api.interceptors.response.use(
       const esRutaPublica = ['/', '/login', '/registro'].includes(rutaRelativa);
 
       if (!esRutaPublica) {
-        localStorage.clear();
+        clearAuthLocalStorage();
         setTimeout(() => {
           const loginPath = `${import.meta.env.BASE_URL}login`.replace(/\/{2,}/g, '/');
           window.location.href = new URL(loginPath, window.location.origin).href;

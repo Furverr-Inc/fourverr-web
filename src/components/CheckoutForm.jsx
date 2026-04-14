@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useStripe, useElements, PaymentElement } from '@stripe/react-stripe-js';
 import { Button, Alert, CircularProgress, Box } from '@mui/material';
 
-const CheckoutForm = ({ onExito, producto }) => {
+const CheckoutForm = ({ onExito, producto, cantidad = 1, precioTotal }) => {
   const stripe = useStripe();
   const elements = useElements();
   const [error, setError] = useState(null);
@@ -65,7 +65,9 @@ const CheckoutForm = ({ onExito, producto }) => {
         }}
         startIcon={procesando ? <CircularProgress size={18} color="inherit" /> : null}
       >
-        {procesando ? 'Procesando...' : `Pagar $${producto?.precio} MXN`}
+        {procesando
+          ? 'Procesando...'
+          : `Pagar $${precioTotal != null ? precioTotal : (Number(producto?.precio || 0) * cantidad).toFixed(2)} MXN`}
       </Button>
     </Box>
   );

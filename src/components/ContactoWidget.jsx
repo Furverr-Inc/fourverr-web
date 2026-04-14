@@ -7,14 +7,12 @@ import CloseIcon from '@mui/icons-material/Close';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import SendIcon from '@mui/icons-material/Send';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
-import { useThemeMode } from '../ThemeContext';
 import api from '../services/api';
 import {
   BRAND_NAVY, BRAND_NAVY_TOP, BRAND_PERIW, BRAND_PERIW_HOVER, BRAND_BORDER, BRAND_SHADOW,
 } from '../brandColors';
 
 const ContactoWidget = () => {
-  const { isDark } = useThemeMode();
   const [abierto, setAbierto] = useState(false);
   const [enviado, setEnviado] = useState(false);
   const [enviando, setEnviando] = useState(false);
@@ -34,7 +32,9 @@ const ContactoWidget = () => {
       await api.post('/soporte/contacto', form);
       setEnviado(true);
     } catch (err) {
-      setError(err.response?.data || 'Error al enviar. Intenta de nuevo.');
+      const d = err.response?.data;
+      const msg = typeof d === 'string' ? d : (d?.message || 'Error al enviar. Intenta de nuevo.');
+      setError(msg);
     } finally { setEnviando(false); }
   };
 

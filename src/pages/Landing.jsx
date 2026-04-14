@@ -14,7 +14,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { useThemeMode } from '../ThemeContext';
 import { useLanguage } from '../LanguageContext';
-import ContactoWidget from '../components/ContactoWidget';
+import SoporteFloating from '../components/SoporteFloating';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 import {
   BRAND_NAVY, BRAND_NAVY_TOP, BRAND_PERIW, BRAND_PERIW_HOVER, BRAND_TEXT, BRAND_BORDER, BRAND_SHADOW,
@@ -374,7 +374,7 @@ const Landing = () => {
       </Box>
 
       <LanguageSwitcher />
-      <ContactoWidget />
+      <SoporteFloating />
     </>
   );
 };

@@ -39,6 +39,7 @@ const WishlistDrawer = ({ open, onClose }) => {
     try {
       await api.delete(`/favoritos/${productoId}`);
       setWishlist(prev => prev.filter(p => p.id !== productoId));
+      window.dispatchEvent(new Event('zento-favoritos-cambiados'));
     } catch (err) {
       alert('Error al quitar de la wishlist');
     }

@@ -6,6 +6,7 @@ import HomeIcon        from '@mui/icons-material/Home';
 import PersonIcon      from '@mui/icons-material/Person';
 import DownloadIcon    from '@mui/icons-material/Download';
 import { useThemeMode } from '../ThemeContext';
+import ChatCompra from '../components/ChatCompra';
 
 /* ── Genera y descarga un ticket de compra como HTML imprimible ── */
 const descargarTicket = (pedido) => {
@@ -323,6 +324,28 @@ const ConfirmacionCompra = () => {
               <Typography variant="body2" color="text.secondary">
                 Puedes ver el detalle en tu perfil
               </Typography>
+            </Box>
+          )}
+
+          {pedido?.id && pedido.producto?.vendedor && (
+            <Box sx={{
+              mb: 3, p: 2, borderRadius: 3,
+              border: '1px solid', borderColor: 'divider',
+              bgcolor: isDark ? 'rgba(139,143,200,0.06)' : 'rgba(13,17,39,0.03)',
+              textAlign: 'center',
+            }}>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
+                Mensajería con el vendedor (esta compra)
+              </Typography>
+              <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+                <ChatCompra
+                  pedidoId={pedido.id}
+                  vendedorNombre={pedido.producto.vendedor.nombreMostrado || pedido.producto.vendedor.username}
+                  vendedorFoto={pedido.producto.vendedor.fotoUrl}
+                  vendedorId={pedido.producto.vendedor.id}
+                  chatIndex={0}
+                />
+              </Box>
             </Box>
           )}
 
