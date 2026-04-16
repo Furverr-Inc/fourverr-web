@@ -180,6 +180,22 @@ const DetalleCompra = () => {
     );
   }
 
+  const usuarioId = localStorage.getItem('usuarioId');
+  const esVendedor =
+    producto?.vendedor?.id != null &&
+    String(producto.vendedor.id) === String(usuarioId);
+
+  if (esVendedor) {
+    return (
+      <Container sx={{ mt: 6, textAlign: 'center' }}>
+        <Alert severity="info">No puedes comprar tu propio producto.</Alert>
+        <Button sx={{ mt: 2 }} onClick={() => navigate('/home')}>
+          Volver al inicio
+        </Button>
+      </Container>
+    );
+  }
+
   if (compraExitosa) {
     return (
       <Container maxWidth="sm" sx={{ mt: 8, textAlign: 'center' }}>

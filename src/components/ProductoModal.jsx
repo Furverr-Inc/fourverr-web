@@ -544,11 +544,13 @@ const ProductoModal = ({ open, onClose, producto }) => {
           }}
         >
           <Button onClick={onClose} variant="outlined" sx={{ flex: 1 }}>Cerrar</Button>
-          <Button variant="contained" startIcon={<ShoppingCartIcon />}
-            onClick={() => { onClose(); navigate('/detalle-compra', { state: { producto } }); }}
-            sx={{ flex: 2, py: 1.2 }}>
-            Comprar ahora
-          </Button>
+          {!esVendedor && (
+            <Button variant="contained" startIcon={<ShoppingCartIcon />}
+              onClick={() => { onClose(); navigate('/detalle-compra', { state: { producto } }); }}
+              sx={{ flex: 2, py: 1.2 }}>
+              Comprar ahora
+            </Button>
+          )}
         </DialogActions>
         </Box>
       </Dialog>
