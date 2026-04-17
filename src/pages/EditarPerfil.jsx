@@ -35,12 +35,12 @@ const EditarPerfil = () => {
 
   // Cambio de contraseña
   const [pwdDialogOpen, setPwdDialogOpen] = useState(false);
-  const [pwdActual,     setPwdActual]     = useState('');
+  const [pwdUsername,   setPwdUsername]   = useState('');
+  const [pwdEmail,      setPwdEmail]      = useState('');
   const [pwdNueva,      setPwdNueva]      = useState('');
   const [pwdConfirmar,  setPwdConfirmar]  = useState('');
   const [pwdLoading,    setPwdLoading]    = useState(false);
   const [pwdError,      setPwdError]      = useState('');
-  const [showPwd1, setShowPwd1] = useState(false);
   const [showPwd2, setShowPwd2] = useState(false);
   const [showPwd3, setShowPwd3] = useState(false);
 
@@ -88,14 +88,14 @@ const EditarPerfil = () => {
   };
 
   const abrirDialogoPassword = () => {
-    setPwdActual(''); setPwdNueva(''); setPwdConfirmar('');
-    setPwdError(''); setShowPwd1(false); setShowPwd2(false); setShowPwd3(false);
+    setPwdUsername(''); setPwdEmail(''); setPwdNueva(''); setPwdConfirmar('');
+    setPwdError(''); setShowPwd2(false); setShowPwd3(false);
     setPwdDialogOpen(true);
   };
 
   const handleCambiarPassword = async () => {
     setPwdError('');
-    if (!pwdActual || !pwdNueva || !pwdConfirmar) {
+    if (!pwdUsername || !pwdEmail || !pwdNueva || !pwdConfirmar) {
       setPwdError('Completa todos los campos'); return;
     }
     if (!RX_PASSWORD.test(pwdNueva)) {
@@ -104,14 +104,12 @@ const EditarPerfil = () => {
     if (pwdNueva !== pwdConfirmar) {
       setPwdError('Las contraseñas no coinciden'); return;
     }
-    if (pwdNueva === pwdActual) {
-      setPwdError('La nueva contraseña debe ser distinta a la actual'); return;
-    }
     setPwdLoading(true);
     try {
       await api.put('/users/perfil/password', {
-        passwordActual: pwdActual,
-        passwordNueva:  pwdNueva,
+        username:      pwdUsername.trim(),
+        email:         pwdEmail.trim(),
+        passwordNueva: pwdNueva,
       });
       setPwdDialogOpen(false);
       setMensaje('Contraseña actualizada correctamente');
@@ -251,24 +249,24 @@ const EditarPerfil = () => {
         <DialogContent>
           {pwdError && <Alert severity="error" sx={{ mb: 2 }}>{pwdError}</Alert>}
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Ingresa tu contraseña actual y define una nueva. La nueva contraseña debe tener al menos 8 caracteres, con letras y números.
+            Confirma tu nombre de usuario y correo para verificar tu identidad y define una nueva contraseña (mínimo 8 caracteres, con letras y números).
           </Typography>
           <TextField
             fullWidth margin="normal"
-            label="Contraseña actual"
-            type={showPwd1 ? 'text' : 'password'}
-            value={pwdActual}
-            onChange={e => setPwdActual(e.target.value)}
+            label="Nombre de usuario"
+            value={pwdUsername}
+            onChange={e => setPwdUsername(e.target.value)}
             disabled={pwdLoading}
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">
-                  <MuiIconButton size="small" tabIndex={-1} onClick={() => setShowPwd1(v => !v)}>
-                    {showPwd1 ? <VisibilityOffIcon fontSize="small" /> : <VisibilityIcon fontSize="small" />}
-                  </MuiIconButton>
-                </InputAdornment>
-              ),
-            }}
+            autoComplete="username"
+          />
+          <TextField
+            fullWidth margin="normal"
+            label="Correo electrónico"
+            type="email"
+            value={pwdEmail}
+            onChange={e => setPwdEmail(e.target.value)}
+            disabled={pwdLoading}
+            autoComplete="email"
           />
           <TextField
             fullWidth margin="normal"
