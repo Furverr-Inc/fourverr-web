@@ -9,6 +9,7 @@ import { clearAuthLocalStorage } from '../utils/authLocalStorage';
 import { useThemeMode } from '../ThemeContext';
 import { useLanguage } from '../LanguageContext';
 import SoporteFloating from '../components/SoporteFloating';
+import { GoogleLogin } from '@react-oauth/google';
 
 /* ── Regex ─────────────────────────────────────────────────── */
 // Username: 3-20 chars, solo letras, números, punto y guión bajo
@@ -99,6 +100,48 @@ const Login = () => {
       setCargando(false);
     }
   };
+
+/* ── Handler para login con Google (OAuth) ── */
+  const handleGoogleSuccess = async (credentialResponse) => {
+    setCargando(true);
+    setError('');
+    try {
+      const tokenGoogle = credentialResponse.credential;
+      
+      const response = await api.post('/auth/google', { token: tokenGoogle });
+
+      const { token, username: userAlias, role, id, nombreMostrado, fotoUrl } = response.data;
+      localStorage.setItem('token',        token);
+      localStorage.setItem('usuarioNombre', nombreMostrado || userAlias);
+      localStorage.setItem('usuarioUsername', userAlias);
+      localStorage.setItem('usuarioRol',   role);
+      localStorage.setItem('usuarioId',    id);
+      localStorage.setItem('usuarioFoto',  fotoUrl || '');
+
+      if (role === 'ADMIN') { navigate('/admin'); } else { navigate('/home'); }
+
+    } catch (err) {
+      console.error("Error en Google Login:", err);
+      const isEn = lang === 'en';
+      const status = err.response?.status;
+      const raw = err.response?.data;
+      const bodyStr = typeof raw === 'string' ? raw : (raw?.message != null ? String(raw.message) : '');
+
+      if (status === 403 && bodyStr && /deshabilitad/i.test(bodyStr)) {
+        setError(bodyStr);
+      } else {
+        setError(isEn ? 'Google login failed.' : 'No se pudo iniciar sesión con Google.');
+      }
+    } finally {
+      setCargando(false);
+    }
+  };
+
+  const handleGoogleError = () => {
+    const isEn = lang === 'en';
+    setError(isEn ? 'Google Login was canceled.' : 'El inicio de sesión con Google fue cancelado.');
+  };
+
 
   /* ── Estilos ── */
   const BG_DARK  = '#0D1127';
@@ -316,6 +359,36 @@ const Login = () => {
             >
               {cargando ? (t.loggingIn || 'Ingresando...') : (t.login || 'LOGIN')}
             </Button>
+
+            <Box sx={{ 
+              my: 3, 
+              display: 'flex', 
+              alignItems: 'center', 
+              '&::before': { content: '""', flex: 1, borderBottom: '1px solid rgba(200,202,212,0.2)' }, 
+              '&::after':  { content: '""', flex: 1, borderBottom: '1px solid rgba(200,202,212,0.2)' } 
+            }}>
+              <Typography variant="caption" sx={{ 
+                color: 'rgba(200,202,212,0.5)', 
+                px: 2, 
+                textTransform: 'uppercase', 
+                letterSpacing: '0.1em' 
+              }}>
+                {lang === 'en' ? 'OR' : 'O'}
+              </Typography>
+            </Box>
+
+            {/* ── Botón de Google ── */}
+            <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
+              <GoogleLogin
+                onSuccess={handleGoogleSuccess}
+                onError={handleGoogleError}
+                theme={isDark ? 'filled_black' : 'outline'}
+                shape="pill"
+                size="large"
+                text="continue_with"
+                width="100%"
+              />
+            </Box>
 
             <Box textAlign="center">
               <Typography variant="body2" sx={{ color: 'rgba(200,202,212,0.55)' }}>
