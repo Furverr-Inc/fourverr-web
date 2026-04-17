@@ -15,7 +15,6 @@ import api from '../services/api';
 import { useThemeMode } from '../ThemeContext';
 import { useLanguage } from '../LanguageContext';
 import SoporteFloating from '../components/SoporteFloating';
-import LanguageSwitcher from '../components/LanguageSwitcher';
 import {
   BRAND_NAVY, BRAND_NAVY_TOP, BRAND_PERIW, BRAND_PERIW_HOVER, BRAND_TEXT, BRAND_BORDER, BRAND_SHADOW,
 } from '../brandColors';
@@ -373,7 +372,6 @@ const Landing = () => {
         </Container>
       </Box>
 
-      <LanguageSwitcher />
       <SoporteFloating />
     </>
   );

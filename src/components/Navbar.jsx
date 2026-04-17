@@ -22,7 +22,6 @@ import { countUnreadMisReportes } from '../utils/misReportesNotif';
 import { useThemeMode } from '../ThemeContext';
 import { useLanguage } from '../LanguageContext';
 import WishlistDrawer from './WishlistDrawer';
-import LanguageSwitcher from './LanguageSwitcher';
 import {
   BRAND_NAVY, BRAND_NAVY_TOP, BRAND_PERIW, BRAND_PERIW_HOVER, BRAND_TEXT, BRAND_BORDER, BRAND_SHADOW,
 } from '../brandColors';
@@ -508,7 +507,6 @@ const Navbar = () => {
       )}
 
       <WishlistDrawer open={wishlistOpen} onClose={() => setWishlistOpen(false)} />
-      <LanguageSwitcher />
     </>
   );
 };
