@@ -15,7 +15,13 @@ import PhoneIcon       from '@mui/icons-material/Phone';
 import LocationOnIcon  from '@mui/icons-material/LocationOn';
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
 import WarningAmberIcon  from '@mui/icons-material/WarningAmber';
+import LockResetIcon   from '@mui/icons-material/LockReset';
+import VisibilityIcon  from '@mui/icons-material/Visibility';
+import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
+import { IconButton as MuiIconButton } from '@mui/material';
 import api from '../services/api';
+
+const RX_PASSWORD = /^(?=.*[A-Za-z])(?=.*\d).{8,}$/;
 
 const EditarPerfil = () => {
   const navigate = useNavigate();
@@ -26,6 +32,17 @@ const EditarPerfil = () => {
   const [dialogOpen,   setDialogOpen]   = useState(false);
   const [eliminando,   setEliminando]   = useState(false);
   const [confirmText,  setConfirmText]  = useState('');
+
+  // Cambio de contraseña
+  const [pwdDialogOpen, setPwdDialogOpen] = useState(false);
+  const [pwdActual,     setPwdActual]     = useState('');
+  const [pwdNueva,      setPwdNueva]      = useState('');
+  const [pwdConfirmar,  setPwdConfirmar]  = useState('');
+  const [pwdLoading,    setPwdLoading]    = useState(false);
+  const [pwdError,      setPwdError]      = useState('');
+  const [showPwd1, setShowPwd1] = useState(false);
+  const [showPwd2, setShowPwd2] = useState(false);
+  const [showPwd3, setShowPwd3] = useState(false);
 
   const [form, setForm] = useState({
     nombreMostrado: '', email: '', descripcion: '',
@@ -67,6 +84,45 @@ const EditarPerfil = () => {
       setDialogOpen(false);
     } finally {
       setEliminando(false);
+    }
+  };
+
+  const abrirDialogoPassword = () => {
+    setPwdActual(''); setPwdNueva(''); setPwdConfirmar('');
+    setPwdError(''); setShowPwd1(false); setShowPwd2(false); setShowPwd3(false);
+    setPwdDialogOpen(true);
+  };
+
+  const handleCambiarPassword = async () => {
+    setPwdError('');
+    if (!pwdActual || !pwdNueva || !pwdConfirmar) {
+      setPwdError('Completa todos los campos'); return;
+    }
+    if (!RX_PASSWORD.test(pwdNueva)) {
+      setPwdError('La nueva contraseña debe tener mínimo 8 caracteres, con al menos 1 letra y 1 número'); return;
+    }
+    if (pwdNueva !== pwdConfirmar) {
+      setPwdError('Las contraseñas no coinciden'); return;
+    }
+    if (pwdNueva === pwdActual) {
+      setPwdError('La nueva contraseña debe ser distinta a la actual'); return;
+    }
+    setPwdLoading(true);
+    try {
+      await api.put('/users/perfil/password', {
+        passwordActual: pwdActual,
+        passwordNueva:  pwdNueva,
+      });
+      setPwdDialogOpen(false);
+      setMensaje('Contraseña actualizada correctamente');
+      setEsError(false);
+      setTimeout(() => setMensaje(''), 4000);
+    } catch (err) {
+      const raw = err.response?.data;
+      const txt = typeof raw === 'string' ? raw : raw?.message;
+      setPwdError(txt || 'No se pudo cambiar la contraseña');
+    } finally {
+      setPwdLoading(false);
     }
   };
 
@@ -135,6 +191,19 @@ const EditarPerfil = () => {
           {guardando ? 'Guardando...' : 'Guardar cambios'}
         </Button>
 
+        <Divider sx={{ my: 3 }} />
+
+        {/* ── Seguridad ── */}
+        <Typography variant="subtitle2" color="text.secondary" gutterBottom>Seguridad</Typography>
+        <Button
+          fullWidth variant="outlined"
+          startIcon={<LockResetIcon />}
+          onClick={abrirDialogoPassword}
+          sx={{ mt: 1, py: 1.2, borderRadius: 2, fontWeight: 600, textTransform: 'none' }}
+        >
+          Cambiar contraseña
+        </Button>
+
         {/* ── Zona de peligro ── */}
         <Box sx={{
           mt: 4, p: 2.5, borderRadius: 2,
@@ -164,6 +233,99 @@ const EditarPerfil = () => {
           </Button>
         </Box>
       </Paper>
+
+      {/* ── Diálogo cambiar contraseña ── */}
+      <Dialog open={pwdDialogOpen} onClose={() => !pwdLoading && setPwdDialogOpen(false)}
+        PaperProps={{ sx: { borderRadius: 3, maxWidth: 440 } }}>
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1.5, pb: 1 }}>
+          <Box sx={{
+            width: 40, height: 40, borderRadius: '50%',
+            bgcolor: 'rgba(99,102,241,0.1)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <LockResetIcon sx={{ color: 'primary.main', fontSize: 22 }} />
+          </Box>
+          Cambiar contraseña
+        </DialogTitle>
+
+        <DialogContent>
+          {pwdError && <Alert severity="error" sx={{ mb: 2 }}>{pwdError}</Alert>}
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Ingresa tu contraseña actual y define una nueva. La nueva contraseña debe tener al menos 8 caracteres, con letras y números.
+          </Typography>
+          <TextField
+            fullWidth margin="normal"
+            label="Contraseña actual"
+            type={showPwd1 ? 'text' : 'password'}
+            value={pwdActual}
+            onChange={e => setPwdActual(e.target.value)}
+            disabled={pwdLoading}
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <MuiIconButton size="small" tabIndex={-1} onClick={() => setShowPwd1(v => !v)}>
+                    {showPwd1 ? <VisibilityOffIcon fontSize="small" /> : <VisibilityIcon fontSize="small" />}
+                  </MuiIconButton>
+                </InputAdornment>
+              ),
+            }}
+          />
+          <TextField
+            fullWidth margin="normal"
+            label="Nueva contraseña"
+            type={showPwd2 ? 'text' : 'password'}
+            value={pwdNueva}
+            onChange={e => setPwdNueva(e.target.value)}
+            disabled={pwdLoading}
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <MuiIconButton size="small" tabIndex={-1} onClick={() => setShowPwd2(v => !v)}>
+                    {showPwd2 ? <VisibilityOffIcon fontSize="small" /> : <VisibilityIcon fontSize="small" />}
+                  </MuiIconButton>
+                </InputAdornment>
+              ),
+            }}
+          />
+          <TextField
+            fullWidth margin="normal"
+            label="Confirmar nueva contraseña"
+            type={showPwd3 ? 'text' : 'password'}
+            value={pwdConfirmar}
+            onChange={e => setPwdConfirmar(e.target.value)}
+            disabled={pwdLoading}
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <MuiIconButton size="small" tabIndex={-1} onClick={() => setShowPwd3(v => !v)}>
+                    {showPwd3 ? <VisibilityOffIcon fontSize="small" /> : <VisibilityIcon fontSize="small" />}
+                  </MuiIconButton>
+                </InputAdornment>
+              ),
+            }}
+          />
+        </DialogContent>
+
+        <DialogActions sx={{ px: 3, pb: 3, gap: 1 }}>
+          <Button
+            fullWidth variant="outlined"
+            onClick={() => setPwdDialogOpen(false)}
+            disabled={pwdLoading}
+            sx={{ borderRadius: 2, textTransform: 'none' }}
+          >
+            Cancelar
+          </Button>
+          <Button
+            fullWidth variant="contained"
+            startIcon={pwdLoading ? <CircularProgress size={16} color="inherit" /> : <LockResetIcon />}
+            onClick={handleCambiarPassword}
+            disabled={pwdLoading}
+            sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 700 }}
+          >
+            {pwdLoading ? 'Guardando...' : 'Cambiar contraseña'}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* ── Diálogo de confirmación ── */}
       <Dialog open={dialogOpen} onClose={() => !eliminando && setDialogOpen(false)}

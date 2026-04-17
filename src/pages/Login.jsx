@@ -1,9 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { TextField, Button, Typography, Box, Alert, Link, InputAdornment, IconButton as MuiIconButton } from '@mui/material';
+import {
+  TextField, Button, Typography, Box, Alert, Link, InputAdornment,
+  IconButton as MuiIconButton,
+  Dialog, DialogTitle, DialogContent, DialogActions, CircularProgress,
+} from '@mui/material';
 import { useNavigate, Link as RouterLink, useLocation } from 'react-router-dom';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
+import LockResetIcon from '@mui/icons-material/LockReset';
 import api from '../services/api';
 import { clearAuthLocalStorage } from '../utils/authLocalStorage';
 import { useThemeMode } from '../ThemeContext';
@@ -25,6 +30,13 @@ const Login = () => {
   const [cargando, setCargando] = useState(false);
   const [mensajeExito, setMensajeExito] = useState('');
   const [showPass, setShowPass] = useState(false);
+
+  // Recuperar contraseña
+  const [forgotOpen,    setForgotOpen]    = useState(false);
+  const [forgotEmail,   setForgotEmail]   = useState('');
+  const [forgotLoading, setForgotLoading] = useState(false);
+  const [forgotError,   setForgotError]   = useState('');
+  const [forgotSuccess, setForgotSuccess] = useState('');
 
   const navigate  = useNavigate();
   const location  = useLocation();
@@ -97,6 +109,43 @@ const Login = () => {
       }
     } finally {
       setCargando(false);
+    }
+  };
+
+  const abrirRecuperar = () => {
+    const prefill = RX_EMAIL.test(username) ? username : '';
+    setForgotEmail(prefill);
+    setForgotError('');
+    setForgotSuccess('');
+    setForgotOpen(true);
+  };
+
+  const enviarRecuperar = async () => {
+    const isEn = lang === 'en';
+    setForgotError(''); setForgotSuccess('');
+    if (!RX_EMAIL.test(forgotEmail)) {
+      setForgotError(isEn ? 'Enter a valid email.' : 'Ingresa un correo válido.');
+      return;
+    }
+    setForgotLoading(true);
+    try {
+      await api.post('/soporte/contacto', {
+        nombre:  isEn ? 'Password recovery request' : 'Solicitud de recuperación de contraseña',
+        email:   forgotEmail,
+        mensaje: isEn
+          ? `The user with email ${forgotEmail} forgot their password and is requesting help to recover it.`
+          : `El usuario con correo ${forgotEmail} olvidó su contraseña y solicita ayuda para recuperarla.`,
+      });
+      setForgotSuccess(isEn
+        ? 'Request sent. Our team will contact you soon at this email.'
+        : 'Solicitud enviada. Nuestro equipo te contactará pronto a este correo.');
+      setForgotEmail('');
+    } catch {
+      setForgotError(isEn
+        ? 'Could not send the request. Try again later.'
+        : 'No se pudo enviar la solicitud. Inténtalo más tarde.');
+    } finally {
+      setForgotLoading(false);
     }
   };
 
@@ -318,9 +367,23 @@ const Login = () => {
             </Button>
 
             <Box textAlign="center">
-              <Typography variant="body2" sx={{ color: 'rgba(200,202,212,0.55)' }}>
+              <Link
+                component="button"
+                type="button"
+                onClick={abrirRecuperar}
+                underline="hover"
+                sx={{
+                  color: PERIW,
+                  fontWeight: 600,
+                  fontSize: '0.875rem',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  p: 0,
+                }}
+              >
                 {lang === 'en' ? 'Forgot your password?' : '¿Olvidaste tu contraseña?'}
-              </Typography>
+              </Link>
               <Typography variant="body2" sx={{ mt: 1.5, color: 'rgba(200,202,212,0.55)' }}>
                 {t.newHere || (lang === 'en' ? "Don't have an account?" : '¿No tienes cuenta?')}{' '}
                 <Link component={RouterLink} to="/registro" underline="hover"
@@ -333,6 +396,72 @@ const Login = () => {
         </Box>
       </Box>
     </Box>
+
+    {/* ── Diálogo: Recuperar contraseña ── */}
+    <Dialog
+      open={forgotOpen}
+      onClose={() => !forgotLoading && setForgotOpen(false)}
+      PaperProps={{ sx: { borderRadius: 3, maxWidth: 440 } }}
+    >
+      <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1.5, pb: 1 }}>
+        <Box sx={{
+          width: 40, height: 40, borderRadius: '50%',
+          bgcolor: 'rgba(139,143,200,0.15)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <LockResetIcon sx={{ color: PERIW, fontSize: 22 }} />
+        </Box>
+        {lang === 'en' ? 'Recover password' : 'Recuperar contraseña'}
+      </DialogTitle>
+
+      <DialogContent>
+        {forgotError   && <Alert severity="error"   sx={{ mb: 2 }}>{forgotError}</Alert>}
+        {forgotSuccess && <Alert severity="success" sx={{ mb: 2 }}>{forgotSuccess}</Alert>}
+        {!forgotSuccess && (
+          <>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              {lang === 'en'
+                ? 'Enter the email registered with your account. Our support team will contact you to help you reset your password.'
+                : 'Ingresa el correo registrado en tu cuenta. Nuestro equipo de soporte te contactará para ayudarte a restablecerla.'}
+            </Typography>
+            <TextField
+              fullWidth autoFocus
+              type="email"
+              label={lang === 'en' ? 'Email' : 'Correo electrónico'}
+              value={forgotEmail}
+              onChange={e => setForgotEmail(e.target.value)}
+              disabled={forgotLoading}
+              sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+            />
+          </>
+        )}
+      </DialogContent>
+
+      <DialogActions sx={{ px: 3, pb: 3, gap: 1 }}>
+        <Button
+          fullWidth variant="outlined"
+          onClick={() => setForgotOpen(false)}
+          disabled={forgotLoading}
+          sx={{ borderRadius: 2, textTransform: 'none' }}
+        >
+          {forgotSuccess ? (lang === 'en' ? 'Close' : 'Cerrar') : (lang === 'en' ? 'Cancel' : 'Cancelar')}
+        </Button>
+        {!forgotSuccess && (
+          <Button
+            fullWidth variant="contained"
+            onClick={enviarRecuperar}
+            disabled={forgotLoading}
+            startIcon={forgotLoading ? <CircularProgress size={16} color="inherit" /> : <LockResetIcon />}
+            sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 700, bgcolor: PERIW, '&:hover': { bgcolor: '#6B6FAE' } }}
+          >
+            {forgotLoading
+              ? (lang === 'en' ? 'Sending...' : 'Enviando...')
+              : (lang === 'en' ? 'Send request' : 'Enviar solicitud')}
+          </Button>
+        )}
+      </DialogActions>
+    </Dialog>
+
     <SoporteFloating />
     </>
   );
