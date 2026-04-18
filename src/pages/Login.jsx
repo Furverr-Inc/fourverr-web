@@ -33,11 +33,12 @@ const Login = () => {
   const [showPass, setShowPass] = useState(false);
 
   // Recuperar contraseña
-  const [forgotOpen,    setForgotOpen]    = useState(false);
-  const [forgotEmail,   setForgotEmail]   = useState('');
-  const [forgotLoading, setForgotLoading] = useState(false);
-  const [forgotError,   setForgotError]   = useState('');
-  const [forgotSuccess, setForgotSuccess] = useState('');
+  const [forgotOpen,     setForgotOpen]     = useState(false);
+  const [forgotUsername, setForgotUsername] = useState('');
+  const [forgotEmail,    setForgotEmail]    = useState('');
+  const [forgotLoading,  setForgotLoading]  = useState(false);
+  const [forgotError,    setForgotError]    = useState('');
+  const [forgotSuccess,  setForgotSuccess]  = useState('');
 
   const navigate  = useNavigate();
   const location  = useLocation();
@@ -115,8 +116,10 @@ const Login = () => {
 
   /* ── Recuperar contraseña ── */
   const abrirRecuperar = () => {
-    const prefill = RX_EMAIL.test(username) ? username : '';
-    setForgotEmail(prefill);
+    const prefillEmail    = RX_EMAIL.test(username) ? username : '';
+    const prefillUsername = RX_USERNAME.test(username) && !RX_EMAIL.test(username) ? username : '';
+    setForgotEmail(prefillEmail);
+    setForgotUsername(prefillUsername);
     setForgotError('');
     setForgotSuccess('');
     setForgotOpen(true);
@@ -125,6 +128,10 @@ const Login = () => {
   const enviarRecuperar = async () => {
     const isEn = lang === 'en';
     setForgotError(''); setForgotSuccess('');
+    if (!forgotUsername.trim()) {
+      setForgotError(isEn ? 'Enter your username.' : 'Ingresa tu nombre de usuario.');
+      return;
+    }
     if (!RX_EMAIL.test(forgotEmail)) {
       setForgotError(isEn ? 'Enter a valid email.' : 'Ingresa un correo válido.');
       return;
@@ -135,12 +142,13 @@ const Login = () => {
         nombre:  isEn ? 'Password recovery request' : 'Solicitud de recuperación de contraseña',
         email:   forgotEmail,
         mensaje: isEn
-          ? `The user with email ${forgotEmail} forgot their password and is requesting help to recover it.`
-          : `El usuario con correo ${forgotEmail} olvidó su contraseña y solicita ayuda para recuperarla.`,
+          ? `The user "${forgotUsername}" with email ${forgotEmail} forgot their password and is requesting help to recover it.`
+          : `El usuario "${forgotUsername}" con correo ${forgotEmail} olvidó su contraseña y solicita ayuda para recuperarla.`,
       });
       setForgotSuccess(isEn
         ? 'Request sent. Our team will contact you soon at this email.'
         : 'Solicitud enviada. Nuestro equipo te contactará pronto a este correo.');
+      setForgotUsername('');
       setForgotEmail('');
     } catch {
       setForgotError(isEn
@@ -494,11 +502,20 @@ const Login = () => {
           <>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
               {lang === 'en'
-                ? 'Enter the email registered with your account. Our support team will contact you to help you reset your password.'
-                : 'Ingresa el correo registrado en tu cuenta. Nuestro equipo de soporte te contactará para ayudarte a restablecerla.'}
+                ? 'Enter the username and email registered with your account. Our support team will contact you to help you reset your password.'
+                : 'Ingresa el nombre de usuario y el correo registrados en tu cuenta. Nuestro equipo de soporte te contactará para ayudarte a restablecerla.'}
             </Typography>
             <TextField
               fullWidth autoFocus
+              label={lang === 'en' ? 'Username' : 'Nombre de usuario'}
+              value={forgotUsername}
+              onChange={e => setForgotUsername(e.target.value)}
+              disabled={forgotLoading}
+              autoComplete="username"
+              sx={{ mb: 2, '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+            />
+            <TextField
+              fullWidth
               type="email"
               label={lang === 'en' ? 'Email' : 'Correo electrónico'}
               value={forgotEmail}

@@ -35,8 +35,6 @@ const EditarPerfil = () => {
 
   // Cambio de contraseña
   const [pwdDialogOpen, setPwdDialogOpen] = useState(false);
-  const [pwdUsername,   setPwdUsername]   = useState('');
-  const [pwdEmail,      setPwdEmail]      = useState('');
   const [pwdNueva,      setPwdNueva]      = useState('');
   const [pwdConfirmar,  setPwdConfirmar]  = useState('');
   const [pwdLoading,    setPwdLoading]    = useState(false);
@@ -88,14 +86,14 @@ const EditarPerfil = () => {
   };
 
   const abrirDialogoPassword = () => {
-    setPwdUsername(''); setPwdEmail(''); setPwdNueva(''); setPwdConfirmar('');
+    setPwdNueva(''); setPwdConfirmar('');
     setPwdError(''); setShowPwd2(false); setShowPwd3(false);
     setPwdDialogOpen(true);
   };
 
   const handleCambiarPassword = async () => {
     setPwdError('');
-    if (!pwdUsername || !pwdEmail || !pwdNueva || !pwdConfirmar) {
+    if (!pwdNueva || !pwdConfirmar) {
       setPwdError('Completa todos los campos'); return;
     }
     if (!RX_PASSWORD.test(pwdNueva)) {
@@ -107,8 +105,6 @@ const EditarPerfil = () => {
     setPwdLoading(true);
     try {
       await api.put('/users/perfil/password', {
-        username:      pwdUsername.trim(),
-        email:         pwdEmail.trim(),
         passwordNueva: pwdNueva,
       });
       setPwdDialogOpen(false);
@@ -249,25 +245,8 @@ const EditarPerfil = () => {
         <DialogContent>
           {pwdError && <Alert severity="error" sx={{ mb: 2 }}>{pwdError}</Alert>}
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Confirma tu nombre de usuario y correo para verificar tu identidad y define una nueva contraseña (mínimo 8 caracteres, con letras y números).
+            Define una nueva contraseña (mínimo 8 caracteres, con letras y números).
           </Typography>
-          <TextField
-            fullWidth margin="normal"
-            label="Nombre de usuario"
-            value={pwdUsername}
-            onChange={e => setPwdUsername(e.target.value)}
-            disabled={pwdLoading}
-            autoComplete="username"
-          />
-          <TextField
-            fullWidth margin="normal"
-            label="Correo electrónico"
-            type="email"
-            value={pwdEmail}
-            onChange={e => setPwdEmail(e.target.value)}
-            disabled={pwdLoading}
-            autoComplete="email"
-          />
           <TextField
             fullWidth margin="normal"
             label="Nueva contraseña"
