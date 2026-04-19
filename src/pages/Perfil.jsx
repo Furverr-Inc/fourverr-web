@@ -29,6 +29,7 @@ import DownloadIcon   from '@mui/icons-material/Download';
 import PostAddIcon from '@mui/icons-material/PostAdd';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import api from '../services/api';
+import { iniciarOnboardingConnect, obtenerEstadoConnect } from '../services/stripeService';
 import { useThemeMode } from '../ThemeContext';
 import { useLanguage } from '../LanguageContext';
 import ProductoModal from '../components/ProductoModal';
@@ -164,6 +165,10 @@ const Perfil = () => {
   const [ratingLoading, setRatingLoading] = useState(false);
   const [ratingCheck, setRatingCheck]     = useState({}); // { [pedidoId]: boolean }
 
+  // ── Stripe Connect ──
+  const [connectEstado, setConnectEstado]       = useState(null); // { conectado, habilitado }
+  const [connectLoading, setConnectLoading]     = useState(false);
+
   const getBadge = (n) => {
     if (n >= 10) return { label: t.levelVip,    color: '#f59e0b', Icon: MilitaryTechOutlinedIcon, bg: 'rgba(245,158,11,0.12)' };
     if (n >= 3)  return { label: t.levelActive, color: '#6366f1', Icon: BoltOutlinedIcon,           bg: 'rgba(99,102,241,0.12)' };
@@ -206,7 +211,10 @@ const Perfil = () => {
   useEffect(() => {
     if (!perfil) return;
     cargarDatosExtra();
-    if (perfil.role === 'SELLER' || perfil.role === 'ADMIN') cargarVentas();
+    if (perfil.role === 'SELLER' || perfil.role === 'ADMIN') {
+      cargarVentas();
+      obtenerEstadoConnect().then(setConnectEstado).catch(() => {});
+    }
   }, [perfil]);
 
   useEffect(() => {
@@ -448,6 +456,66 @@ const Perfil = () => {
               <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2.5, lineHeight: 1.5 }}>
                 {t.balanceHint}
               </Typography>
+
+              {/* ── Stripe Connect — onboarding del vendedor ── */}
+              <Box sx={{
+                mb: 2.5, p: 2, borderRadius: 2, border: '1px solid',
+                borderColor: connectEstado?.habilitado
+                  ? (isDark ? 'rgba(16,185,129,0.4)' : 'rgba(16,185,129,0.35)')
+                  : (isDark ? 'rgba(245,158,11,0.35)' : 'rgba(245,158,11,0.4)'),
+                bgcolor: connectEstado?.habilitado
+                  ? (isDark ? 'rgba(16,185,129,0.07)' : 'rgba(16,185,129,0.05)')
+                  : (isDark ? 'rgba(245,158,11,0.07)' : 'rgba(245,158,11,0.05)'),
+              }}>
+                <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 1.5, flexWrap: 'wrap' }}>
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <Typography variant="body2" fontWeight="bold" sx={{ mb: 0.5 }}>
+                      {t.stripeConnectTitle}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.5, display: 'block' }}>
+                      {t.stripeConnectDesc}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ flexShrink: 0, display: 'flex', alignItems: 'center' }}>
+                    {connectEstado?.habilitado ? (
+                      <Chip
+                        label={t.stripeConnectActive}
+                        size="small"
+                        sx={{ bgcolor: 'rgba(16,185,129,0.15)', color: '#10b981', fontWeight: 700, fontSize: '0.7rem' }}
+                      />
+                    ) : (
+                      <Button
+                        size="small"
+                        variant="contained"
+                        disabled={connectLoading}
+                        startIcon={connectLoading ? <CircularProgress size={13} color="inherit" /> : null}
+                        sx={{
+                          borderRadius: 2, textTransform: 'none', fontWeight: 700, fontSize: '0.75rem',
+                          bgcolor: '#f59e0b', '&:hover': { bgcolor: '#d97706' },
+                        }}
+                        onClick={async () => {
+                          setConnectLoading(true);
+                          try {
+                            const url = await iniciarOnboardingConnect();
+                            window.location.href = url;
+                          } catch {
+                            setError('Error al conectar con Stripe. Intenta de nuevo.');
+                            setTimeout(() => setError(''), 4000);
+                            setConnectLoading(false);
+                          }
+                        }}
+                      >
+                        {connectLoading
+                          ? t.stripeConnectLoading
+                          : connectEstado?.conectado
+                            ? t.stripeConnectPending
+                            : t.stripeConnectBtn}
+                      </Button>
+                    )}
+                  </Box>
+                </Box>
+              </Box>
+
 
               {ventasPagadas.length > 0 && (
                 <Box sx={{ p: 2, borderRadius: 2, background: isDark ? 'rgba(99,102,241,0.1)' : 'rgba(99,102,241,0.05)', border: '1px solid', borderColor: isDark ? 'rgba(99,102,241,0.3)' : 'rgba(99,102,241,0.15)', mb: 2.5 }}>
