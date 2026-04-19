@@ -27,6 +27,42 @@ const AdminUsuarios = () => {
   const [tabValue, setTabValue] = useState(0);
   const [selected, setSelected] = useState([]);
 
+  // ── Retiros ──
+  const [retiros, setRetiros] = useState([]);
+  const [retirosLoading, setRetirosLoading] = useState(false);
+  const [retiroAccionId, setRetiroAccionId] = useState(null); // id procesándose
+
+  const cargarRetiros = useCallback(async () => {
+    setRetirosLoading(true);
+    try {
+      const r = await api.get('/users/retiros/todos');
+      setRetiros(Array.isArray(r.data) ? r.data : []);
+    } catch { setRetiros([]); }
+    finally { setRetirosLoading(false); }
+  }, []);
+
+  const handleAprobarRetiro = async (id) => {
+    setRetiroAccionId(id);
+    try {
+      await api.put(`/users/retiros/${id}/aprobar`);
+      setSuccess('Retiro marcado como completado. Realiza la transferencia SPEI al vendedor.');
+      setTimeout(() => setSuccess(''), 6000);
+      cargarRetiros();
+    } catch { setError('Error al aprobar el retiro'); setTimeout(() => setError(''), 4000); }
+    finally { setRetiroAccionId(null); }
+  };
+
+  const handleRechazarRetiro = async (id) => {
+    setRetiroAccionId(id);
+    try {
+      await api.put(`/users/retiros/${id}/rechazar`);
+      setSuccess('Retiro rechazado. El saldo fue devuelto al vendedor.');
+      setTimeout(() => setSuccess(''), 5000);
+      cargarRetiros();
+    } catch { setError('Error al rechazar el retiro'); setTimeout(() => setError(''), 4000); }
+    finally { setRetiroAccionId(null); }
+  };
+
   const cargarUsuarios = useCallback(async () => {
     try {
       const usrRes = await api.get('/users/todos');
@@ -44,9 +80,10 @@ const AdminUsuarios = () => {
 
   useEffect(() => {
     cargarUsuarios();
-    const interval = setInterval(cargarUsuarios, 30000);
+    cargarRetiros();
+    const interval = setInterval(() => { cargarUsuarios(); cargarRetiros(); }, 30000);
     return () => clearInterval(interval);
-  }, [cargarUsuarios]);
+  }, [cargarUsuarios, cargarRetiros]);
 
   const handleSelectAll = (e) => {
     if (e.target.checked) setSelected(usuariosMostrar.map((u) => u.id));
@@ -474,6 +511,109 @@ const AdminUsuarios = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* ══════════════ PANEL DE RETIROS ══════════════ */}
+      <Paper elevation={3} sx={{ p: 3, mt: 3 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+          <Typography variant="h6" fontWeight="bold">
+            Solicitudes de Retiro
+          </Typography>
+          <Button size="small" variant="outlined" onClick={cargarRetiros} disabled={retirosLoading}
+            sx={{ textTransform: 'none', borderRadius: 2 }}>
+            {retirosLoading ? 'Actualizando...' : 'Actualizar'}
+          </Button>
+        </Box>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+          Cuando apruebes una solicitud, realiza manualmente la transferencia SPEI a la CLABE del vendedor y márcala como completada.
+        </Typography>
+        <Divider sx={{ mb: 2 }} />
+
+        {retiros.length === 0 ? (
+          <Box sx={{ textAlign: 'center', py: 4 }}>
+            <Typography color="text.secondary" variant="body2">No hay solicitudes de retiro aún.</Typography>
+          </Box>
+        ) : (
+          <TableContainer>
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell><strong>Vendedor</strong></TableCell>
+                  <TableCell><strong>Monto</strong></TableCell>
+                  <TableCell><strong>CLABE</strong></TableCell>
+                  <TableCell><strong>Notas</strong></TableCell>
+                  <TableCell><strong>Fecha</strong></TableCell>
+                  <TableCell><strong>Estado</strong></TableCell>
+                  <TableCell align="center"><strong>Acciones</strong></TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {retiros.map((r) => (
+                  <TableRow key={r.id} sx={{ opacity: r.estado !== 'PENDIENTE' ? 0.6 : 1 }}>
+                    <TableCell>
+                      <Typography variant="body2" fontWeight={600}>@{r.vendedor?.username}</Typography>
+                      <Typography variant="caption" color="text.secondary">{r.vendedor?.email}</Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body2" fontWeight={700} color="success.main">
+                        ${Number(r.monto || 0).toFixed(2)} MXN
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      {r.clabeSnapshot ? (
+                        <Typography variant="body2" sx={{ fontFamily: 'monospace', fontWeight: 600, letterSpacing: 0.5 }}>
+                          {r.clabeSnapshot}
+                        </Typography>
+                      ) : (
+                        <Typography variant="caption" color="warning.main">Sin CLABE</Typography>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="caption" color="text.secondary">
+                        {r.notas || '—'}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="caption">
+                        {r.fechaSolicitud ? new Date(r.fechaSolicitud).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Chip
+                        label={r.estado}
+                        size="small"
+                        color={r.estado === 'PENDIENTE' ? 'warning' : r.estado === 'COMPLETADO' ? 'success' : 'error'}
+                        sx={{ fontWeight: 700, fontSize: '0.7rem' }}
+                      />
+                    </TableCell>
+                    <TableCell align="center">
+                      {r.estado === 'PENDIENTE' && (
+                        <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
+                          <Button
+                            size="small" variant="contained" color="success"
+                            disabled={retiroAccionId === r.id}
+                            onClick={() => handleAprobarRetiro(r.id)}
+                            sx={{ textTransform: 'none', borderRadius: 1.5, fontWeight: 700, fontSize: '0.75rem' }}
+                          >
+                            {retiroAccionId === r.id ? '...' : 'Aprobar ✓'}
+                          </Button>
+                          <Button
+                            size="small" variant="outlined" color="error"
+                            disabled={retiroAccionId === r.id}
+                            onClick={() => handleRechazarRetiro(r.id)}
+                            sx={{ textTransform: 'none', borderRadius: 1.5, fontWeight: 700, fontSize: '0.75rem' }}
+                          >
+                            Rechazar
+                          </Button>
+                        </Box>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )}
+      </Paper>
     </>
   );
 };

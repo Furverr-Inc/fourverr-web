@@ -3,7 +3,7 @@ import {
   Container, Paper, Box, Typography, Avatar, Button,
   CircularProgress, Alert, Chip, Divider, IconButton, Grid,
   Card, CardMedia, CardContent, Dialog, DialogTitle, DialogContent,
-  DialogActions, TextField, Rating, Tooltip, Stack,
+  DialogActions, TextField, Rating, Tooltip, Stack, InputAdornment,
 } from '@mui/material';
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import EditIcon from '@mui/icons-material/Edit';
@@ -169,6 +169,12 @@ const Perfil = () => {
   const [connectEstado, setConnectEstado]       = useState(null); // { conectado, habilitado }
   const [connectLoading, setConnectLoading]     = useState(false);
 
+  // ── Retiro de saldo ──
+  const [retiroDialog, setRetiroDialog]   = useState(false);
+  const [retiroMonto, setRetiroMonto]     = useState('');
+  const [retiroNotas, setRetiroNotas]     = useState('');
+  const [retiroLoading, setRetiroLoading] = useState(false);
+
   const getBadge = (n) => {
     if (n >= 10) return { label: t.levelVip,    color: '#f59e0b', Icon: MilitaryTechOutlinedIcon, bg: 'rgba(245,158,11,0.12)' };
     if (n >= 3)  return { label: t.levelActive, color: '#6366f1', Icon: BoltOutlinedIcon,           bg: 'rgba(99,102,241,0.12)' };
@@ -245,6 +251,29 @@ const Perfil = () => {
       setSuccess('Solicitud enviada. Esperando aprobación del Administrador.');
       cargarPerfil(); setTimeout(() => setSuccess(''), 5000);
     } catch { setError('Error al enviar la solicitud'); setTimeout(() => setError(''), 3000); }
+  };
+
+  const handleSolicitarRetiro = async () => {
+    const monto = parseFloat(retiroMonto);
+    if (!retiroMonto || isNaN(monto) || monto <= 0) {
+      setError('Ingresa un monto válido mayor a 0'); setTimeout(() => setError(''), 3000); return;
+    }
+    if (monto > Number(perfil?.saldoDisponible || 0)) {
+      setError('El monto supera tu saldo disponible'); setTimeout(() => setError(''), 3000); return;
+    }
+    setRetiroLoading(true);
+    try {
+      await api.post('/users/retiros/solicitar', { monto, notas: retiroNotas });
+      setRetiroDialog(false);
+      setRetiroMonto(''); setRetiroNotas('');
+      setSuccess('Solicitud de retiro enviada. El administrador la procesará pronto.');
+      setTimeout(() => setSuccess(''), 6000);
+      cargarPerfil(); // refresca saldoDisponible
+    } catch (err) {
+      const msg = typeof err.response?.data === 'string' ? err.response.data : 'Error al solicitar el retiro';
+      setError(msg); setTimeout(() => setError(''), 5000);
+      setRetiroDialog(false);
+    } finally { setRetiroLoading(false); }
   };
 
   const handleAbrirRating = (pedido) => {
@@ -622,6 +651,17 @@ const Perfil = () => {
                 >
                   {t.myPublications}
                 </Button>
+                {Number(perfil?.saldoDisponible || 0) > 0 && (
+                  <Button
+                    variant="contained"
+                    color="success"
+                    startIcon={<AccountBalanceWalletIcon />}
+                    sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 700 }}
+                    onClick={() => { setRetiroMonto(''); setRetiroNotas(''); setRetiroDialog(true); }}
+                  >
+                    Retirar saldo
+                  </Button>
+                )}
               </Stack>
             </Paper>
           </Grid>
@@ -825,11 +865,61 @@ const Perfil = () => {
         <DialogActions sx={{ p: 2.5, pt: 0, gap: 1 }}>
           <Button onClick={() => setRatingDialog(false)} variant="outlined" sx={{ borderRadius: 2 }}>{t.cancel || 'Cancelar'}</Button>
           <Button onClick={handleEnviarRating} variant="contained" disabled={!ratingVal || ratingLoading}
-            sx={{ borderRadius: 2, background: 'linear-gradient(90deg,#6366f1,#8b5cf6)', flex: 1 }}>
-            {ratingLoading ? <CircularProgress size={20} color="inherit" /> : t.submitRating}
+            sx={{ borderRadius: 2, background: 'linear-gradient(90deg,#6366f1,#8b5cf6)', flex: 1 }}>\n            {ratingLoading ? <CircularProgress size={20} color="inherit" /> : t.submitRating}
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* ── Dialog solicitar retiro ── */}
+      <Dialog open={retiroDialog} onClose={() => !retiroLoading && setRetiroDialog(false)}
+        maxWidth="xs" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1.5, pb: 1 }}>
+          <Box sx={{ width: 40, height: 40, borderRadius: '50%', bgcolor: 'rgba(16,185,129,0.12)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <AccountBalanceWalletIcon sx={{ color: '#10b981', fontSize: 22 }} />
+          </Box>
+          Solicitar retiro
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Saldo disponible: <strong>${Number(perfil?.saldoDisponible || 0).toFixed(2)} MXN</strong>
+            <br />
+            {perfil?.clabe
+              ? <>CLABE registrada: <strong>••••{perfil.clabe.slice(-4)}</strong></>
+              : <Box component="span" sx={{ color: 'warning.main', fontWeight: 600 }}>
+                  ⚠ No tienes CLABE registrada. Ve a Editar Perfil primero.
+                </Box>
+            }
+          </Typography>
+          <TextField
+            fullWidth label="Monto a retirar (MXN)" margin="normal" type="number"
+            value={retiroMonto} onChange={e => setRetiroMonto(e.target.value)}
+            disabled={retiroLoading || !perfil?.clabe}
+            inputProps={{ min: 1, max: Number(perfil?.saldoDisponible || 0), step: 0.01 }}
+            InputProps={{ startAdornment: <InputAdornment position="start">$</InputAdornment> }}
+          />
+          <TextField
+            fullWidth label="Notas para el admin (opcional)" margin="normal" multiline rows={2}
+            value={retiroNotas} onChange={e => setRetiroNotas(e.target.value)}
+            disabled={retiroLoading}
+            placeholder="Ej. SPEI urgente, cuenta personal..."
+          />
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 3, gap: 1 }}>
+          <Button fullWidth variant="outlined" onClick={() => setRetiroDialog(false)}
+            disabled={retiroLoading} sx={{ borderRadius: 2, textTransform: 'none' }}>
+            Cancelar
+          </Button>
+          <Button fullWidth variant="contained" color="success"
+            disabled={retiroLoading || !perfil?.clabe || !retiroMonto}
+            startIcon={retiroLoading ? <CircularProgress size={16} color="inherit" /> : <AccountBalanceWalletIcon />}
+            onClick={handleSolicitarRetiro}
+            sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 700 }}>
+            {retiroLoading ? 'Enviando...' : 'Solicitar retiro'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
     </Container>
   );
 };

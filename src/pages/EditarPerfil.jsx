@@ -46,6 +46,7 @@ const EditarPerfil = () => {
     nombreMostrado: '', email: '', descripcion: '',
     telefono: '', ciudad: '', pais: '',
     sitioWeb: '', instagram: '', twitter: '', linkedin: '',
+    clabe: '',
   });
 
   useEffect(() => {
@@ -62,6 +63,7 @@ const EditarPerfil = () => {
         instagram:      d.instagram      || '',
         twitter:        d.twitter        || '',
         linkedin:       d.linkedin       || '',
+        clabe:          d.clabe          || '',
       });
     }).catch(() => setEsError(true))
       .finally(() => setLoading(false));
@@ -163,6 +165,23 @@ const EditarPerfil = () => {
             InputProps={{ startAdornment: <InputAdornment position="start"><LocationOnIcon fontSize="small" /></InputAdornment> }} />
           <TextField fullWidth label="País" margin="normal" value={form.pais} onChange={f('pais')} />
         </Box>
+
+        <Divider sx={{ my:3 }} />
+
+        {/* Datos bancarios */}
+        <Typography variant="subtitle2" color="text.secondary" gutterBottom>Datos bancarios</Typography>
+        <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1, lineHeight: 1.5 }}>
+          Necesaria para recibir el pago cuando solicites un retiro. Solo el administrador la verá al procesar tu solicitud.
+        </Typography>
+        <TextField
+          fullWidth label="CLABE interbancaria (18 dígitos)" margin="normal"
+          value={form.clabe} onChange={f('clabe')}
+          placeholder="ej. 012345678901234567"
+          inputProps={{ maxLength: 18 }}
+          helperText={form.clabe && form.clabe.length !== 18 ? 'La CLABE debe tener exactamente 18 dígitos' : ''}
+          error={!!form.clabe && form.clabe.length !== 18}
+          InputProps={{ startAdornment: <InputAdornment position="start"><span style={{ fontSize: 16 }}>🏦</span></InputAdornment> }}
+        />
 
         <Divider sx={{ my:3 }} />
 
