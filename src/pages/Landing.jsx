@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
-  Container, Grid, Card, CardMedia, CardContent, Typography,
+  Container, Card, CardMedia, CardContent, Typography,
   Box, Chip, CircularProgress, Alert, AppBar, Toolbar, Button, IconButton, Tooltip,
   Avatar, useMediaQuery,
 } from '@mui/material';
@@ -10,6 +10,8 @@ import LightModeIcon from '@mui/icons-material/LightMode';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import StarBorderIcon from '@mui/icons-material/StarBorder';
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { useThemeMode } from '../ThemeContext';
@@ -170,31 +172,14 @@ const Landing = () => {
         </Container>
       </Box>
 
-      {/* Categorías — mismo ancho útil que Home */}
+      {/* Categorías — carrusel horizontal */}
       <Container maxWidth="xl" sx={{ mt: 6, mb: 4, px: { xs: 1.5, sm: 3, md: 4 } }}>
         <Box sx={sxListingColumn}>
-          <Grid container spacing={2} justifyContent="center">
-            {t.landingCategories.map(cat => (
-              <Grid item key={cat}>
-                <Chip
-                  label={cat}
-                  onClick={() => navigate('/login')}
-                  sx={{
-                    py: 2.5, px: 2, fontSize: '1rem', fontWeight: 500, cursor: 'pointer',
-                    color: 'text.primary',
-                    border: '1px solid',
-                    borderColor: isDark ? 'rgba(200,202,212,0.2)' : BRAND_BORDER,
-                    bgcolor: isDark ? 'rgba(255,255,255,0.06)' : 'transparent',
-                    '&:hover': {
-                      bgcolor: BRAND_PERIW_HOVER,
-                      color: '#fff',
-                      borderColor: BRAND_PERIW_HOVER,
-                    },
-                  }}
-                />
-              </Grid>
-            ))}
-          </Grid>
+          <CategoriasCarrusel
+            categorias={t.landingCategories}
+            onSelect={() => navigate('/login')}
+            isDark={isDark}
+          />
         </Box>
       </Container>
 
@@ -378,6 +363,105 @@ const Landing = () => {
 
       <SoporteFloating />
     </>
+  );
+};
+
+const CategoriasCarrusel = ({ categorias, onSelect, isDark }) => {
+  const scrollRef = useRef(null);
+  const [canLeft, setCanLeft] = useState(false);
+  const [canRight, setCanRight] = useState(false);
+
+  const updateArrows = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    setCanLeft(el.scrollLeft > 2);
+    setCanRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 2);
+  };
+
+  useEffect(() => {
+    updateArrows();
+    const el = scrollRef.current;
+    if (!el) return;
+    el.addEventListener('scroll', updateArrows, { passive: true });
+    window.addEventListener('resize', updateArrows);
+    return () => {
+      el.removeEventListener('scroll', updateArrows);
+      window.removeEventListener('resize', updateArrows);
+    };
+  }, [categorias]);
+
+  const scrollBy = (dir) => {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollBy({ left: dir * Math.max(240, el.clientWidth * 0.6), behavior: 'smooth' });
+  };
+
+  const arrowSx = {
+    position: 'absolute',
+    top: '50%',
+    transform: 'translateY(-50%)',
+    zIndex: 2,
+    bgcolor: isDark ? 'rgba(20,20,35,0.9)' : 'rgba(255,255,255,0.95)',
+    border: '1px solid',
+    borderColor: isDark ? 'rgba(255,255,255,0.12)' : BRAND_BORDER,
+    boxShadow: `0 4px 16px ${BRAND_SHADOW}`,
+    color: isDark ? BRAND_PERIW : BRAND_NAVY,
+    '&:hover': { bgcolor: BRAND_PERIW, color: '#fff' },
+  };
+
+  return (
+    <Box sx={{ position: 'relative' }}>
+      {canLeft && (
+        <IconButton size="small" onClick={() => scrollBy(-1)} sx={{ ...arrowSx, left: { xs: -4, md: -18 } }}>
+          <ChevronLeftIcon />
+        </IconButton>
+      )}
+      <Box
+        ref={scrollRef}
+        sx={{
+          display: 'flex',
+          gap: 1.5,
+          overflowX: 'auto',
+          scrollSnapType: 'x mandatory',
+          scrollBehavior: 'smooth',
+          py: 1,
+          px: { xs: 0.5, md: 1 },
+          '&::-webkit-scrollbar': { display: 'none' },
+          scrollbarWidth: 'none',
+          WebkitMaskImage:
+            'linear-gradient(to right, transparent 0, #000 24px, #000 calc(100% - 24px), transparent 100%)',
+          maskImage:
+            'linear-gradient(to right, transparent 0, #000 24px, #000 calc(100% - 24px), transparent 100%)',
+        }}
+      >
+        {categorias.map(cat => (
+          <Chip
+            key={cat}
+            label={cat}
+            onClick={onSelect}
+            sx={{
+              flex: '0 0 auto',
+              scrollSnapAlign: 'start',
+              py: 2.5, px: 2, fontSize: '1rem', fontWeight: 500, cursor: 'pointer',
+              color: 'text.primary',
+              border: '1px solid',
+              borderColor: isDark ? 'rgba(200,202,212,0.2)' : BRAND_BORDER,
+              bgcolor: isDark ? 'rgba(255,255,255,0.06)' : 'transparent',
+              '&:hover': {
+                bgcolor: BRAND_PERIW_HOVER,
+                color: '#fff',
+                borderColor: BRAND_PERIW_HOVER,
+              },
+            }}
+          />
+        ))}
+      </Box>
+      {canRight && (
+        <IconButton size="small" onClick={() => scrollBy(1)} sx={{ ...arrowSx, right: { xs: -4, md: -18 } }}>
+          <ChevronRightIcon />
+        </IconButton>
+      )}
+    </Box>
   );
 };
 
