@@ -28,6 +28,8 @@ const TIPOS = [
 
 const tipoLabel = (tipo) => TIPOS.find(t => t.value === tipo)?.label || tipo;
 
+const PRECIO_MINIMO_MXN = 10;
+
 const MisPublicaciones = () => {
   const [productos, setProductos] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -82,6 +84,12 @@ const MisPublicaciones = () => {
 
   const handleGuardar = async () => {
     if (!editDialog.producto) return;
+    const precioNum = parseFloat(String(editForm.precio).replace(',', '.'));
+    if (Number.isNaN(precioNum) || precioNum < PRECIO_MINIMO_MXN) {
+      setError(`El precio mínimo es ${PRECIO_MINIMO_MXN} MXN.`);
+      setTimeout(() => setError(''), 4000);
+      return;
+    }
     setGuardando(true);
     try {
       const fd = new FormData();
@@ -101,7 +109,12 @@ const MisPublicaciones = () => {
       setEditDialog({ open: false, producto: null });
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
-      setError('Error al guardar: ' + (err.response?.data || err.message));
+      const d = err.response?.data;
+      const msg =
+        err.response?.status === 400 && typeof d === 'string'
+          ? d
+          : 'Error al guardar: ' + (d || err.message);
+      setError(msg);
       setTimeout(() => setError(''), 4000);
     } finally { setGuardando(false); }
   };
@@ -233,12 +246,13 @@ const MisPublicaciones = () => {
             />
             <Box sx={{ display: 'flex', gap: 2 }}>
               <TextField
-                label="Precio"
+                label="Precio (MXN)"
                 type="number"
                 sx={{ flex: 1 }}
                 value={editForm.precio}
                 onChange={e => setEditForm(f => ({ ...f, precio: e.target.value }))}
-                inputProps={{ min: 0, step: 0.01 }}
+                inputProps={{ min: PRECIO_MINIMO_MXN, step: 0.01 }}
+                helperText={`Mín. ${PRECIO_MINIMO_MXN} MXN`}
               />
               <TextField
                 label="Categoría"

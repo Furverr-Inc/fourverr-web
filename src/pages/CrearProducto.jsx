@@ -4,6 +4,9 @@ import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 
+/** Mínimo alineado con Stripe (MXN) y con el backend. */
+const PRECIO_MINIMO_MXN = 10;
+
 const TIPOS = [
   { value: 'SERVICIO_GIG',        label: 'Servicio / Gig' },
   { value: 'CURSO_DIGITAL',       label: 'Curso Digital' },
@@ -55,6 +58,12 @@ const CrearProducto = () => {
     if (!titulo || !precio || !descripcion || !portada) {
       setEsError(true); setMensaje('Todos los campos y la imagen de portada son obligatorios.'); return;
     }
+    const precioNum = parseFloat(String(precio).replace(',', '.'));
+    if (Number.isNaN(precioNum) || precioNum < PRECIO_MINIMO_MXN) {
+      setEsError(true);
+      setMensaje(`El precio mínimo para publicar es ${PRECIO_MINIMO_MXN} MXN (requisito para cobrar con tarjeta).`);
+      return;
+    }
     setCargando(true);
     const formData = new FormData();
     formData.append('titulo',      titulo);
@@ -72,7 +81,10 @@ const CrearProducto = () => {
     } catch (err) {
       setEsError(true);
       if (err.response?.status === 403) setMensaje('No tienes permiso. Asegúrate de ser Vendedor.');
-      else setMensaje('Error al subir el producto: ' + (err.response?.data || err.message));
+      else if (err.response?.status === 400) {
+        const d = err.response?.data;
+        setMensaje(typeof d === 'string' ? d : 'No se pudo publicar. Revisa el precio y los datos.');
+      } else setMensaje('Error al subir el producto: ' + (err.response?.data || err.message));
     } finally { setCargando(false); }
   };
 
@@ -93,8 +105,16 @@ const CrearProducto = () => {
             value={titulo} onChange={e => setTitulo(e.target.value)} />
 
           <Box sx={{ display:'flex', gap:2 }}>
-            <TextField fullWidth label="Precio ($)" type="number" margin="normal"
-              value={precio} onChange={e => setPrecio(e.target.value)} />
+            <TextField
+              fullWidth
+              label="Precio (MXN)"
+              type="number"
+              margin="normal"
+              value={precio}
+              onChange={e => setPrecio(e.target.value)}
+              inputProps={{ min: PRECIO_MINIMO_MXN, step: '0.01' }}
+              helperText={`Mínimo ${PRECIO_MINIMO_MXN} MXN`}
+            />
             <TextField select fullWidth label="Categoría" margin="normal"
               value={tipo} onChange={e => setTipo(e.target.value)}>
               {TIPOS.map(t => (
