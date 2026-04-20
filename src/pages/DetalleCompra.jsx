@@ -146,8 +146,15 @@ const DetalleCompra = () => {
     try {
       const data = await crearPaymentIntent(producto.id, 'mxn', cantidad);
       setClientSecret(data.clientSecret);
-    } catch {
-      setError('No se pudo iniciar el proceso de pago. Intenta de nuevo.');
+    } catch (err) {
+      const body = err.response?.data;
+      const serverMsg =
+        (body && typeof body.error === 'string' && body.error) ||
+        (body && typeof body.message === 'string' && body.message) ||
+        (typeof body === 'string' ? body : null);
+      setError(
+        serverMsg || 'No se pudo iniciar el proceso de pago. Intenta de nuevo.'
+      );
     } finally {
       setCargando(false);
     }
