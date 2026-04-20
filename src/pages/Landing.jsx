@@ -174,20 +174,24 @@ const Landing = () => {
       <Container maxWidth="xl" sx={{ mt: 6, mb: 4, px: { xs: 1.5, sm: 3, md: 4 } }}>
         <Box sx={sxListingColumn}>
           <Grid container spacing={2} justifyContent="center">
-            {['Programación', 'Diseño Gráfico', 'Marketing', 'Escritura', 'Video', 'Música'].map(cat => (
+            {t.landingCategories.map(cat => (
               <Grid item key={cat}>
-                <Chip label={cat} sx={{
-                  py: 2.5, px: 2, fontSize: '1rem', fontWeight: 500, cursor: 'pointer',
-                  color: 'text.primary',
-                  border: '1px solid',
-                  borderColor: isDark ? 'rgba(200,202,212,0.2)' : BRAND_BORDER,
-                  bgcolor: isDark ? 'rgba(255,255,255,0.06)' : 'transparent',
-                  '&:hover': {
-                    bgcolor: BRAND_PERIW_HOVER,
-                    color: '#fff',
-                    borderColor: BRAND_PERIW_HOVER,
-                  },
-                }} />
+                <Chip
+                  label={cat}
+                  onClick={() => navigate('/login')}
+                  sx={{
+                    py: 2.5, px: 2, fontSize: '1rem', fontWeight: 500, cursor: 'pointer',
+                    color: 'text.primary',
+                    border: '1px solid',
+                    borderColor: isDark ? 'rgba(200,202,212,0.2)' : BRAND_BORDER,
+                    bgcolor: isDark ? 'rgba(255,255,255,0.06)' : 'transparent',
+                    '&:hover': {
+                      bgcolor: BRAND_PERIW_HOVER,
+                      color: '#fff',
+                      borderColor: BRAND_PERIW_HOVER,
+                    },
+                  }}
+                />
               </Grid>
             ))}
           </Grid>

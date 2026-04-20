@@ -36,6 +36,8 @@ export const translations = {
     seller: 'Vendedor',
     from: 'Desde',
     noServices: 'No hay servicios disponibles en este momento',
+    landingCategories: ['Programación', 'Diseño Gráfico', 'Marketing', 'Escritura', 'Video', 'Música'],
+    changeLanguage: 'Cambiar idioma',
 
     // Auth
     welcome: 'Bienvenido de nuevo',
@@ -212,6 +214,8 @@ export const translations = {
     seller: 'Seller',
     from: 'From',
     noServices: 'No services available at this time',
+    landingCategories: ['Programming', 'Graphic Design', 'Marketing', 'Writing', 'Video', 'Music'],
+    changeLanguage: 'Change language',
 
     // Auth
     welcome: 'Welcome back',

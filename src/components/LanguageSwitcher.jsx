@@ -11,7 +11,7 @@ const LANGUAGES = [
 ];
 
 const LanguageSwitcher = () => {
-  const { lang, switchLanguage } = useLanguage();
+  const { lang, switchLanguage, t } = useLanguage();
   const { isDark } = useThemeMode();
   const [open, setOpen] = useState(false);
 
@@ -77,7 +77,7 @@ const LanguageSwitcher = () => {
       </Collapse>
 
       {/* Botón globo */}
-      <Tooltip title={open ? '' : 'Cambiar idioma'} placement="right">
+      <Tooltip title={open ? '' : t.changeLanguage} placement="right">
         <Box
           onClick={() => setOpen(prev => !prev)}
           sx={{

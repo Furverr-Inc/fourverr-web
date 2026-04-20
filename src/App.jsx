@@ -16,6 +16,7 @@ import AdminReportes from './pages/admin/AdminReportes';
 import ProtectedRoute from './components/ProtectedRoute';
 import DetalleCompra        from './pages/DetalleCompra';
 import ConfirmacionCompra  from './pages/ConfirmacionCompra';
+import LanguageSwitcher    from './components/LanguageSwitcher';
 
 /** Coincide con vite.config base (dev: `/`, producción GitHub Pages: `/fourverr-web/`) */
 const routerBasename = import.meta.env.BASE_URL.replace(/\/$/, '') || undefined;
@@ -51,6 +52,7 @@ function App() {
 
         <Route path="*" element={<Landing />} />
       </Routes>
+      <LanguageSwitcher />
     </Router>
   );
 }
