@@ -140,7 +140,10 @@ const DetalleCompra = () => {
 
   const handleIniciarPago = async () => {
     setError(null);
-    if (esProductoFisico && !validateShipping()) return;
+    if (esProductoFisico && !validateShipping()) {
+      setError('Completa la dirección de envío antes de continuar con el pago.');
+      return;
+    }
 
     setCargando(true);
     try {

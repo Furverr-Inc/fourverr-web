@@ -36,6 +36,9 @@ const Login = () => {
   const [forgotOpen,     setForgotOpen]     = useState(false);
   const [forgotUsername, setForgotUsername] = useState('');
   const [forgotEmail,    setForgotEmail]    = useState('');
+  const [forgotPassword, setForgotPassword] = useState('');
+  const [forgotPassword2, setForgotPassword2] = useState('');
+  const [forgotShowPass, setForgotShowPass] = useState(false);
   const [forgotLoading,  setForgotLoading]  = useState(false);
   const [forgotError,    setForgotError]    = useState('');
   const [forgotSuccess,  setForgotSuccess]  = useState('');
@@ -120,6 +123,9 @@ const Login = () => {
     const prefillUsername = RX_USERNAME.test(username) && !RX_EMAIL.test(username) ? username : '';
     setForgotEmail(prefillEmail);
     setForgotUsername(prefillUsername);
+    setForgotPassword('');
+    setForgotPassword2('');
+    setForgotShowPass(false);
     setForgotError('');
     setForgotSuccess('');
     setForgotOpen(true);
@@ -136,24 +142,45 @@ const Login = () => {
       setForgotError(isEn ? 'Enter a valid email.' : 'Ingresa un correo válido.');
       return;
     }
+    if (!RX_PASSWORD.test(forgotPassword)) {
+      setForgotError(isEn
+        ? 'New password must be at least 8 characters, with 1 letter and 1 number.'
+        : 'La nueva contraseña debe tener mínimo 8 caracteres, con 1 letra y 1 número.');
+      return;
+    }
+    if (forgotPassword !== forgotPassword2) {
+      setForgotError(isEn ? 'Passwords do not match.' : 'Las contraseñas no coinciden.');
+      return;
+    }
     setForgotLoading(true);
     try {
-      await api.post('/soporte/contacto', {
-        nombre:  isEn ? 'Password recovery request' : 'Solicitud de recuperación de contraseña',
-        email:   forgotEmail,
-        mensaje: isEn
-          ? `The user "${forgotUsername}" with email ${forgotEmail} forgot their password and is requesting help to recover it.`
-          : `El usuario "${forgotUsername}" con correo ${forgotEmail} olvidó su contraseña y solicita ayuda para recuperarla.`,
+      await api.post('/auth/reset-password', {
+        username:    forgotUsername.trim(),
+        email:       forgotEmail.trim(),
+        newPassword: forgotPassword,
       });
       setForgotSuccess(isEn
-        ? 'Request sent. Our team will contact you soon at this email.'
-        : 'Solicitud enviada. Nuestro equipo te contactará pronto a este correo.');
-      setForgotUsername('');
-      setForgotEmail('');
-    } catch {
-      setForgotError(isEn
-        ? 'Could not send the request. Try again later.'
-        : 'No se pudo enviar la solicitud. Inténtalo más tarde.');
+        ? 'Password updated. You can sign in with your new password now.'
+        : 'Contraseña actualizada. Ya puedes iniciar sesión con la nueva contraseña.');
+      setForgotPassword('');
+      setForgotPassword2('');
+    } catch (err) {
+      const status = err.response?.status;
+      const raw = err.response?.data;
+      const bodyStr = typeof raw === 'string' ? raw : (raw?.message != null ? String(raw.message) : '');
+      if (status === 404) {
+        setForgotError(isEn
+          ? 'Username and email do not match any account.'
+          : 'El usuario y el correo no coinciden con ninguna cuenta.');
+      } else if (status === 400 && bodyStr) {
+        setForgotError(bodyStr);
+      } else if (status === 403 && bodyStr) {
+        setForgotError(bodyStr);
+      } else {
+        setForgotError(isEn
+          ? 'Could not update the password. Try again later.'
+          : 'No se pudo actualizar la contraseña. Inténtalo más tarde.');
+      }
     } finally {
       setForgotLoading(false);
     }
@@ -492,7 +519,7 @@ const Login = () => {
         }}>
           <LockResetIcon sx={{ color: PERIW, fontSize: 22 }} />
         </Box>
-        {lang === 'en' ? 'Recover password' : 'Recuperar contraseña'}
+        {lang === 'en' ? 'Reset password' : 'Cambiar contraseña'}
       </DialogTitle>
 
       <DialogContent>
@@ -502,8 +529,8 @@ const Login = () => {
           <>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
               {lang === 'en'
-                ? 'Enter the username and email registered with your account. Our support team will contact you to help you reset your password.'
-                : 'Ingresa el nombre de usuario y el correo registrados en tu cuenta. Nuestro equipo de soporte te contactará para ayudarte a restablecerla.'}
+                ? 'Enter your username, the email registered in your account, and a new password. If both match, your password will be updated immediately.'
+                : 'Ingresa tu nombre de usuario, el correo registrado en tu cuenta y una nueva contraseña. Si ambos coinciden, tu contraseña se actualizará al instante.'}
             </Typography>
             <TextField
               fullWidth autoFocus
@@ -521,6 +548,45 @@ const Login = () => {
               value={forgotEmail}
               onChange={e => setForgotEmail(e.target.value)}
               disabled={forgotLoading}
+              sx={{ mb: 2, '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+            />
+            <TextField
+              fullWidth
+              type={forgotShowPass ? 'text' : 'password'}
+              label={lang === 'en' ? 'New password' : 'Nueva contraseña'}
+              value={forgotPassword}
+              onChange={e => setForgotPassword(e.target.value)}
+              disabled={forgotLoading}
+              autoComplete="new-password"
+              helperText={lang === 'en'
+                ? 'Minimum 8 characters, with at least 1 letter and 1 number.'
+                : 'Mínimo 8 caracteres, con al menos 1 letra y 1 número.'}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <MuiIconButton
+                      onClick={() => setForgotShowPass(p => !p)}
+                      tabIndex={-1}
+                      size="small"
+                      edge="end"
+                    >
+                      {forgotShowPass
+                        ? <VisibilityOffIcon sx={{ fontSize: 18 }} />
+                        : <VisibilityIcon    sx={{ fontSize: 18 }} />}
+                    </MuiIconButton>
+                  </InputAdornment>
+                ),
+              }}
+              sx={{ mb: 2, '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+            />
+            <TextField
+              fullWidth
+              type={forgotShowPass ? 'text' : 'password'}
+              label={lang === 'en' ? 'Confirm new password' : 'Confirmar nueva contraseña'}
+              value={forgotPassword2}
+              onChange={e => setForgotPassword2(e.target.value)}
+              disabled={forgotLoading}
+              autoComplete="new-password"
               sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
             />
           </>
@@ -545,8 +611,8 @@ const Login = () => {
             sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 700, bgcolor: PERIW, '&:hover': { bgcolor: '#6B6FAE' } }}
           >
             {forgotLoading
-              ? (lang === 'en' ? 'Sending...' : 'Enviando...')
-              : (lang === 'en' ? 'Send request' : 'Enviar solicitud')}
+              ? (lang === 'en' ? 'Updating...' : 'Actualizando...')
+              : (lang === 'en' ? 'Update password' : 'Actualizar contraseña')}
           </Button>
         )}
       </DialogActions>
