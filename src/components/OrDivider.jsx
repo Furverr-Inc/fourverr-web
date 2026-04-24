@@ -7,17 +7,19 @@ import { Box, Typography } from '@mui/material';
  */
 const OrDivider = ({ label = 'OR', sx, color }) => (
   <Box
-    sx={{
-      my: 3,
-      display: 'flex',
-      alignItems: 'center',
-      '&::before, &::after': {
-        content: '""',
-        flex: 1,
-        borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
+    sx={[
+      {
+        my: 3,
+        display: 'flex',
+        alignItems: 'center',
+        '&::before, &::after': {
+          content: '""',
+          flex: 1,
+          borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
+        },
       },
-      ...sx,
-    }}
+      ...(Array.isArray(sx) ? sx : sx ? [sx] : []),
+    ]}
   >
     <Typography
       variant="caption"

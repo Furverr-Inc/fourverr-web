@@ -58,6 +58,9 @@ const motionTransitions = {
 const baseCssOverrides = (bgColor) => ({
   html: { WebkitTapHighlightColor: 'transparent' },
   body: { backgroundColor: bgColor },
+  '.theme-transitioning, .theme-transitioning *, .theme-transitioning *::before, .theme-transitioning *::after': {
+    transition: 'background-color 350ms ease, color 350ms ease, border-color 350ms ease, box-shadow 350ms ease, fill 350ms ease !important',
+  },
   '*:focus': { outline: 'none' },
   '*:focus-visible': {
     outline: `2px solid ${PERIW}`,

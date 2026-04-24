@@ -12,11 +12,13 @@ export const ThemeModeProvider = ({ children }) => {
   );
 
   const toggleTheme = () => {
+    document.documentElement.classList.add('theme-transitioning');
     setIsDark(prev => {
       const next = !prev;
       localStorage.setItem('themeMode', next ? 'dark' : 'light');
       return next;
     });
+    setTimeout(() => document.documentElement.classList.remove('theme-transitioning'), 400);
   };
 
   return (
