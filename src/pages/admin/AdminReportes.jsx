@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import {
   Paper, Box, Typography, Button, IconButton, Alert, Chip, Dialog, DialogTitle,
   DialogContent, DialogActions, Divider, Tabs, Tab, Stack, TextField,
-  Avatar, CircularProgress, Badge,
+  Avatar, CircularProgress, Badge, Fade,
 } from '@mui/material';
 import FlagIcon from '@mui/icons-material/Flag';
 import ReplyIcon from '@mui/icons-material/Reply';
@@ -56,6 +56,8 @@ const AdminReportes = () => {
   const [rechazarDlg, setRechazarDlg] = useState({ open: false, id: null });
   const [mensajeRechazo, setMensajeRechazo] = useState('');
   const [enviandoRechazo, setEnviandoRechazo] = useState(false);
+  const [eliminarDlg, setEliminarDlg] = useState({ open: false, id: null });
+  const [eliminandoR, setEliminandoR] = useState(false);
 
   const cargarReportes = useCallback(async () => {
     setLoadingReportes(true);
@@ -114,13 +116,22 @@ const AdminReportes = () => {
       setEnviandoRechazo(false);
     }
   };
-  const handleEliminarR = async (id) => {
+  const handleEliminarR = (id) => {
+    setEliminarDlg({ open: true, id });
+  };
+
+  const confirmarEliminarR = async () => {
+    if (!eliminarDlg.id) return;
+    setEliminandoR(true);
     try {
-      await api.delete(`/reportes/${id}`);
+      await api.delete(`/reportes/${eliminarDlg.id}`);
+      setEliminarDlg({ open: false, id: null });
       mostrarR('Reporte eliminado');
       cargarReportes();
     } catch {
       mostrarR('Error al eliminar', 'error');
+    } finally {
+      setEliminandoR(false);
     }
   };
   const handleResponder = async () => {
@@ -307,7 +318,7 @@ const AdminReportes = () => {
         )}
       </Paper>
 
-      <Dialog open={detalleRDlg.open} onClose={() => setDetalleRDlg({ open: false, reporte: null })} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 3, overflow: 'hidden' } }}>
+      <Dialog open={detalleRDlg.open} onClose={() => setDetalleRDlg({ open: false, reporte: null })} maxWidth="sm" fullWidth TransitionComponent={Fade} transitionDuration={240} PaperProps={{ sx: { borderRadius: 3, overflow: 'hidden' } }}>
         {detalleRDlg.reporte && (() => {
           const r = detalleRDlg.reporte;
           return (
@@ -406,7 +417,7 @@ const AdminReportes = () => {
         })()}
       </Dialog>
 
-      <Dialog open={responderDlg.open} onClose={() => !enviandoR && setResponderDlg({ open: false, reporte: null })} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
+      <Dialog open={responderDlg.open} onClose={() => !enviandoR && setResponderDlg({ open: false, reporte: null })} maxWidth="sm" fullWidth TransitionComponent={Fade} transitionDuration={240} PaperProps={{ sx: { borderRadius: 3 } }}>
         <DialogTitle sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 1 }}>
           <ReplyIcon color="success" /> Responder reporte
         </DialogTitle>
@@ -454,7 +465,43 @@ const AdminReportes = () => {
         </DialogActions>
       </Dialog>
 
-      <Dialog open={rechazarDlg.open} onClose={() => !enviandoRechazo && setRechazarDlg({ open: false, id: null })} maxWidth="xs" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
+      <Dialog
+        open={eliminarDlg.open}
+        onClose={() => !eliminandoR && setEliminarDlg({ open: false, id: null })}
+        maxWidth="xs" fullWidth
+        TransitionComponent={Fade}
+        transitionDuration={240}
+        PaperProps={{ sx: { borderRadius: 3 } }}
+      >
+        <DialogTitle sx={{ fontWeight: 'bold' }}>Eliminar reporte</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary">
+            ¿Estás seguro de eliminar este reporte? Esta acción no se puede deshacer.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2, gap: 1 }}>
+          <Button
+            variant="outlined"
+            disabled={eliminandoR}
+            onClick={() => setEliminarDlg({ open: false, id: null })}
+            sx={{ borderRadius: 2 }}
+          >
+            Cancelar
+          </Button>
+          <Button
+            variant="contained"
+            color="error"
+            disabled={eliminandoR}
+            onClick={confirmarEliminarR}
+            startIcon={eliminandoR ? <CircularProgress size={16} color="inherit" /> : <DeleteIcon />}
+            sx={{ borderRadius: 2 }}
+          >
+            {eliminandoR ? 'Eliminando…' : 'Eliminar'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={rechazarDlg.open} onClose={() => !enviandoRechazo && setRechazarDlg({ open: false, id: null })} maxWidth="xs" fullWidth TransitionComponent={Fade} transitionDuration={240} PaperProps={{ sx: { borderRadius: 3 } }}>
         <DialogTitle sx={{ fontWeight: 'bold' }}>{t.rejectReportTitle}</DialogTitle>
         <DialogContent>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>

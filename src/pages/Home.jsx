@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import {
   Container, Card, CardMedia, CardContent, Typography,
-  CardActions, Button, Chip, Box, CircularProgress, Alert,
+  CardActions, Button, Chip, Box, CircularProgress, Alert, Skeleton,
   Avatar, TextField, InputAdornment, Stack, Rating,
   Menu, MenuItem, IconButton, Divider, useMediaQuery, Drawer, List, ListItem, ListItemText,
   Snackbar, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions
@@ -34,18 +34,19 @@ const sxCategoryScrollRow = (isDark) => ({
   pb: 0.75,
   mb: 4,
   scrollbarWidth: 'thin',
-  scrollbarColor: `${isDark ? 'rgba(232,233,240,0.22)' : 'rgba(13,17,39,0.18)'} transparent`,
-  '&::-webkit-scrollbar': { height: 5 },
+  scrollbarColor: `${isDark ? 'rgba(232,233,240,0.45)' : 'rgba(139,143,200,0.55)'} transparent`,
+  '&::-webkit-scrollbar': { height: 6 },
   '&::-webkit-scrollbar-track': { background: 'transparent' },
   '&::-webkit-scrollbar-button': { display: 'none', width: 0, height: 0 },
   '&::-webkit-scrollbar-thumb': {
-    backgroundColor: isDark ? 'rgba(232,233,240,0.18)' : 'rgba(13,17,39,0.16)',
+    backgroundColor: isDark ? 'rgba(232,233,240,0.38)' : 'rgba(139,143,200,0.55)',
     borderRadius: 10,
-    border: '2px solid transparent',
+    border: '1px solid transparent',
     backgroundClip: 'padding-box',
+    transition: 'background-color 0.2s ease',
   },
   '&:hover::-webkit-scrollbar-thumb': {
-    backgroundColor: isDark ? 'rgba(232,233,240,0.32)' : 'rgba(139,143,200,0.45)',
+    backgroundColor: isDark ? 'rgba(232,233,240,0.6)' : 'rgba(139,143,200,0.85)',
   },
 });
 
@@ -121,6 +122,7 @@ const Home = () => {
   const [busqueda, setBusqueda]     = useState('');
   const [tipoFiltro, setTipoFiltro] = useState('');
   const [visibles, setVisibles]     = useState(PAGE_SIZE);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [anchorEl, setAnchorEl]     = useState(null); // Para el menú de filtros en móvil
   const [orden, setOrden]           = useState('');   // Para ordenamiento
 
@@ -203,10 +205,16 @@ const Home = () => {
     return productos;
   }, [productos, orden, ratings]);
 
-  const handleVerMas = () => {
-    const nuevoVisibles = visibles + PAGE_SIZE;
-    setVisibles(nuevoVisibles);
-    cargarRatings(productosOrdenados.slice(visibles, nuevoVisibles));
+  const handleVerMas = async () => {
+    if (loadingMore) return;
+    setLoadingMore(true);
+    try {
+      const nuevoVisibles = visibles + PAGE_SIZE;
+      setVisibles(nuevoVisibles);
+      await cargarRatings(productosOrdenados.slice(visibles, nuevoVisibles));
+    } finally {
+      setLoadingMore(false);
+    }
   };
 
   const handleEliminar = async (e, id) => {
@@ -474,8 +482,33 @@ const Home = () => {
 
       {/* Contenido */}
       {loading ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-          <CircularProgress sx={{ color: BRAND_PERIW }} />
+        <Box sx={sxListingColumn}>
+          <Box
+            sx={{
+              display: 'grid',
+              gap: { xs: 1.5, sm: 2.25, md: 2.5 },
+              gridTemplateColumns: {
+                xs: 'minmax(0, 1fr)',
+                sm: 'repeat(2, minmax(0, 1fr))',
+                md: 'repeat(3, minmax(0, 1fr))',
+              },
+            }}
+          >
+            {Array.from({ length: 6 }).map((_, i) => (
+              <Box key={i} sx={{ borderRadius: R_CARD, overflow: 'hidden' }}>
+                <Skeleton variant="rectangular" height={isMobile ? 110 : 160} animation="wave" />
+                <Box sx={{ p: 2 }}>
+                  <Skeleton variant="text" width="40%" />
+                  <Skeleton variant="text" width="85%" />
+                  <Skeleton variant="text" width="60%" />
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1 }}>
+                    <Skeleton variant="rectangular" width={64} height={22} sx={{ borderRadius: 999 }} />
+                    <Skeleton variant="text" width={48} height={28} />
+                  </Box>
+                </Box>
+              </Box>
+            ))}
+          </Box>
         </Box>
       ) : productos.length === 0 ? (
         <Alert severity="info">{t.noResults} — {t.noResultsHint}</Alert>
@@ -514,14 +547,18 @@ const Home = () => {
                     borderRadius: R_CARD,
                     overflow: 'hidden',
                     cursor: 'pointer',
-                    WebkitTapHighlightColor: 'transparent',
-                    transition: 'transform 0.2s, box-shadow 0.2s',
+                    willChange: 'transform',
+                    transition: 'transform 200ms cubic-bezier(.2,.8,.2,1), box-shadow 200ms cubic-bezier(.2,.8,.2,1)',
+                    '& .zento-card-media': {
+                      transition: 'transform 320ms cubic-bezier(.2,.8,.2,1)',
+                    },
                     '&:hover': {
                       transform: 'translateY(-4px)',
                       boxShadow: isDark
                         ? '0 12px 32px rgba(13,17,39,0.35)'
                         : '0 12px 32px rgba(13,17,39,0.12)',
                     },
+                    '&:hover .zento-card-media': { transform: 'scale(1.04)' },
                     '&:active': {
                       transform: 'translateY(-2px)',
                       boxShadow: isDark
@@ -531,15 +568,18 @@ const Home = () => {
                   }}
                   onClick={() => { setSelected(prod); setModalOpen(true); }}
                 >
-                    {/* Imagen */}
-                    <CardMedia
-                      component="img"
-                      height={isMobile ? 110 : 160}
-                      image={prod.urlPortada || prod.urlArchivo || 'https://via.placeholder.com/300?text=Sin+Imagen'}
-                      alt={prod.titulo}
-                      loading="lazy"
-                      sx={{ width: '100%', objectFit: 'cover' }}
-                    />
+                    {/* Imagen con zoom suave al hover */}
+                    <Box sx={{ overflow: 'hidden' }}>
+                      <CardMedia
+                        component="img"
+                        className="zento-card-media"
+                        height={isMobile ? 110 : 160}
+                        image={prod.urlPortada || prod.urlArchivo || 'https://via.placeholder.com/300?text=Sin+Imagen'}
+                        alt={prod.titulo}
+                        loading="lazy"
+                        sx={{ width: '100%', objectFit: 'cover' }}
+                      />
+                    </Box>
 
                     {/* Contenido */}
                     <CardContent sx={{ flexGrow: 1, p: { xs: 1, sm: 2 }, pb: { xs: 0.5, sm: 1 } }}>
@@ -588,7 +628,9 @@ const Home = () => {
                             sx={{
                               fontSize: { xs: '0.7rem', sm: '0.9rem' },
                               '& .MuiRating-iconFilled': { color: '#e8b006' },
-                              '& .MuiRating-iconEmpty': { color: `${BRAND_PERIW}55` },
+                              '& .MuiRating-iconEmpty': {
+                                color: isDark ? 'rgba(200,202,212,0.25)' : 'rgba(13,17,39,0.18)',
+                              },
                             }}
                           />
                           <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.6rem', sm: '0.75rem' } }}>
@@ -679,7 +721,10 @@ const Home = () => {
               <Button
                 variant="outlined"
                 size="large"
-                endIcon={<ExpandMoreIcon />}
+                disabled={loadingMore}
+                endIcon={loadingMore
+                  ? <CircularProgress size={18} sx={{ color: BRAND_PERIW }} />
+                  : <ExpandMoreIcon />}
                 onClick={handleVerMas}
                 sx={{
                   borderRadius: R_PILL,

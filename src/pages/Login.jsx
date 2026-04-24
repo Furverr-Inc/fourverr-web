@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   TextField, Button, Typography, Box, Alert, Link, InputAdornment,
-  IconButton as MuiIconButton,
+  IconButton as MuiIconButton, Collapse,
   Dialog, DialogTitle, DialogContent, DialogActions, CircularProgress,
 } from '@mui/material';
 import { useNavigate, Link as RouterLink, useLocation } from 'react-router-dom';
@@ -14,13 +14,12 @@ import { clearAuthLocalStorage } from '../utils/authLocalStorage';
 import { useThemeMode } from '../ThemeContext';
 import { useLanguage } from '../LanguageContext';
 import SoporteFloating from '../components/SoporteFloating';
+import OrDivider from '../components/OrDivider';
 import { GoogleLogin } from '@react-oauth/google';
 
 /* ── Regex ─────────────────────────────────────────────────── */
-// Username: 3-20 chars, solo letras, números, punto y guión bajo
 const RX_USERNAME = /^[a-zA-Z0-9._]{3,20}$/;
 const RX_EMAIL    = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-// Password: mínimo 8 caracteres, al menos 1 letra y 1 número
 const RX_PASSWORD = /^(?=.*[A-Za-z])(?=.*\d).{8,}$/;
 
 const Login = () => {
@@ -53,16 +52,14 @@ const Login = () => {
     clearAuthLocalStorage();
   }, []);
 
-  /* ── Validación al enviar el formulario (vacío + formato) ── */
+  /* ── Validación ── */
   const validateField = (name, value) => {
     const isEn = lang === 'en';
     let msg = '';
     if (name === 'username') {
       if (!value) msg = isEn ? 'Username or email is required' : 'El usuario o correo es requerido';
       else if (!RX_USERNAME.test(value) && !RX_EMAIL.test(value))
-        msg = isEn
-          ? 'Enter a valid username or email'
-          : 'Ingresa un usuario o correo válido';
+        msg = isEn ? 'Enter a valid username or email' : 'Ingresa un usuario o correo válido';
     }
     if (name === 'password') {
       if (!value) msg = isEn ? 'Password is required' : 'La contraseña es requerida';
@@ -99,7 +96,6 @@ const Login = () => {
       const raw = err.response?.data;
       const bodyStr = typeof raw === 'string' ? raw : (raw?.message != null ? String(raw.message) : '');
 
-      // Solo 403 con mensaje explícito de deshabilitación (API); otros 403/401 = credenciales u acceso denegado genérico
       const cuentaDeshabilitada =
         status === 403 &&
         bodyStr &&
@@ -186,15 +182,13 @@ const Login = () => {
     }
   };
 
-  /* ── Handler para login con Google (OAuth) ── */
+  /* ── Google OAuth ── */
   const handleGoogleSuccess = async (credentialResponse) => {
     setCargando(true);
     setError('');
     try {
       const tokenGoogle = credentialResponse.credential;
-      
       const response = await api.post('/auth/google', { token: tokenGoogle });
-
       const { token, username: userAlias, role, id, nombreMostrado, fotoUrl } = response.data;
       localStorage.setItem('token',        token);
       localStorage.setItem('usuarioNombre', nombreMostrado || userAlias);
@@ -202,16 +196,12 @@ const Login = () => {
       localStorage.setItem('usuarioRol',   role);
       localStorage.setItem('usuarioId',    id);
       localStorage.setItem('usuarioFoto',  fotoUrl || '');
-
       if (role === 'ADMIN') { navigate('/admin'); } else { navigate('/home'); }
-
     } catch (err) {
-      console.error("Error en Google Login:", err);
       const isEn = lang === 'en';
       const status = err.response?.status;
       const raw = err.response?.data;
       const bodyStr = typeof raw === 'string' ? raw : (raw?.message != null ? String(raw.message) : '');
-
       if (status === 403 && bodyStr && /deshabilitad/i.test(bodyStr)) {
         setError(bodyStr);
       } else {
@@ -234,147 +224,115 @@ const Login = () => {
   const CARD_DARK_BOTTOM = '#0D1127';
   const PERIW = '#8B8FC8';
 
-  const inputSx = {
-    mb: 3,
-    /* La etiqueta outlined usa translateY negativo al hacer shrink; el overflow:hidden por defecto de MUI recorta el texto. */
-    overflow: 'visible',
+  const inputDarkCardSx = {
+    mb: 2.5,
     '& .MuiOutlinedInput-root': {
-      borderRadius: '50px',
       backgroundColor: '#FFFFFF',
       '& fieldset': { borderColor: 'rgba(209,213,219,0.9)' },
-      '&:hover fieldset': { borderColor: PERIW },
-      '&.Mui-focused fieldset': { borderColor: PERIW },
     },
-    '& .MuiInputLabel-root': {
-      color: '#9CA3AF',
-      overflow: 'visible',
-      textOverflow: 'clip',
-      zIndex: 1,
-      /*
-       * Con -2px el texto quedaba demasiado abajo (el borde cortaba las letras).
-       * Valor MUI outlined medium: translate(14px, -9px). En píldora elevamos más el shrink
-       * para que el label quede claramente sobre el borde y no pise el campo de arriba.
-       */
-      '&.MuiInputLabel-shrink': {
-        transform: 'translate(14px, -20px) scale(0.75)',
-      },
-      '&.Mui-focused': { color: PERIW },
-    },
-    '& .MuiOutlinedInput-input': {
-      color: '#374151',
-      letterSpacing: '0.04em',
-    },
+    '& .MuiInputLabel-root': { color: '#6B7280' },
+    '& .MuiOutlinedInput-input': { color: '#1F2937' },
   };
 
   return (
     <>
-    <Box sx={{
-      minHeight: '100vh',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      background: isDark ? BG_DARK : BG_LIGHT,
-      position: 'relative',
-    }}>
-      {/* Botón volver */}
-      <Button
-        startIcon={<ArrowBackIcon />}
-        onClick={() => navigate('/')}
-        sx={{
-          position: 'absolute', top: 20, left: 20,
-          color: isDark ? 'rgba(232,233,240,0.7)' : 'rgba(13,17,39,0.5)',
-          textTransform: 'none',
-          '&:hover': { color: PERIW, background: 'transparent' },
-        }}
-      >
-        {lang === 'en' ? 'Back' : 'Volver'}
-      </Button>
-
-      {/* Card principal */}
       <Box sx={{
-        width: '100%', maxWidth: 400, mx: 2,
-        borderRadius: 4, overflow: 'hidden',
-        boxShadow: isDark
-          ? '0 24px 80px rgba(0,0,0,0.7)'
-          : '0 16px 60px rgba(13,17,39,0.18)',
+        minHeight: '100vh',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        background: isDark ? BG_DARK : BG_LIGHT,
+        position: 'relative',
       }}>
-        {/* Zona superior: logo */}
-        <Box sx={{
-          background: isDark
-            ? `linear-gradient(180deg, ${CARD_DARK_TOP} 0%, ${CARD_DARK_BOTTOM} 100%)`
-            : '#FFFFFF',
-          pt: 3, pb: 2, px: 4, textAlign: 'center',
-        }}>
-          {mensajeExito && (
-            <Alert severity="success" sx={{ mb: 2, borderRadius: 3, textAlign: 'left' }}>{mensajeExito}</Alert>
-          )}
-          {error && (
-            <Alert severity="error" sx={{ mb: 2, borderRadius: 3, textAlign: 'left' }}>{error}</Alert>
-          )}
-          {/* Logo SVG inline — símbolo Futark adaptado */}
-          <Box sx={{ mb: 2, display: 'flex', justifyContent: 'center' }}>
-            <svg width="72" height="72" viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <polygon
-                points="36,4 60,20 60,52 36,68 12,52 12,20"
-                fill="none"
-                stroke={isDark ? '#C8CAD4' : '#0D1127'}
-                strokeWidth="3"
-              />
-              <text
-                x="36" y="46"
-                textAnchor="middle"
-                fontSize="28"
-                fontWeight="800"
-                fontFamily="Inter, sans-serif"
-                fill={isDark ? '#C8CAD4' : '#0D1127'}
-              >Z</text>
-            </svg>
-          </Box>
-          <Typography variant="h4" fontWeight="800" sx={{
-            color: isDark ? '#E8E9F0' : '#0D1127',
-            letterSpacing: '0.12em',
-            textTransform: 'uppercase',
-          }}>
-            Zento
-          </Typography>
-          <Typography variant="caption" sx={{
-            color: isDark ? 'rgba(200,202,212,0.55)' : 'rgba(13,17,39,0.4)',
-            letterSpacing: '0.2em',
-            textTransform: 'uppercase',
-          }}>
-            {lang === 'en' ? 'Marketplace' : 'Mercado Digital'}
-          </Typography>
-        </Box>
+        <Button
+          startIcon={<ArrowBackIcon />}
+          onClick={() => navigate('/')}
+          variant="text"
+          sx={{
+            position: 'absolute', top: 20, left: 20,
+            color: isDark ? 'rgba(232,233,240,0.7)' : 'rgba(13,17,39,0.5)',
+            '&:hover': { color: PERIW, background: 'transparent' },
+          }}
+        >
+          {lang === 'en' ? 'Back' : 'Volver'}
+        </Button>
 
-        {/* Zona inferior: formulario */}
         <Box sx={{
-          background: isDark ? CARD_DARK_BOTTOM : '#0D1127',
-          px: 4, pt: 4, pb: 4,
-          overflow: 'visible',
+          width: '100%', maxWidth: 400, mx: 2,
+          borderRadius: 4, overflow: 'hidden',
+          boxShadow: isDark
+            ? '0 24px 80px rgba(0,0,0,0.7)'
+            : '0 16px 60px rgba(13,17,39,0.18)',
+          animation: 'zento-fade-in 320ms cubic-bezier(.2,.8,.2,1)',
         }}>
-          <Box component="form" noValidate onSubmit={handleLogin}>
-            <TextField
-              fullWidth
-              label={t.userOrEmail || 'USERNAME'}
-              required
-              value={username}
-              onChange={(e) => {
-                setUsername(e.target.value);
-                setFieldErrors((prev) => ({ ...prev, username: '' }));
-              }}
-              onFocus={() => setFieldErrors({ username: '', password: '' })}
-              error={!!fieldErrors.username}
-              helperText={fieldErrors.username}
-              autoFocus
-              sx={{
-                ...inputSx,
-                '& .MuiOutlinedInput-input': {
-                  ...inputSx['& .MuiOutlinedInput-input'],
-                  letterSpacing: '0.06em',
-                },
-                '& .MuiFormHelperText-root': { color: '#F87171' },
-              }}
-            />
-            {/* Campo contraseña + ojo FUERA del pill */}
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5, mb: 1 }}>
+          <Box sx={{
+            background: isDark
+              ? `linear-gradient(180deg, ${CARD_DARK_TOP} 0%, ${CARD_DARK_BOTTOM} 100%)`
+              : '#FFFFFF',
+            pt: 3, pb: 2, px: 4, textAlign: 'center',
+          }}>
+            <Collapse in={!!mensajeExito} unmountOnExit>
+              <Alert severity="success" sx={{ mb: 2, borderRadius: 3, textAlign: 'left' }}>{mensajeExito}</Alert>
+            </Collapse>
+            <Collapse in={!!error} unmountOnExit>
+              <Alert severity="error" sx={{ mb: 2, borderRadius: 3, textAlign: 'left' }}>{error}</Alert>
+            </Collapse>
+
+            <Box sx={{ mb: 2, display: 'flex', justifyContent: 'center' }}>
+              <svg width="72" height="72" viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <polygon
+                  points="36,4 60,20 60,52 36,68 12,52 12,20"
+                  fill="none"
+                  stroke={isDark ? '#C8CAD4' : '#0D1127'}
+                  strokeWidth="3"
+                />
+                <text
+                  x="36" y="46"
+                  textAnchor="middle"
+                  fontSize="28"
+                  fontWeight="800"
+                  fontFamily="Inter, sans-serif"
+                  fill={isDark ? '#C8CAD4' : '#0D1127'}
+                >Z</text>
+              </svg>
+            </Box>
+            <Typography variant="h4" fontWeight="800" sx={{
+              color: isDark ? '#E8E9F0' : '#0D1127',
+              letterSpacing: '0.12em',
+              textTransform: 'uppercase',
+            }}>
+              Zento
+            </Typography>
+            <Typography variant="caption" sx={{
+              color: isDark ? 'rgba(200,202,212,0.55)' : 'rgba(13,17,39,0.4)',
+              letterSpacing: '0.2em',
+              textTransform: 'uppercase',
+            }}>
+              {lang === 'en' ? 'Marketplace' : 'Mercado Digital'}
+            </Typography>
+          </Box>
+
+          <Box sx={{
+            background: isDark ? CARD_DARK_BOTTOM : '#0D1127',
+            px: 4, pt: 4, pb: 4,
+          }}>
+            <Box component="form" noValidate onSubmit={handleLogin}>
+              <TextField
+                fullWidth
+                label={t.userOrEmail || 'USERNAME'}
+                required
+                value={username}
+                onChange={(e) => {
+                  setUsername(e.target.value);
+                  setFieldErrors((prev) => ({ ...prev, username: '' }));
+                }}
+                onBlur={() => username && validateField('username', username)}
+                error={!!fieldErrors.username}
+                helperText={fieldErrors.username}
+                autoFocus
+                autoComplete="username"
+                inputMode="email"
+                sx={inputDarkCardSx}
+              />
+
               <TextField
                 fullWidth
                 label={t.password || 'PASSWORD'}
@@ -385,240 +343,218 @@ const Login = () => {
                   setPassword(e.target.value);
                   setFieldErrors((prev) => ({ ...prev, password: '' }));
                 }}
-                onFocus={() => setFieldErrors({ username: '', password: '' })}
+                onBlur={() => password && validateField('password', password)}
                 error={!!fieldErrors.password}
                 helperText={fieldErrors.password}
-                sx={{
-                  ...inputSx,
-                  mb: 0,
-                  '& .MuiOutlinedInput-input': {
-                    ...inputSx['& .MuiOutlinedInput-input'],
-                    letterSpacing: '0.12em',
-                  },
-                  '& .MuiFormHelperText-root': { color: '#F87171' },
+                autoComplete="current-password"
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <MuiIconButton
+                        onClick={() => setShowPass(p => !p)}
+                        tabIndex={-1}
+                        size="small"
+                        edge="end"
+                        aria-label={showPass ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                        sx={{ color: '#6B7280', '&:hover': { color: PERIW } }}
+                      >
+                        {showPass
+                          ? <VisibilityOffIcon sx={{ fontSize: 20 }} />
+                          : <VisibilityIcon    sx={{ fontSize: 20 }} />}
+                      </MuiIconButton>
+                    </InputAdornment>
+                  ),
                 }}
+                sx={inputDarkCardSx}
               />
-              {/* Ojo flotante FUERA del input */}
-              <MuiIconButton
-                onClick={() => setShowPass(p => !p)}
-                tabIndex={-1}
-                size="small"
+
+              <Button
+                fullWidth variant="contained" size="large" type="submit"
+                disabled={cargando}
+                startIcon={cargando ? <CircularProgress size={16} color="inherit" /> : null}
                 sx={{
-                  flexShrink: 0,
-                  width: 38, height: 38,
-                  color: '#6B7280',
-                  bgcolor: '#FFFFFF',
-                  border: '1.5px solid rgba(209,213,219,0.9)',
-                  borderRadius: '50%',
-                  '&:hover': {
+                  mt: 1, mb: 2,
+                  fontWeight: 800,
+                  letterSpacing: '0.14em',
+                  textTransform: 'uppercase',
+                  backgroundColor: PERIW,
+                  color: '#fff',
+                  fontSize: '0.95rem',
+                  '&:hover': { backgroundColor: '#6B6FAE' },
+                  '&:disabled': { backgroundColor: 'rgba(139,143,200,0.45)', color: '#fff' },
+                }}
+              >
+                {t.login || 'LOGIN'}
+              </Button>
+
+              <OrDivider
+                label={lang === 'en' ? 'OR' : 'O'}
+                sx={{
+                  '&::before, &::after': { borderBottom: '1px solid rgba(200,202,212,0.2)' },
+                }}
+                color="rgba(200,202,212,0.5)"
+              />
+
+              <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
+                <GoogleLogin
+                  onSuccess={handleGoogleSuccess}
+                  onError={handleGoogleError}
+                  theme={isDark ? 'filled_black' : 'outline'}
+                  shape="pill"
+                  size="large"
+                  text="continue_with"
+                  width="100%"
+                />
+              </Box>
+
+              <Box textAlign="center">
+                <Link
+                  component="button"
+                  type="button"
+                  onClick={abrirRecuperar}
+                  underline="hover"
+                  sx={{
                     color: PERIW,
-                    borderColor: PERIW,
-                    bgcolor: 'rgba(139,143,200,0.08)',
-                  },
-                  transition: 'all 0.2s',
-                }}
-              >
-                {showPass
-                  ? <VisibilityOffIcon sx={{ fontSize: 18 }} />
-                  : <VisibilityIcon    sx={{ fontSize: 18 }} />}
-              </MuiIconButton>
-            </Box>
-            <Box sx={{ mb: 1.5 }} />
-
-            <Button
-              fullWidth variant="contained" size="large" type="submit"
-              disabled={cargando}
-              sx={{
-                mt: 2, mb: 2, py: 1.5,
-                fontWeight: 800,
-                letterSpacing: '0.14em',
-                textTransform: 'uppercase',
-                borderRadius: '50px',
-                backgroundColor: PERIW,
-                color: '#fff',
-                fontSize: '0.95rem',
-                '&:hover': { backgroundColor: '#6B6FAE' },
-                '&:disabled': { backgroundColor: 'rgba(139,143,200,0.4)', color: '#fff' },
-              }}
-            >
-              {cargando ? (t.loggingIn || 'Ingresando...') : (t.login || 'LOGIN')}
-            </Button>
-
-            <Box sx={{ 
-              my: 3, 
-              display: 'flex', 
-              alignItems: 'center', 
-              '&::before': { content: '""', flex: 1, borderBottom: '1px solid rgba(200,202,212,0.2)' }, 
-              '&::after':  { content: '""', flex: 1, borderBottom: '1px solid rgba(200,202,212,0.2)' } 
-            }}>
-              <Typography variant="caption" sx={{ 
-                color: 'rgba(200,202,212,0.5)', 
-                px: 2, 
-                textTransform: 'uppercase', 
-                letterSpacing: '0.1em' 
-              }}>
-                {lang === 'en' ? 'OR' : 'O'}
-              </Typography>
-            </Box>
-
-            {/* ── Botón de Google ── */}
-            <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
-              <GoogleLogin
-                onSuccess={handleGoogleSuccess}
-                onError={handleGoogleError}
-                theme={isDark ? 'filled_black' : 'outline'}
-                shape="pill"
-                size="large"
-                text="continue_with"
-                width="100%"
-              />
-            </Box>
-
-            <Box textAlign="center">
-              <Link
-                component="button"
-                type="button"
-                onClick={abrirRecuperar}
-                underline="hover"
-                sx={{
-                  color: PERIW,
-                  fontWeight: 600,
-                  fontSize: '0.875rem',
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  p: 0,
-                }}
-              >
-                {lang === 'en' ? 'Forgot your password?' : '¿Olvidaste tu contraseña?'}
-              </Link>
-              <Typography variant="body2" sx={{ mt: 1.5, color: 'rgba(200,202,212,0.55)' }}>
-                {t.newHere || (lang === 'en' ? "Don't have an account?" : '¿No tienes cuenta?')}{' '}
-                <Link component={RouterLink} to="/registro" underline="hover"
-                  sx={{ color: PERIW, fontWeight: 700 }}>
-                  {t.createAccount || (lang === 'en' ? 'Sign up' : 'Regístrate')}
+                    fontWeight: 600,
+                    fontSize: '0.875rem',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    p: 0,
+                  }}
+                >
+                  {lang === 'en' ? 'Forgot your password?' : '¿Olvidaste tu contraseña?'}
                 </Link>
-              </Typography>
+                <Typography variant="body2" sx={{ mt: 1.5, color: 'rgba(200,202,212,0.55)' }}>
+                  {t.newHere || (lang === 'en' ? "Don't have an account?" : '¿No tienes cuenta?')}{' '}
+                  <Link component={RouterLink} to="/registro" underline="hover"
+                    sx={{ color: PERIW, fontWeight: 700 }}>
+                    {t.createAccount || (lang === 'en' ? 'Sign up' : 'Regístrate')}
+                  </Link>
+                </Typography>
+              </Box>
             </Box>
           </Box>
         </Box>
       </Box>
-    </Box>
 
-    {/* ── Diálogo: Recuperar contraseña ── */}
-    <Dialog
-      open={forgotOpen}
-      onClose={() => !forgotLoading && setForgotOpen(false)}
-      PaperProps={{ sx: { borderRadius: 3, maxWidth: 440 } }}
-    >
-      <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1.5, pb: 1 }}>
-        <Box sx={{
-          width: 40, height: 40, borderRadius: '50%',
-          bgcolor: 'rgba(139,143,200,0.15)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-        }}>
-          <LockResetIcon sx={{ color: PERIW, fontSize: 22 }} />
-        </Box>
-        {lang === 'en' ? 'Reset password' : 'Cambiar contraseña'}
-      </DialogTitle>
+      {/* ── Diálogo: Recuperar contraseña ── */}
+      <Dialog
+        open={forgotOpen}
+        onClose={() => !forgotLoading && setForgotOpen(false)}
+        PaperProps={{ sx: { borderRadius: 3, maxWidth: 440 } }}
+        TransitionProps={{ timeout: 280 }}
+      >
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1.5, pb: 1 }}>
+          <Box sx={{
+            width: 40, height: 40, borderRadius: '50%',
+            bgcolor: 'rgba(139,143,200,0.15)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <LockResetIcon sx={{ color: PERIW, fontSize: 22 }} />
+          </Box>
+          {lang === 'en' ? 'Reset password' : 'Cambiar contraseña'}
+        </DialogTitle>
 
-      <DialogContent>
-        {forgotError   && <Alert severity="error"   sx={{ mb: 2 }}>{forgotError}</Alert>}
-        {forgotSuccess && <Alert severity="success" sx={{ mb: 2 }}>{forgotSuccess}</Alert>}
-        {!forgotSuccess && (
-          <>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              {lang === 'en'
-                ? 'Enter your username, the email registered in your account, and a new password. If both match, your password will be updated immediately.'
-                : 'Ingresa tu nombre de usuario, el correo registrado en tu cuenta y una nueva contraseña. Si ambos coinciden, tu contraseña se actualizará al instante.'}
-            </Typography>
-            <TextField
-              fullWidth autoFocus
-              label={lang === 'en' ? 'Username' : 'Nombre de usuario'}
-              value={forgotUsername}
-              onChange={e => setForgotUsername(e.target.value)}
-              disabled={forgotLoading}
-              autoComplete="username"
-              sx={{ mb: 2, '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
-            />
-            <TextField
-              fullWidth
-              type="email"
-              label={lang === 'en' ? 'Email' : 'Correo electrónico'}
-              value={forgotEmail}
-              onChange={e => setForgotEmail(e.target.value)}
-              disabled={forgotLoading}
-              sx={{ mb: 2, '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
-            />
-            <TextField
-              fullWidth
-              type={forgotShowPass ? 'text' : 'password'}
-              label={lang === 'en' ? 'New password' : 'Nueva contraseña'}
-              value={forgotPassword}
-              onChange={e => setForgotPassword(e.target.value)}
-              disabled={forgotLoading}
-              autoComplete="new-password"
-              helperText={lang === 'en'
-                ? 'Minimum 8 characters, with at least 1 letter and 1 number.'
-                : 'Mínimo 8 caracteres, con al menos 1 letra y 1 número.'}
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <MuiIconButton
-                      onClick={() => setForgotShowPass(p => !p)}
-                      tabIndex={-1}
-                      size="small"
-                      edge="end"
-                    >
-                      {forgotShowPass
-                        ? <VisibilityOffIcon sx={{ fontSize: 18 }} />
-                        : <VisibilityIcon    sx={{ fontSize: 18 }} />}
-                    </MuiIconButton>
-                  </InputAdornment>
-                ),
-              }}
-              sx={{ mb: 2, '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
-            />
-            <TextField
-              fullWidth
-              type={forgotShowPass ? 'text' : 'password'}
-              label={lang === 'en' ? 'Confirm new password' : 'Confirmar nueva contraseña'}
-              value={forgotPassword2}
-              onChange={e => setForgotPassword2(e.target.value)}
-              disabled={forgotLoading}
-              autoComplete="new-password"
-              sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
-            />
-          </>
-        )}
-      </DialogContent>
+        <DialogContent>
+          <Collapse in={!!forgotError} unmountOnExit>
+            <Alert severity="error" sx={{ mb: 2 }}>{forgotError}</Alert>
+          </Collapse>
+          <Collapse in={!!forgotSuccess} unmountOnExit>
+            <Alert severity="success" sx={{ mb: 2 }}>{forgotSuccess}</Alert>
+          </Collapse>
+          {!forgotSuccess && (
+            <>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                {lang === 'en'
+                  ? 'Enter your username, the email registered in your account, and a new password. If both match, your password will be updated immediately.'
+                  : 'Ingresa tu nombre de usuario, el correo registrado en tu cuenta y una nueva contraseña. Si ambos coinciden, tu contraseña se actualizará al instante.'}
+              </Typography>
+              <TextField
+                fullWidth autoFocus
+                label={lang === 'en' ? 'Username' : 'Nombre de usuario'}
+                value={forgotUsername}
+                onChange={e => setForgotUsername(e.target.value)}
+                disabled={forgotLoading}
+                autoComplete="username"
+                sx={{ mb: 2 }}
+              />
+              <TextField
+                fullWidth
+                type="email"
+                label={lang === 'en' ? 'Email' : 'Correo electrónico'}
+                value={forgotEmail}
+                onChange={e => setForgotEmail(e.target.value)}
+                disabled={forgotLoading}
+                autoComplete="email"
+                inputMode="email"
+                sx={{ mb: 2 }}
+              />
+              <TextField
+                fullWidth
+                type={forgotShowPass ? 'text' : 'password'}
+                label={lang === 'en' ? 'New password' : 'Nueva contraseña'}
+                value={forgotPassword}
+                onChange={e => setForgotPassword(e.target.value)}
+                disabled={forgotLoading}
+                autoComplete="new-password"
+                helperText={lang === 'en'
+                  ? 'Minimum 8 characters, with at least 1 letter and 1 number.'
+                  : 'Mínimo 8 caracteres, con al menos 1 letra y 1 número.'}
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <MuiIconButton
+                        onClick={() => setForgotShowPass(p => !p)}
+                        tabIndex={-1}
+                        size="small"
+                        edge="end"
+                      >
+                        {forgotShowPass
+                          ? <VisibilityOffIcon sx={{ fontSize: 20 }} />
+                          : <VisibilityIcon    sx={{ fontSize: 20 }} />}
+                      </MuiIconButton>
+                    </InputAdornment>
+                  ),
+                }}
+                sx={{ mb: 2 }}
+              />
+              <TextField
+                fullWidth
+                type={forgotShowPass ? 'text' : 'password'}
+                label={lang === 'en' ? 'Confirm new password' : 'Confirmar nueva contraseña'}
+                value={forgotPassword2}
+                onChange={e => setForgotPassword2(e.target.value)}
+                disabled={forgotLoading}
+                autoComplete="new-password"
+              />
+            </>
+          )}
+        </DialogContent>
 
-      <DialogActions sx={{ px: 3, pb: 3, gap: 1 }}>
-        <Button
-          fullWidth variant="outlined"
-          onClick={() => setForgotOpen(false)}
-          disabled={forgotLoading}
-          sx={{ borderRadius: 2, textTransform: 'none' }}
-        >
-          {forgotSuccess ? (lang === 'en' ? 'Close' : 'Cerrar') : (lang === 'en' ? 'Cancel' : 'Cancelar')}
-        </Button>
-        {!forgotSuccess && (
+        <DialogActions sx={{ px: 3, pb: 3, gap: 1 }}>
           <Button
-            fullWidth variant="contained"
-            onClick={enviarRecuperar}
+            fullWidth variant="outlined"
+            onClick={() => setForgotOpen(false)}
             disabled={forgotLoading}
-            startIcon={forgotLoading ? <CircularProgress size={16} color="inherit" /> : <LockResetIcon />}
-            sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 700, bgcolor: PERIW, '&:hover': { bgcolor: '#6B6FAE' } }}
           >
-            {forgotLoading
-              ? (lang === 'en' ? 'Updating...' : 'Actualizando...')
-              : (lang === 'en' ? 'Update password' : 'Actualizar contraseña')}
+            {forgotSuccess ? (lang === 'en' ? 'Close' : 'Cerrar') : (lang === 'en' ? 'Cancel' : 'Cancelar')}
           </Button>
-        )}
-      </DialogActions>
-    </Dialog>
+          {!forgotSuccess && (
+            <Button
+              fullWidth variant="contained"
+              onClick={enviarRecuperar}
+              disabled={forgotLoading}
+              startIcon={forgotLoading ? <CircularProgress size={16} color="inherit" /> : <LockResetIcon />}
+              sx={{ fontWeight: 700, bgcolor: PERIW, '&:hover': { bgcolor: '#6B6FAE' } }}
+            >
+              {lang === 'en' ? 'Update password' : 'Actualizar contraseña'}
+            </Button>
+          )}
+        </DialogActions>
+      </Dialog>
 
-    <SoporteFloating />
+      <SoporteFloating />
     </>
   );
 };

@@ -148,22 +148,46 @@ const EditarPerfil = () => {
 
         {/* Info básica */}
         <Typography variant="subtitle2" color="text.secondary" gutterBottom>Información básica</Typography>
-        <TextField fullWidth label="Nombre mostrado"   margin="normal" value={form.nombreMostrado} onChange={f('nombreMostrado')} />
-        <TextField fullWidth label="Email" type="email" margin="normal" value={form.email}          onChange={f('email')} />
-        <TextField fullWidth label="Descripción"       margin="normal" multiline rows={3}
+        <TextField
+          fullWidth label="Nombre mostrado" margin="normal"
+          value={form.nombreMostrado} onChange={f('nombreMostrado')}
+          autoComplete="name"
+        />
+        <TextField
+          fullWidth label="Email" type="email" margin="normal"
+          value={form.email} onChange={f('email')}
+          autoComplete="email" inputMode="email"
+        />
+        <TextField
+          fullWidth label="Descripción" margin="normal" multiline rows={3}
           value={form.descripcion} onChange={f('descripcion')}
-          placeholder="Cuéntale a todos quién eres y qué haces..." />
+          placeholder="Cuéntale a todos quién eres y qué haces..."
+          inputProps={{ maxLength: 500 }}
+          helperText={`${form.descripcion.length}/500`}
+        />
 
         <Divider sx={{ my:3 }} />
 
         {/* Datos de contacto */}
         <Typography variant="subtitle2" color="text.secondary" gutterBottom>Datos de contacto</Typography>
-        <TextField fullWidth label="Teléfono" margin="normal" value={form.telefono} onChange={f('telefono')}
-          InputProps={{ startAdornment: <InputAdornment position="start"><PhoneIcon fontSize="small" /></InputAdornment> }} />
+        <TextField
+          fullWidth label="Teléfono" margin="normal"
+          value={form.telefono} onChange={f('telefono')}
+          autoComplete="tel" inputMode="tel"
+          InputProps={{ startAdornment: <InputAdornment position="start"><PhoneIcon fontSize="small" /></InputAdornment> }}
+        />
         <Box sx={{ display:'flex', gap:2 }}>
-          <TextField fullWidth label="Ciudad" margin="normal" value={form.ciudad} onChange={f('ciudad')}
-            InputProps={{ startAdornment: <InputAdornment position="start"><LocationOnIcon fontSize="small" /></InputAdornment> }} />
-          <TextField fullWidth label="País" margin="normal" value={form.pais} onChange={f('pais')} />
+          <TextField
+            fullWidth label="Ciudad" margin="normal"
+            value={form.ciudad} onChange={f('ciudad')}
+            autoComplete="address-level2"
+            InputProps={{ startAdornment: <InputAdornment position="start"><LocationOnIcon fontSize="small" /></InputAdornment> }}
+          />
+          <TextField
+            fullWidth label="País" margin="normal"
+            value={form.pais} onChange={f('pais')}
+            autoComplete="country-name"
+          />
         </Box>
 
         <Divider sx={{ my:3 }} />
@@ -177,8 +201,8 @@ const EditarPerfil = () => {
           fullWidth label="CLABE interbancaria (18 dígitos)" margin="normal"
           value={form.clabe} onChange={f('clabe')}
           placeholder="ej. 012345678901234567"
-          inputProps={{ maxLength: 18 }}
-          helperText={form.clabe && form.clabe.length !== 18 ? 'La CLABE debe tener exactamente 18 dígitos' : ''}
+          inputProps={{ maxLength: 18, inputMode: 'numeric', pattern: '[0-9]*' }}
+          helperText={form.clabe && form.clabe.length !== 18 ? 'La CLABE debe tener exactamente 18 dígitos' : ' '}
           error={!!form.clabe && form.clabe.length !== 18}
           InputProps={{ startAdornment: <InputAdornment position="start"><span style={{ fontSize: 16 }}>🏦</span></InputAdornment> }}
         />
@@ -187,16 +211,30 @@ const EditarPerfil = () => {
 
         {/* Redes sociales */}
         <Typography variant="subtitle2" color="text.secondary" gutterBottom>Redes sociales</Typography>
-        <TextField fullWidth label="Sitio web" margin="normal" value={form.sitioWeb} onChange={f('sitioWeb')}
+        <TextField
+          fullWidth label="Sitio web" margin="normal"
+          value={form.sitioWeb} onChange={f('sitioWeb')}
           placeholder="https://tuweb.com"
-          InputProps={{ startAdornment: <InputAdornment position="start"><LanguageIcon fontSize="small" /></InputAdornment> }} />
-        <TextField fullWidth label="Instagram (usuario sin @)" margin="normal" value={form.instagram} onChange={f('instagram')}
-          InputProps={{ startAdornment: <InputAdornment position="start"><InstagramIcon fontSize="small" sx={{ color:'#E1306C' }} /></InputAdornment> }} />
-        <TextField fullWidth label="Twitter / X (usuario sin @)" margin="normal" value={form.twitter} onChange={f('twitter')}
-          InputProps={{ startAdornment: <InputAdornment position="start"><TwitterIcon fontSize="small" sx={{ color:'#1DA1F2' }} /></InputAdornment> }} />
-        <TextField fullWidth label="LinkedIn (URL completa)" margin="normal" value={form.linkedin} onChange={f('linkedin')}
+          autoComplete="url" inputMode="url"
+          InputProps={{ startAdornment: <InputAdornment position="start"><LanguageIcon fontSize="small" /></InputAdornment> }}
+        />
+        <TextField
+          fullWidth label="Instagram (usuario sin @)" margin="normal"
+          value={form.instagram} onChange={f('instagram')}
+          InputProps={{ startAdornment: <InputAdornment position="start"><InstagramIcon fontSize="small" sx={{ color:'#E1306C' }} /></InputAdornment> }}
+        />
+        <TextField
+          fullWidth label="Twitter / X (usuario sin @)" margin="normal"
+          value={form.twitter} onChange={f('twitter')}
+          InputProps={{ startAdornment: <InputAdornment position="start"><TwitterIcon fontSize="small" sx={{ color:'#1DA1F2' }} /></InputAdornment> }}
+        />
+        <TextField
+          fullWidth label="LinkedIn (URL completa)" margin="normal"
+          value={form.linkedin} onChange={f('linkedin')}
           placeholder="https://linkedin.com/in/tuperfil"
-          InputProps={{ startAdornment: <InputAdornment position="start"><LinkedInIcon fontSize="small" sx={{ color:'#0A66C2' }} /></InputAdornment> }} />
+          inputMode="url"
+          InputProps={{ startAdornment: <InputAdornment position="start"><LinkedInIcon fontSize="small" sx={{ color:'#0A66C2' }} /></InputAdornment> }}
+        />
 
         <Button fullWidth variant="contained" size="large" startIcon={<SaveIcon />}
           onClick={handleGuardar} disabled={guardando}

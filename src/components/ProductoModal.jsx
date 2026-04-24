@@ -3,7 +3,7 @@ import {
   Dialog, DialogContent, DialogActions, Button, Typography, Box,
   Avatar, Chip, Divider, IconButton, Stack, Tooltip,
   Snackbar, Alert, TextField, CircularProgress, Paper,
-  Popover, MenuItem, Select, FormControl, InputLabel
+  Popover, MenuItem, Select, FormControl, InputLabel, Fade
 } from '@mui/material';
 import CloseIcon          from '@mui/icons-material/Close';
 import ShoppingCartIcon   from '@mui/icons-material/ShoppingCart';
@@ -192,6 +192,8 @@ const ProductoModal = ({ open, onClose, producto }) => {
         maxWidth="sm"
         fullWidth
         scroll="paper"
+        TransitionComponent={Fade}
+        transitionDuration={280}
         PaperProps={{
           sx: {
             borderRadius: 4,
@@ -557,6 +559,8 @@ const ProductoModal = ({ open, onClose, producto }) => {
 
       {/* ── DIALOG REPORTAR VENDEDOR ── */}
       <Dialog open={reporteOpen} onClose={() => !enviandoR && setReporteOpen(false)} maxWidth="xs" fullWidth
+        TransitionComponent={Fade}
+        transitionDuration={240}
         PaperProps={{ sx: { borderRadius: 3, overflow: 'hidden' } }}>
         {/* Header rojo */}
         <Box sx={{

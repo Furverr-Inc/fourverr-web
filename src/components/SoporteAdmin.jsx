@@ -3,7 +3,7 @@ import {
   Box, Paper, Typography, TextField, IconButton, Avatar,
   Badge, List, ListItem, ListItemAvatar, ListItemText,
   Divider, CircularProgress, Chip, Tabs, Tab, Tooltip,
-  Alert, Button
+  Alert, Button, Dialog, DialogTitle, DialogContent, DialogActions, Fade
 } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
 import MarkEmailReadIcon from '@mui/icons-material/MarkEmailRead';
@@ -32,6 +32,10 @@ const SoporteAdmin = () => {
   // Mensajes de contacto (visitantes)
   const [contactos, setContactos] = useState([]);
   const [loadingContactos, setLoadingContactos] = useState(false);
+
+  // Eliminar conversación
+  const [eliminarDlg, setEliminarDlg] = useState({ open: false, usuario: null });
+  const [eliminandoConv, setEliminandoConv] = useState(false);
 
   const adminId = localStorage.getItem('usuarioId');
 
@@ -97,6 +101,20 @@ const SoporteAdmin = () => {
     } catch {}
   };
 
+  const confirmarEliminarConversacion = async () => {
+    const usuario = eliminarDlg.usuario;
+    if (!usuario) return;
+    setEliminandoConv(true);
+    try {
+      await api.delete(`/soporte/admin/chat/${usuario.id}`);
+      setMensajes([]);
+      if (chatActivo?.id === usuario.id) setChatActivo(null);
+      await cargarChats();
+      setEliminarDlg({ open: false, usuario: null });
+    } catch {}
+    finally { setEliminandoConv(false); }
+  };
+
   const noLeidosContactos = contactos.filter(c => !c.leido).length;
   const noLeidosChats = chats.reduce((s, c) => s + (c.noLeidos || 0), 0);
 
@@ -134,11 +152,20 @@ const SoporteAdmin = () => {
 
       {/* ── PANEL CHATS ── */}
       {tab === 0 && (
-        <Box sx={{ display: 'flex', height: 500 }}>
+        <Box sx={{
+          display: 'flex',
+          flexDirection: { xs: 'column', sm: 'row' },
+          height: { xs: 'calc(100vh - 240px)', sm: 500, md: 560, lg: 620 },
+          minHeight: 380,
+        }}>
 
           {/* Lista de usuarios */}
           <Box sx={{
-            width: 240, borderRight: 1, borderColor: 'divider',
+            width: { xs: '100%', sm: 240 },
+            maxHeight: { xs: 180, sm: 'none' },
+            borderRight: { xs: 0, sm: 1 },
+            borderBottom: { xs: 1, sm: 0 },
+            borderColor: 'divider',
             overflowY: 'auto', flexShrink: 0,
           }}>
             {chats.length === 0 ? (
@@ -207,6 +234,15 @@ const SoporteAdmin = () => {
                     <Typography variant="caption" color="text.secondary">@{chatActivo.username}</Typography>
                   </Box>
                   <Chip label={chatActivo.role === 'SELLER' ? 'Vendedor' : 'Usuario'} size="small" sx={{ ml: 'auto' }} />
+                  <Tooltip title="Eliminar conversación">
+                    <IconButton
+                      size="small"
+                      color="error"
+                      onClick={() => setEliminarDlg({ open: true, usuario: chatActivo })}
+                    >
+                      <DeleteIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
                 </Box>
 
                 {/* Mensajes */}
@@ -261,6 +297,45 @@ const SoporteAdmin = () => {
           </Box>
         </Box>
       )}
+
+      {/* ── DIÁLOGO CONFIRMAR ELIMINAR CONVERSACIÓN ── */}
+      <Dialog
+        open={eliminarDlg.open}
+        onClose={() => !eliminandoConv && setEliminarDlg({ open: false, usuario: null })}
+        maxWidth="xs" fullWidth
+        TransitionComponent={Fade}
+        transitionDuration={240}
+        PaperProps={{ sx: { borderRadius: 3 } }}
+      >
+        <DialogTitle sx={{ fontWeight: 'bold' }}>Eliminar conversación</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary">
+            Esta acción eliminará permanentemente todos los mensajes entre tú y
+            {' '}<strong>{eliminarDlg.usuario?.nombreMostrado || eliminarDlg.usuario?.username}</strong>.
+            No se puede deshacer.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2, gap: 1 }}>
+          <Button
+            variant="outlined"
+            disabled={eliminandoConv}
+            onClick={() => setEliminarDlg({ open: false, usuario: null })}
+            sx={{ borderRadius: 2 }}
+          >
+            Cancelar
+          </Button>
+          <Button
+            variant="contained"
+            color="error"
+            disabled={eliminandoConv}
+            onClick={confirmarEliminarConversacion}
+            startIcon={eliminandoConv ? <CircularProgress size={16} color="inherit" /> : <DeleteIcon />}
+            sx={{ borderRadius: 2 }}
+          >
+            {eliminandoConv ? 'Eliminando…' : 'Eliminar'}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* ── PANEL CONTACTOS (visitantes) ── */}
       {tab === 1 && (

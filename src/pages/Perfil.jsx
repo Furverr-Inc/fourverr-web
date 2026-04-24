@@ -331,7 +331,7 @@ const Perfil = () => {
                   <Avatar src={perfil?.fotoUrl} sx={{ width: 80, height: 80, fontSize: '2rem', bgcolor: 'primary.main' }}>
                     {!perfil?.fotoUrl && (perfil?.nombreMostrado?.charAt(0) || 'U')}
                   </Avatar>
-                  <Box className="overlay" sx={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', bgcolor: 'rgba(0,0,0,0.4)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0, transition: '0.3s' }}>
+                  <Box className="overlay" sx={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', bgcolor: 'rgba(0,0,0,0.4)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0, transition: 'opacity 0.25s ease', pointerEvents: 'none' }}>
                     <PhotoCamera sx={{ color: 'white', fontSize: 20 }} />
                   </Box>
                   {subiendo && <CircularProgress size={80} sx={{ position: 'absolute', top: 0, left: 0, color: 'primary.main', zIndex: 1 }} />}

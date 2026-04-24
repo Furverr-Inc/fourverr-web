@@ -1,8 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
   Container, Card, CardMedia, CardContent, Typography,
-  Box, Chip, CircularProgress, Alert, AppBar, Toolbar, Button, IconButton, Tooltip,
-  Avatar, useMediaQuery,
+  Box, Chip, Alert, AppBar, Toolbar, Button, IconButton, Tooltip,
+  Avatar, useMediaQuery, Skeleton,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import DarkModeIcon from '@mui/icons-material/DarkMode';
@@ -48,9 +48,32 @@ const Landing = () => {
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return (
-    <Box sx={{ display: 'flex', justifyContent: 'center', mt: 10 }}>
-      <CircularProgress sx={{ color: BRAND_PERIW }} />
+  const renderSkeletonGrid = () => (
+    <Box
+      sx={{
+        display: 'grid',
+        gap: { xs: 1.5, sm: 2.25, md: 2.5 },
+        gridTemplateColumns: {
+          xs: 'minmax(0, 1fr)',
+          sm: 'repeat(2, minmax(0, 1fr))',
+          md: 'repeat(3, minmax(0, 1fr))',
+        },
+      }}
+    >
+      {Array.from({ length: 6 }).map((_, i) => (
+        <Box key={i} sx={{ borderRadius: R_CARD, overflow: 'hidden' }}>
+          <Skeleton variant="rectangular" height={isMobile ? 110 : 160} />
+          <Box sx={{ p: 2 }}>
+            <Skeleton variant="text" width="40%" height={18} />
+            <Skeleton variant="text" width="85%" height={22} />
+            <Skeleton variant="text" width="60%" height={18} />
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1 }}>
+              <Skeleton variant="text" width="30%" height={20} />
+              <Skeleton variant="text" width="20%" height={24} />
+            </Box>
+          </Box>
+        </Box>
+      ))}
     </Box>
   );
 
@@ -89,12 +112,11 @@ const Landing = () => {
               {isDark ? <LightModeIcon /> : <DarkModeIcon />}
             </IconButton>
           </Tooltip>
-          <Button variant="contained" onClick={() => navigate('/login')}
-            sx={{
-              fontWeight: 'bold', px: 3, borderRadius: '50px',
-              bgcolor: BRAND_PERIW, color: '#fff',
-              '&:hover': { bgcolor: BRAND_PERIW_HOVER },
-            }}>
+          <Button
+            variant="contained"
+            color="secondary"
+            onClick={() => navigate('/login')}
+          >
             {t.access}
           </Button>
         </Toolbar>
@@ -108,8 +130,14 @@ const Landing = () => {
         textAlign: 'center',
         borderBottom: `1px solid ${BRAND_BORDER}`,
       }}>
-        <Container maxWidth="md">
-          <Typography variant="h2" component="h1" gutterBottom fontWeight="bold" sx={{ mb: 2 }}>
+        <Container maxWidth="md" sx={{ animation: 'zento-fade-in 400ms cubic-bezier(.2,.8,.2,1)' }}>
+          <Typography
+            variant="h2"
+            component="h1"
+            gutterBottom
+            fontWeight="bold"
+            sx={{ mb: 2, fontSize: 'clamp(2rem, 4.5vw, 3.5rem)' }}
+          >
             {t.heroTitle}{' '}
             <Box component="span" sx={{
               fontStyle: 'italic',
@@ -123,7 +151,11 @@ const Landing = () => {
             variant="h4"
             component="h2"
             gutterBottom
-            sx={{ color: 'rgba(220,222,232,0.88)', fontWeight: 400 }}
+            sx={{
+              color: 'rgba(220,222,232,0.88)',
+              fontWeight: 400,
+              fontSize: 'clamp(1.15rem, 2.2vw, 1.6rem)',
+            }}
           >
             {t.heroSubtitle}
           </Typography>
@@ -196,6 +228,7 @@ const Landing = () => {
             {t.popularServices}
           </Typography>
           {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
+          {loading ? renderSkeletonGrid() : (
           <Box
             sx={{
               display: 'grid',
@@ -223,27 +256,36 @@ const Landing = () => {
                   borderRadius: R_CARD,
                   overflow: 'hidden',
                   cursor: 'pointer',
-                  transition: 'transform 0.2s, box-shadow 0.2s',
+                  willChange: 'transform',
+                  transition: 'transform 200ms cubic-bezier(.2,.8,.2,1), box-shadow 200ms cubic-bezier(.2,.8,.2,1)',
                   ...(isDark && {
                     border: '1px solid rgba(200,202,212,0.12)',
                     boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
                   }),
+                  '& .zento-card-media': {
+                    transition: 'transform 320ms cubic-bezier(.2,.8,.2,1)',
+                  },
                   '&:hover': {
                     transform: 'translateY(-4px)',
                     boxShadow: isDark
                       ? '0 16px 40px rgba(0,0,0,0.55), 0 0 0 1px rgba(139,143,200,0.14)'
                       : '0 12px 32px rgba(13,17,39,0.12)',
                   },
+                  '&:hover .zento-card-media': { transform: 'scale(1.04)' },
+                  '&:active': { transform: 'translateY(-2px)' },
                 }}
               >
-                <CardMedia
-                  component="img"
-                  height={isMobile ? 110 : 160}
-                  image={prod.urlPortada || prod.urlArchivo || 'https://via.placeholder.com/300?text=Sin+Imagen'}
-                  alt={prod.titulo}
-                  loading="lazy"
-                  sx={{ width: '100%', objectFit: 'cover' }}
-                />
+                <Box sx={{ overflow: 'hidden' }}>
+                  <CardMedia
+                    component="img"
+                    className="zento-card-media"
+                    height={isMobile ? 110 : 160}
+                    image={prod.urlPortada || prod.urlArchivo || 'https://via.placeholder.com/300?text=Sin+Imagen'}
+                    alt={prod.titulo}
+                    loading="lazy"
+                    sx={{ width: '100%', objectFit: 'cover' }}
+                  />
+                </Box>
                 <CardContent sx={{ flexGrow: 1, p: { xs: 1, sm: 2 }, pb: { xs: 0.5, sm: 1 } }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
                     <Avatar
@@ -315,7 +357,8 @@ const Landing = () => {
               </Card>
             ))}
           </Box>
-          {productos.length === 0 && !error && (
+          )}
+          {!loading && productos.length === 0 && !error && (
             <Alert severity="info" sx={{ mt: 3 }}>{t.noServices}</Alert>
           )}
         </Box>
@@ -345,16 +388,10 @@ const Landing = () => {
           </Typography>
           <Button
             variant="contained"
+            color="secondary"
             size="large"
             onClick={() => navigate('/login')}
-            sx={{
-              fontWeight: 'bold',
-              px: 5,
-              py: 1.5,
-              bgcolor: BRAND_PERIW,
-              color: '#fff',
-              '&:hover': { bgcolor: BRAND_PERIW_HOVER },
-            }}
+            sx={{ fontWeight: 700, px: 5 }}
           >
             {t.ctaButton}
           </Button>

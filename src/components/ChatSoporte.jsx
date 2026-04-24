@@ -83,13 +83,25 @@ const ChatSoporte = () => {
           color: BRAND_PERIW,
           boxShadow: `0 8px 28px ${BRAND_SHADOW}`,
           border: `1px solid ${BRAND_BORDER}`,
-          '&:hover': {
-            background: BRAND_NAVY,
-            color: '#fff',
+          transform: 'scale(0.6)',
+          animation: 'zento-fab-in 420ms cubic-bezier(.2,.8,.2,1.2) forwards, zento-pulse-soft 4.5s ease-in-out 1200ms infinite',
+          '@keyframes zento-fab-in': {
+            '0%':   { transform: 'scale(0.6)', opacity: 0 },
+            '60%':  { transform: 'scale(1.08)', opacity: 1 },
+            '100%': { transform: 'scale(1)', opacity: 1 },
           },
+          transition: 'background 200ms ease, color 200ms ease',
+          '&:hover':  { background: BRAND_NAVY, color: '#fff' },
+          '&:active': { transform: 'scale(0.96)' },
         }}
       >
-        <Badge badgeContent={noLeidos} color="error" max={9}>
+        <Badge
+          key={`ns-${noLeidos}`}
+          badgeContent={noLeidos}
+          color="error"
+          max={9}
+          sx={{ '& .MuiBadge-badge': { animation: noLeidos > 0 ? 'zento-pop 300ms cubic-bezier(.2,.8,.2,1.2)' : 'none' } }}
+        >
           <ChatBubbleOutlineIcon sx={{ fontSize: 26 }} />
         </Badge>
       </Fab>
@@ -103,6 +115,8 @@ const ChatSoporte = () => {
           display: 'flex', flexDirection: 'column',
           border: `1px solid ${BRAND_BORDER}`,
           boxShadow: `0 20px 60px ${BRAND_SHADOW}`,
+          animation: 'zento-fade-in 220ms cubic-bezier(.2,.8,.2,1)',
+          transformOrigin: 'bottom right',
         }}>
 
           {/* Header */}
@@ -131,7 +145,7 @@ const ChatSoporte = () => {
           </Box>
 
           {/* Mensajes */}
-          <Box sx={{ flex: 1, overflowY: 'auto', p: 2, display: 'flex', flexDirection: 'column', gap: 1 }}>
+          <Box sx={{ flex: 1, overflowY: 'auto', p: 2, display: 'flex', flexDirection: 'column', gap: 1, scrollBehavior: 'smooth', overscrollBehavior: 'contain' }}>
             {loading ? (
               <Box sx={{ display: 'flex', justifyContent: 'center', pt: 4 }}>
                 <CircularProgress size={28} />

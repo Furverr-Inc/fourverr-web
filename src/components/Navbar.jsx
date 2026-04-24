@@ -2,7 +2,8 @@ import React, { useEffect, useState, useCallback } from 'react';
 import {
   AppBar, Toolbar, Button, Box, IconButton, Avatar, Tooltip, Badge, Typography,
   Popover, List, ListItem, ListItemAvatar, ListItemText, Divider, Chip,
-  Menu, MenuItem, useMediaQuery
+  Menu, MenuItem, useMediaQuery,
+  Dialog, DialogTitle, DialogContent, DialogActions, DialogContentText, Snackbar, Alert
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { useNavigate, Link } from 'react-router-dom';
@@ -49,6 +50,21 @@ const Navbar = () => {
   const [avatarMenuAnchor, setAvatarMenuAnchor] = useState(null);
   const avatarMenuOpen = Boolean(avatarMenuAnchor);
 
+  // Shrink on scroll
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 12);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  // Dialog y snackbar para solicitar vendedor
+  const [sellerDlg, setSellerDlg]   = useState(false);
+  const [sellerBusy, setSellerBusy] = useState(false);
+  const [snack, setSnack]           = useState({ open: false, msg: '', severity: 'success' });
+  const [approvedDlg, setApprovedDlg] = useState(false);
+
   const ventasPendientes = ventas.filter(v => v.estado === 'PENDIENTE').length;
 
   const refreshWishlistCount = useCallback(async () => {
@@ -64,12 +80,20 @@ const Navbar = () => {
     }
   }, []);
 
-  const handleSolicitar = async () => {
-    if (!window.confirm('¿Deseas enviar tu solicitud para ser vendedor?')) return;
+  const handleSolicitar = () => setSellerDlg(true);
+
+  const confirmSolicitar = async () => {
+    setSellerBusy(true);
     try {
       await api.post('/users/solicitar-vendedor');
-      alert('✅ Solicitud enviada. Un administrador revisará tu perfil.');
-    } catch { alert('Error al enviar solicitud o ya la enviaste.'); }
+      setSnack({ open: true, msg: t.sellerRequestSent || 'Solicitud enviada. Un administrador revisará tu perfil.', severity: 'success' });
+      setSellerDlg(false);
+    } catch {
+      setSnack({ open: true, msg: t.sellerRequestError || 'Error al enviar solicitud o ya la enviaste.', severity: 'error' });
+      setSellerDlg(false);
+    } finally {
+      setSellerBusy(false);
+    }
   };
 
   const checkStatus = useCallback(async () => {
@@ -79,8 +103,7 @@ const Navbar = () => {
         if (data.role === 'SELLER') {
           localStorage.setItem('token', data.token);
           localStorage.setItem('usuarioRol', data.role);
-          alert('¡Felicidades! Has sido aprobado como Vendedor.');
-          window.location.reload();
+          setApprovedDlg(true);
         }
       } catch {}
     }
@@ -163,9 +186,17 @@ const Navbar = () => {
           : 'rgba(255,255,255,0.96)',
         backdropFilter: 'blur(16px)',
         borderBottom: `1px solid ${BRAND_BORDER}`,
-        boxShadow: `0 2px 20px ${BRAND_SHADOW}`,
+        boxShadow: scrolled ? `0 6px 22px ${BRAND_SHADOW}` : `0 2px 20px ${BRAND_SHADOW}`,
+        transition: 'box-shadow 220ms cubic-bezier(.2,.8,.2,1)',
       }}>
-        <Toolbar sx={{ minHeight: { xs: 56, sm: 64 }, px: { xs: 1.5, sm: 2 } }}>
+        <Toolbar sx={{
+          minHeight: {
+            xs: scrolled ? 52 : 56,
+            sm: scrolled ? 56 : 64,
+          },
+          px: { xs: 1.5, sm: 2 },
+          transition: 'min-height 220ms cubic-bezier(.2,.8,.2,1)',
+        }}>
 
           {/* ── LOGO ── */}
           <Box component={Link} to="/home" sx={{
@@ -173,23 +204,33 @@ const Navbar = () => {
             display: 'flex', alignItems: 'center', gap: 1
           }}>
             <Box sx={{
-              width: { xs: 30, sm: 34 }, height: { xs: 30, sm: 34 },
+              width:  { xs: scrolled ? 26 : 30, sm: scrolled ? 30 : 34 },
+              height: { xs: scrolled ? 26 : 30, sm: scrolled ? 30 : 34 },
               borderRadius: '10px',
               background: `linear-gradient(145deg, ${BRAND_NAVY_TOP} 0%, ${BRAND_NAVY} 100%)`,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               boxShadow: `0 4px 16px ${BRAND_SHADOW}`, flexShrink: 0,
               border: `1px solid ${BRAND_BORDER}`,
+              transition: 'width 220ms cubic-bezier(.2,.8,.2,1), height 220ms cubic-bezier(.2,.8,.2,1)',
             }}>
-              <Typography sx={{ color: BRAND_PERIW, fontWeight: 900, fontSize: { xs: '0.85rem', sm: '1rem' }, lineHeight: 1 }}>
+              <Typography sx={{
+                color: BRAND_PERIW,
+                fontWeight: 900,
+                fontSize: { xs: '0.85rem', sm: '1rem' },
+                lineHeight: 1,
+              }}>
                 Z
               </Typography>
             </Box>
             {/* Nombre "Zento" solo en desktop */}
             {!isMobile && (
               <Typography sx={{
-                fontWeight: 800, fontSize: '1.75rem', letterSpacing: '-0.5px',
+                fontWeight: 800,
+                fontSize: scrolled ? '1.4rem' : '1.75rem',
+                letterSpacing: '-0.5px',
                 color: isDark ? BRAND_TEXT : BRAND_NAVY,
                 lineHeight: 1,
+                transition: 'font-size 220ms cubic-bezier(.2,.8,.2,1)',
               }}>
                 Zento
               </Typography>
@@ -210,7 +251,13 @@ const Navbar = () => {
               {/* Campana (solo SELLER/ADMIN) */}
               {(usuarioRol === 'SELLER' || usuarioRol === 'ADMIN') && (
                 <IconButton onClick={e => setNotifAnchor(e.currentTarget)} sx={{ ...iconSx, p: 0.75 }}>
-                  <Badge badgeContent={ventasPendientes} color="error" max={9}>
+                  <Badge
+                    key={`vp-${ventasPendientes}`}
+                    badgeContent={ventasPendientes}
+                    color="error"
+                    max={9}
+                    sx={{ '& .MuiBadge-badge': { animation: ventasPendientes > 0 ? 'zento-pop 300ms cubic-bezier(.2,.8,.2,1.2)' : 'none' } }}
+                  >
                     <NotificationsNoneOutlinedIcon fontSize="small" />
                   </Badge>
                 </IconButton>
@@ -218,7 +265,12 @@ const Navbar = () => {
 
               {/* Wishlist */}
               <IconButton onClick={() => setWishlistOpen(true)} sx={{ ...iconSx, p: 0.75 }}>
-                <Badge badgeContent={wishlistCount} sx={{ '& .MuiBadge-badge': { bgcolor: BRAND_PERIW, color: '#fff' } }} max={99}>
+                <Badge
+                  key={`wl-${wishlistCount}`}
+                  badgeContent={wishlistCount}
+                  sx={{ '& .MuiBadge-badge': { bgcolor: BRAND_PERIW, color: '#fff', animation: wishlistCount > 0 ? 'zento-pop 300ms cubic-bezier(.2,.8,.2,1.2)' : 'none' } }}
+                  max={99}
+                >
                   <StarBorderIcon fontSize="small" />
                 </Badge>
               </IconButton>
@@ -357,7 +409,12 @@ const Navbar = () => {
               {/* Wishlist */}
               <Tooltip title={t.wishlist}>
                 <IconButton onClick={() => setWishlistOpen(true)} sx={iconSx}>
-                <Badge badgeContent={wishlistCount} sx={{ '& .MuiBadge-badge': { bgcolor: BRAND_PERIW, color: '#fff' } }} max={99}>
+                <Badge
+                  key={`wl-d-${wishlistCount}`}
+                  badgeContent={wishlistCount}
+                  sx={{ '& .MuiBadge-badge': { bgcolor: BRAND_PERIW, color: '#fff', animation: wishlistCount > 0 ? 'zento-pop 300ms cubic-bezier(.2,.8,.2,1.2)' : 'none' } }}
+                  max={99}
+                >
                   <StarBorderIcon />
                 </Badge>
                 </IconButton>
@@ -366,7 +423,14 @@ const Navbar = () => {
               {(usuarioRol === 'USER' || usuarioRol === 'SELLER') && (
                 <Tooltip title={t.myReportsTooltip}>
                   <IconButton component={Link} to="/perfil#mis-reportes" sx={iconSx}>
-                    <Badge badgeContent={reportesUnread} color="error" max={9} invisible={reportesUnread === 0}>
+                    <Badge
+                      key={`rp-d-${reportesUnread}`}
+                      badgeContent={reportesUnread}
+                      color="error"
+                      max={9}
+                      invisible={reportesUnread === 0}
+                      sx={{ '& .MuiBadge-badge': { animation: reportesUnread > 0 ? 'zento-pop 300ms cubic-bezier(.2,.8,.2,1.2)' : 'none' } }}
+                    >
                       <FlagOutlinedIcon />
                     </Badge>
                   </IconButton>
@@ -382,47 +446,35 @@ const Navbar = () => {
               </IconButton>
 
               {usuarioRol === 'SELLER' || usuarioRol === 'ADMIN' ? (
-                <Button variant="contained" component={Link} to="/nuevo" startIcon={<StorefrontIcon />}
-                  sx={{
-                    fontWeight: 'bold', borderRadius: '50px', px: 2,
-                    bgcolor: BRAND_PERIW, color: '#fff',
-                    boxShadow: `0 4px 14px ${BRAND_SHADOW}`,
-                    '&:hover': { bgcolor: BRAND_PERIW_HOVER },
-                  }}>
+                <Button
+                  variant="contained"
+                  color="secondary"
+                  component={Link}
+                  to="/nuevo"
+                  startIcon={<StorefrontIcon />}
+                  sx={{ fontWeight: 700, px: 2 }}
+                >
                   {t.publishGig}
                 </Button>
               ) : (
                 <Button
                   variant="outlined"
+                  color="secondary"
                   onClick={handleSolicitar}
-                  sx={{
-                    fontWeight: 'bold',
-                    borderRadius: '50px',
-                    px: 2,
-                    borderColor: BRAND_PERIW,
-                    ...(isDark
-                      ? {
-                          color: BRAND_TEXT,
-                          '&:hover': {
-                            borderColor: BRAND_PERIW_HOVER,
-                            bgcolor: 'rgba(139,143,200,0.14)',
-                            color: '#fff',
-                          },
-                        }
-                      : {
-                          color: BRAND_NAVY,
-                          '&:hover': {
-                            borderColor: BRAND_PERIW_HOVER,
-                            bgcolor: 'rgba(139,143,200,0.08)',
-                          },
-                        }),
-                  }}
+                  sx={{ fontWeight: 700, px: 2 }}
                 >
                   {t.beSeller}
                 </Button>
               )}
 
-              <Button onClick={handleLogout} sx={{ borderRadius: 2, color: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.4)', '&:hover': { color: '#ef4444' } }}>
+              <Button
+                variant="text"
+                onClick={handleLogout}
+                sx={{
+                  color: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.4)',
+                  '&:hover': { color: '#ef4444' },
+                }}
+              >
                 {t.logout}
               </Button>
             </Box>
@@ -507,6 +559,85 @@ const Navbar = () => {
       )}
 
       <WishlistDrawer open={wishlistOpen} onClose={() => setWishlistOpen(false)} />
+
+      {/* Confirmar solicitud de vendedor */}
+      <Dialog
+        open={sellerDlg}
+        onClose={() => !sellerBusy && setSellerDlg(false)}
+        PaperProps={{ sx: { borderRadius: 3, maxWidth: 440 } }}
+        TransitionProps={{ timeout: 260 }}
+      >
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+          <Box sx={{
+            width: 40, height: 40, borderRadius: '50%',
+            bgcolor: 'rgba(139,143,200,0.15)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <StorefrontIcon sx={{ color: BRAND_PERIW }} />
+          </Box>
+          {t.beSeller || 'Convertirme en vendedor'}
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            {t.sellerRequestAsk || '¿Deseas enviar tu solicitud para ser vendedor? Un administrador revisará tu perfil.'}
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>
+          <Button variant="outlined" onClick={() => setSellerDlg(false)} disabled={sellerBusy}>
+            {t.cancel || 'Cancelar'}
+          </Button>
+          <Button variant="contained" color="secondary" onClick={confirmSolicitar} disabled={sellerBusy}>
+            {t.send || 'Enviar solicitud'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Aprobado como vendedor */}
+      <Dialog
+        open={approvedDlg}
+        onClose={() => { setApprovedDlg(false); window.location.reload(); }}
+        PaperProps={{ sx: { borderRadius: 3, maxWidth: 400, textAlign: 'center' } }}
+      >
+        <DialogTitle sx={{ pb: 0 }}>
+          <Box sx={{
+            width: 56, height: 56, borderRadius: '50%',
+            bgcolor: 'rgba(46,125,82,0.15)', mx: 'auto',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <CheckCircleIcon sx={{ fontSize: 32, color: 'success.main' }} />
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="h6" fontWeight={700} sx={{ mb: 1 }}>
+            {t.congratulations || '¡Felicidades!'}
+          </Typography>
+          <DialogContentText>
+            {t.sellerApproved || 'Has sido aprobado como Vendedor. Recarga la página para continuar.'}
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2.5, justifyContent: 'center' }}>
+          <Button variant="contained" color="secondary"
+            onClick={() => { setApprovedDlg(false); window.location.reload(); }}>
+            {t.continue || 'Continuar'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Snackbar
+        open={snack.open}
+        autoHideDuration={4000}
+        onClose={() => setSnack(s => ({ ...s, open: false }))}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert
+          severity={snack.severity}
+          variant="filled"
+          onClose={() => setSnack(s => ({ ...s, open: false }))}
+          sx={{ borderRadius: 2 }}
+        >
+          {snack.msg}
+        </Alert>
+      </Snackbar>
     </>
   );
 };

@@ -164,6 +164,8 @@ const ChatCompra = ({ pedidoId, vendedorNombre, vendedorFoto, vendedorId, chatIn
         flex: 1, overflowY: 'auto', p: 1.5,
         background: BG_CHAT,
         display: 'flex', flexDirection: 'column', gap: 1,
+        scrollBehavior: 'smooth',
+        overscrollBehavior: 'contain',
         '&::-webkit-scrollbar': { width: 4 },
         '&::-webkit-scrollbar-thumb': { background: PERIW, borderRadius: 2 },
       }}>

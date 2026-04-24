@@ -54,7 +54,16 @@ const ContactoWidget = () => {
           color: BRAND_PERIW,
           boxShadow: `0 8px 28px ${BRAND_SHADOW}`,
           border: `1px solid ${BRAND_BORDER}`,
-          '&:hover': { background: BRAND_NAVY, color: '#fff' },
+          transform: 'scale(0.6)',
+          animation: 'zento-fab-in 420ms cubic-bezier(.2,.8,.2,1.2) forwards, zento-pulse-soft 4.5s ease-in-out 1200ms infinite',
+          '@keyframes zento-fab-in': {
+            '0%':   { transform: 'scale(0.6)', opacity: 0 },
+            '60%':  { transform: 'scale(1.08)', opacity: 1 },
+            '100%': { transform: 'scale(1)', opacity: 1 },
+          },
+          transition: 'background 200ms ease, color 200ms ease',
+          '&:hover':  { background: BRAND_NAVY, color: '#fff' },
+          '&:active': { transform: 'scale(0.96)' },
         }}
       >
         <ChatBubbleOutlineIcon sx={{ fontSize: 26 }} />
@@ -66,6 +75,8 @@ const ContactoWidget = () => {
           width: 340, borderRadius: 3, overflow: 'hidden',
           border: `1px solid ${BRAND_BORDER}`,
           boxShadow: `0 20px 60px ${BRAND_SHADOW}`,
+          animation: 'zento-fade-in 220ms cubic-bezier(.2,.8,.2,1)',
+          transformOrigin: 'bottom right',
         }}>
 
           {/* Header */}
@@ -125,14 +136,12 @@ const ContactoWidget = () => {
                 />
 
                 <Button
-                  variant="contained" fullWidth endIcon={enviando ? <CircularProgress size={16} color="inherit" /> : <SendIcon />}
+                  variant="contained"
+                  color="secondary"
+                  fullWidth
+                  endIcon={enviando ? <CircularProgress size={16} color="inherit" /> : <SendIcon />}
                   disabled={enviando}
                   onClick={handleEnviar}
-                  sx={{
-                    borderRadius: '50px', py: 1,
-                    bgcolor: BRAND_PERIW,
-                    '&:hover': { bgcolor: BRAND_PERIW_HOVER },
-                  }}
                 >
                   {enviando ? 'Enviando...' : 'Enviar mensaje'}
                 </Button>
