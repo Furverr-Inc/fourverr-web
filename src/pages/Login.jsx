@@ -239,7 +239,9 @@ const Login = () => {
       <Box sx={{
         minHeight: '100vh',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        background: isDark ? BG_DARK : BG_LIGHT,
+        background: isDark
+          ? `radial-gradient(ellipse at 50% 38%, #111829 0%, ${BG_DARK} 68%)`
+          : `radial-gradient(ellipse at 50% 38%, #e8e8e6 0%, ${BG_LIGHT} 68%)`,
         position: 'relative',
       }}>
         <Button
@@ -267,7 +269,8 @@ const Login = () => {
             background: isDark
               ? `linear-gradient(180deg, ${CARD_DARK_TOP} 0%, ${CARD_DARK_BOTTOM} 100%)`
               : '#FFFFFF',
-            pt: 3, pb: 2, px: 4, textAlign: 'center',
+            pt: 3, pb: 4, px: 4, textAlign: 'center',
+            position: 'relative', zIndex: 0,
           }}>
             <Collapse in={!!mensajeExito} unmountOnExit>
               <Alert severity="success" sx={{ mb: 2, borderRadius: 3, textAlign: 'left' }}>{mensajeExito}</Alert>
@@ -313,6 +316,9 @@ const Login = () => {
           <Box sx={{
             background: isDark ? CARD_DARK_BOTTOM : '#0D1127',
             px: 4, pt: 4, pb: 4,
+            borderRadius: '22px 22px 0 0',
+            mt: -2.5,
+            position: 'relative', zIndex: 1,
           }}>
             <Box component="form" noValidate onSubmit={handleLogin}>
               <TextField
@@ -403,7 +409,7 @@ const Login = () => {
                   shape="pill"
                   size="large"
                   text="continue_with"
-                  width="100%"
+                  width="336"
                 />
               </Box>
 
@@ -425,7 +431,7 @@ const Login = () => {
                 >
                   {lang === 'en' ? 'Forgot your password?' : '¿Olvidaste tu contraseña?'}
                 </Link>
-                <Typography variant="body2" sx={{ mt: 1.5, color: 'rgba(200,202,212,0.55)' }}>
+                <Typography variant="body2" sx={{ mt: 2.5, color: 'rgba(200,202,212,0.72)' }}>
                   {t.newHere || (lang === 'en' ? "Don't have an account?" : '¿No tienes cuenta?')}{' '}
                   <Link component={RouterLink} to="/registro" underline="hover"
                     sx={{ color: PERIW, fontWeight: 700 }}>

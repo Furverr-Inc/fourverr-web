@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import {
   Container, Paper, Box, Typography, Avatar, CircularProgress, Alert,
-  Chip, Divider, Grid, Card, CardMedia, CardContent, IconButton, Tooltip
+  Chip, Divider, Card, CardMedia, CardContent, IconButton, Tooltip
 } from '@mui/material';
 import { useParams, useNavigate } from 'react-router-dom';
 import ArrowBackIcon   from '@mui/icons-material/ArrowBack';
@@ -134,30 +134,36 @@ const PerfilPublico = () => {
           {productos.length === 0 ? (
             <Alert severity="info">Este vendedor aún no tiene publicaciones.</Alert>
           ) : (
-            <Grid container spacing={2}>
+            <Box sx={{
+              display: 'grid',
+              gridTemplateColumns: {
+                xs: '1fr',
+                sm: productos.length === 1 ? '1fr' : 'repeat(2, 1fr)',
+                md: productos.length <= 2 ? `repeat(${productos.length}, 1fr)` : 'repeat(3, 1fr)',
+              },
+              gap: 2,
+            }}>
               {productos.map(prod => (
-                <Grid item key={prod.id} xs={12} sm={6} md={4}>
-                  <Card onClick={() => { setSelected(prod); setModal(true); }}
-                    sx={{ borderRadius:3, cursor:'pointer', transition:'transform 0.2s',
-                      '&:hover': { transform:'translateY(-3px)',
-                        boxShadow: isDark ? '0 8px 24px rgba(124,58,237,0.3)' : '0 8px 24px rgba(55,48,163,0.15)' }
-                    }}>
-                    <CardMedia component="img" height="160"
-                      image={prod.urlArchivo || prod.urlPortada || 'https://via.placeholder.com/300'}
-                      sx={{ objectFit:'cover' }} />
-                    <CardContent>
-                      <Typography variant="subtitle2" fontWeight="bold" noWrap>{prod.titulo}</Typography>
-                      <Box sx={{ display:'flex', justifyContent:'space-between', mt:1 }}>
-                        <Chip label={prod.tipo?.replace(/_/g,' ')} size="small" color="primary" variant="outlined" />
-                        <Typography variant="subtitle1" fontWeight="bold" color="success.main">
-                          ${prod.precio}
-                        </Typography>
-                      </Box>
-                    </CardContent>
-                  </Card>
-                </Grid>
+                <Card key={prod.id} onClick={() => { setSelected(prod); setModal(true); }}
+                  sx={{ borderRadius:3, cursor:'pointer', transition:'transform 0.2s',
+                    '&:hover': { transform:'translateY(-3px)',
+                      boxShadow: isDark ? '0 8px 24px rgba(124,58,237,0.3)' : '0 8px 24px rgba(55,48,163,0.15)' }
+                  }}>
+                  <CardMedia component="img" height="160"
+                    image={prod.urlArchivo || prod.urlPortada || 'https://via.placeholder.com/300'}
+                    sx={{ objectFit:'cover' }} />
+                  <CardContent>
+                    <Typography variant="subtitle2" fontWeight="bold" noWrap>{prod.titulo}</Typography>
+                    <Box sx={{ display:'flex', justifyContent:'space-between', mt:1 }}>
+                      <Chip label={prod.tipo?.replace(/_/g,' ')} size="small" color="primary" variant="outlined" />
+                      <Typography variant="subtitle1" fontWeight="bold" color="success.main">
+                        ${prod.precio}
+                      </Typography>
+                    </Box>
+                  </CardContent>
+                </Card>
               ))}
-            </Grid>
+            </Box>
           )}
         </>
       )}

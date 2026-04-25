@@ -680,7 +680,7 @@ const Perfil = () => {
 
         {/* GUARDADOS (Wishlist) */}
         {favoritos.length > 0 && (
-          <Grid item xs={12} sm={6} md={4}>
+          <Grid item xs={12} sm={compras.length > 0 ? 5 : 12} md={compras.length > 0 ? 4 : 12}>
             <Paper elevation={3} sx={{ p: 2.5, borderRadius: 3, height: '100%' }}>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -717,7 +717,7 @@ const Perfil = () => {
 
         {/* HISTORIAL DE COMPRAS */}
         {compras.length > 0 && (
-          <Grid item xs={12}>
+          <Grid item xs={12} sm={favoritos.length > 0 ? 7 : 12} md={favoritos.length > 0 ? 8 : 12}>
             <Paper elevation={3} sx={{ p: 2.5, borderRadius: 3 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -728,7 +728,7 @@ const Perfil = () => {
               </Box>
               <Grid container spacing={2}>
                 {compras.slice(0, 6).map((pedido, idx) => (
-                  <Grid item xs={12} sm={6} md={4} key={pedido.id}>
+                  <Grid item xs={12} sm={6} md={favoritos.length > 0 ? 6 : 4} key={pedido.id}>
                     <Card elevation={0} sx={{
                       borderRadius: 3,
                       border: '1px solid', borderColor: 'divider',
